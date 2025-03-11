@@ -7,6 +7,7 @@ import { mdToPdf } from 'md-to-pdf';
 import NotesGeneratorAgent from "../agents/NotesGeneratorAgent.js";
 import SyllabusAnalyzerAgent from "../agents/SyllabusAnalyzerAgent.js";
 import { v4 as uuidv4 } from 'uuid';
+import { NotesRequestModel } from "../models/user-request.model.js";
 
 dotenv.config();
 
@@ -111,6 +112,18 @@ export async function generateNotesController(req, res) {
       example_types,
       user_instructions
     };
+    
+    // Store request in database
+    await NotesRequestModel.create({
+      request_id: requestId,
+      subject_name,
+      syllabus,
+      note_type,
+      include_examples,
+      example_types,
+      user_instructions,
+      format
+    })
     
     // Step 1: Generate analysis and prompts
     console.log(`[${requestId}] Analyzing syllabus...`);
