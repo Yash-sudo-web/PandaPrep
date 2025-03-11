@@ -1,159 +1,224 @@
+// File: controllers/pipeline.controller.js
 import { ChatGroq } from "@langchain/groq";
 import dotenv from "dotenv";
-import PDFDocument from "pdfkit";
 import fs from "fs";
+import path from "path";
+import { mdToPdf } from 'md-to-pdf';
+import NotesGeneratorAgent from "../agents/NotesGeneratorAgent.js";
+import SyllabusAnalyzerAgent from "../agents/SyllabusAnalyzerAgent.js";
+import { v4 as uuidv4 } from 'uuid';
 
-dotenv.config({ path: "./.env" });
+dotenv.config();
 
-console.log("API Key Loaded:", process.env.GROQ_API_KEY);
+// Constants
+const OUTPUT_DIR = path.join(process.cwd(), 'temp');
+const DEFAULT_FILENAME = "study_notes";
 
-const llm = new ChatGroq({
-  groqApiKey: process.env.GROQ_API_KEY,
-  model: "mixtral-8x7b-32768",
-});
-
-async function generateStructuredPrompts(syllabus) {
-    const llmPrompt = `
-        You are a professional syllabus simplifier. Your task is to break down the given syllabus into multiple structured prompts. 
-        Each prompt should focus on a specific part of the syllabus, ensuring completeness and logical flow.
-
-        Format your response as a **valid JSON array** with clear, detailed prompts.
-
-        Example output:
-        [
-        "Explain Topic A in depth...",
-        "Provide key points for Topic B...",
-        "Summarize Topic C with examples..."
-        ]
-
-        Here is the syllabus:
-        ${syllabus}
-
-        Return ONLY a valid JSON array, nothing else.
-    `;
-
-  try {
-    const response = await llm.call([llmPrompt]);
-    console.log("LLM Raw Response:", response.content);
-    return JSON.parse(response.content);
-  } catch (error) {
-    console.error("Error parsing response:", error);
-    return [];
-  }
+// Ensure temp directory exists
+if (!fs.existsSync(OUTPUT_DIR)) {
+  fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 }
 
-async function generateNotesFromPrompts(prompts) {
-    const systemPrompt1 = `
-        You are an expert educational content generator. Your task is to generate comprehensive, well-structured, and detailed notes based on the given prompts.
-        Ensure clarity, conciseness, and logical flow.
-        Format the response as a valid JSON object where keys are the prompts and values are the corresponding detailed notes.
-
-        Example output:
-        {
-        "Explain Topic A in depth...": "Detailed explanation of Topic A...",
-        "Provide key points for Topic B...": "Key points for Topic B are..."
-        }
-
-        Here are the prompts:
-        ${JSON.stringify(prompts)}
-
-        Return ONLY a valid JSON object, nothing else.
-    `;
-    const systemPrompt2 = `
-        You are an AI specializing in generating clear, concise, and informative study notes from structured prompts. Your task is to create well-organized notes that explain key concepts in a simple yet comprehensive manner. Ensure that the notes:
-
-        Provide clear definitions and explanations.
-        Include relevant examples where necessary.
-        Use bullet points, subheadings, and structured formatting for readability.
-        Maintain a professional and academic tone, while being engaging and easy to understand.
-        Your goal is to make complex topics accessible and digestible for learners, helping them grasp key ideas effectively."
-
-        Example output:
-        {
-        "Explain Topic A in depth...": "Detailed explanation of Topic A...",
-        "Provide key points for Topic B...": "Key points for Topic B are..."
-        }
-
-        Here are the prompts:
-        ${JSON.stringify(prompts)}
-
-        Return ONLY a valid JSON object, nothing else.
-    `;
-
-  try {
-    const response = await llm.call([systemPrompt2]);
-    console.log("LLM Notes Response:", response.content);
-    return JSON.parse(response.content);
-  } catch (error) {
-    console.error("Error parsing notes response:", error);
-    return {};
+/**
+ * Validates the request body
+ * @param {Object} body - The request body to validate
+ * @returns {Object} - { isValid, errors }
+ */
+function validateRequest(body) {
+  const errors = [];
+  
+  if (!body.syllabus) {
+    errors.push("Syllabus is required");
   }
+  
+  if (body.subject_name && typeof body.subject_name !== 'string') {
+    errors.push("Subject name must be a string");
+  }
+  
+  if (body.note_type && !['concise', 'detailed', 'q&a'].includes(body.note_type.toLowerCase())) {
+    errors.push("Note type must be one of: concise, detailed, q&a");
+  }
+  
+  if (body.include_examples && !['Yes', 'No'].includes(body.include_examples)) {
+    errors.push("include_examples must be 'Yes' or 'No'");
+  }
+  
+  if (body.example_types && !Array.isArray(body.example_types)) {
+    errors.push("example_types must be an array");
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
 }
 
-function generatePDF(notes, filePath = "output.pdf") {
-    return new Promise((resolve, reject) => {
-      const doc = new PDFDocument({ margin: 50 });
-  
-      const stream = fs.createWriteStream(filePath);
-      doc.pipe(stream);
-  
-      // Title
-      doc.fontSize(20).text("Generated Study Notes", { align: "center" });
-      doc.moveDown(2);
-  
-      // Loop through the notes and add them to the PDF
-      for (const [topic, content] of Object.entries(notes)) {
-        doc.fontSize(16).text(topic, { underline: true });
-        doc.moveDown(0.5);
-  
-        if (typeof content === "object") {
-          for (const [key, value] of Object.entries(content)) {
-            doc.fontSize(14).text(`${key}:`, { bold: true });
-            if (Array.isArray(value)) {
-              value.forEach((item) => doc.fontSize(12).text(`- ${item}`));
-            } else {
-              doc.fontSize(12).text(value);
-            }
-            doc.moveDown(0.5);
-          }
-        } else {
-          doc.fontSize(12).text(content);
-        }
-        doc.moveDown(1);
-      }
-  
-      doc.end();
-  
-      stream.on("finish", () => resolve(filePath));
-      stream.on("error", (err) => reject(err));
-    });
-  }
-
-  export async function generateNotesController(req, res) {
-    try {
-      const { syllabus } = req.body;
-      if (!syllabus) {
-        return res.status(400).json({ error: "Syllabus is required" });
-      }
-  
-      // Step 1: Generate structured prompts
-      const structuredPrompts = await generateStructuredPrompts(syllabus);
-  
-      // Step 2: Generate notes from structured prompts
-      const notes = await generateNotesFromPrompts(structuredPrompts);
-  
-      // Step 3: Generate PDF
-      const pdfPath = "study_notes.pdf";
-      await generatePDF(notes, pdfPath);
-  
-      res.download(pdfPath, "study_notes.pdf", (err) => {
-        if (err) {
-          console.error("Error sending PDF:", err);
-          res.status(500).json({ error: "Error generating PDF" });
-        }
-      });
-    } catch (error) {
-      console.error("Error:", error);
-      res.status(500).json({ error: "Internal Server Error" });
+/**
+ * Handles file cleanup
+ * @param {string} filePath - Path of file to clean up
+ */
+function cleanupFile(filePath) {
+  try {
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
     }
+  } catch (error) {
+    console.error(`Error cleaning up file ${filePath}:`, error);
   }
+}
+
+/**
+ * Controller for generating study notes
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
+ */
+export async function generateNotesController(req, res) {
+  const requestId = uuidv4();
+  const startTime = Date.now();
+  let markdownPath = null;
+  let pdfPath = null;
+  
+  console.log(`[${requestId}] Processing notes generation request`);
+  
+  try {
+    // Validate request
+    const { isValid, errors } = validateRequest(req.body);
+    if (!isValid) {
+      return res.status(400).json({ 
+        success: false, 
+        errors 
+      });
+    }
+    
+    const { 
+      syllabus, 
+      subject_name = "General Subject",
+      note_type = 'detailed', 
+      include_examples = 'No',
+      example_types = [],
+      user_instructions = '',
+      format = 'pdf'  // 'pdf' or 'markdown'
+    } = req.body;
+    
+    console.log(`[${requestId}] Generating ${note_type} notes for ${subject_name}`);
+    
+    // Prepare parameters for agents
+    const params = {
+      subject_name,
+      syllabus,
+      note_type: note_type.toLowerCase(),
+      include_examples,
+      example_types,
+      user_instructions
+    };
+    
+    // Step 1: Generate analysis and prompts
+    console.log(`[${requestId}] Analyzing syllabus...`);
+    const promptsList = await SyllabusAnalyzerAgent.process(params);
+    
+    if (!promptsList || promptsList.error) {
+      return res.status(500).json({
+        success: false,
+        error: "Failed to analyze syllabus",
+        details: promptsList?.error ? promptsList : "Invalid response from analyzer"
+      });
+    }
+    
+    console.log(`[${requestId}] Generated ${promptsList.length} section prompts`);
+    
+    // Step 2: Generate notes for each prompt
+    console.log(`[${requestId}] Generating notes content...`);
+    const notesResults = await NotesGeneratorAgent.generateMultipleNotes(promptsList, params);
+    
+    // Step 3: Combine notes
+    const combinedMarkdown = NotesGeneratorAgent.combineNotes(notesResults);
+    
+    // Prepare filename
+    const sanitizedSubject = subject_name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const filePrefix = `${sanitizedSubject}_${note_type}_${timestamp}`;
+    
+    // Step 4: Save and deliver content based on requested format
+    if (format.toLowerCase() === 'markdown') {
+      // Return markdown directly
+      markdownPath = path.join(OUTPUT_DIR, `${filePrefix}.md`);
+      fs.writeFileSync(markdownPath, combinedMarkdown);
+      
+      console.log(`[${requestId}] Returning markdown content`);
+      return res.download(markdownPath, `${filePrefix}.md`, (err) => {
+        if (err) {
+          console.error(`[${requestId}] Download error:`, err);
+        }
+        cleanupFile(markdownPath);
+      });
+    } else {
+      // Generate PDF
+      console.log(`[${requestId}] Converting to PDF...`);
+      pdfPath = path.join(OUTPUT_DIR, `${filePrefix}.pdf`);
+      
+      try {
+        const { content } = await mdToPdf({ 
+          content: combinedMarkdown,
+          pdf_options: {
+            format: 'A4',
+            margin: '20mm',
+            printBackground: true
+          }
+        });
+        
+        fs.writeFileSync(pdfPath, content);
+        
+        console.log(`[${requestId}] Sending PDF file...`);
+        return res.download(pdfPath, `${filePrefix}.pdf`, (err) => {
+          if (err) {
+            console.error(`[${requestId}] Download error:`, err);
+          }
+          cleanupFile(pdfPath);
+        });
+      } catch (pdfError) {
+        console.error(`[${requestId}] PDF generation error:`, pdfError);
+        
+        // Fallback to markdown if PDF generation fails
+        markdownPath = path.join(OUTPUT_DIR, `${filePrefix}.md`);
+        fs.writeFileSync(markdownPath, combinedMarkdown);
+        
+        return res.download(markdownPath, `${filePrefix}.md`, (err) => {
+          if (err) {
+            console.error(`[${requestId}] Fallback download error:`, err);
+          }
+          cleanupFile(markdownPath);
+        });
+      }
+    }
+  } catch (error) {
+    console.error(`[${requestId}] Controller error:`, error);
+    
+    // Clean up any generated files
+    if (markdownPath) cleanupFile(markdownPath);
+    if (pdfPath) cleanupFile(pdfPath);
+    
+    // Send detailed error in development, sanitized in production
+    const isProduction = process.env.NODE_ENV === 'production';
+    res.status(500).json({ 
+      success: false,
+      error: error.message || "Internal server error",
+      details: isProduction ? undefined : error.stack 
+    });
+  } finally {
+    const duration = Date.now() - startTime;
+    console.log(`[${requestId}] Request completed in ${duration}ms`);
+  }
+}
+
+/**
+ * Controller for status check endpoint
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
+ */
+export function healthCheck(req, res) {
+  res.status(200).json({
+    status: "ok",
+    message: "Notes generator API is running",
+    timestamp: new Date().toISOString()
+  });
+}
