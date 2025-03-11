@@ -127,6 +127,4 @@ UserRequestSchema.virtual('is_completed').get(function() {
   return ['completed', 'failed'].includes(this.status);
 });
 
-const NotesRequestModel = mongoose.model('UserRequest', UserRequestSchema);
-
-module.exports = NotesRequestModel;
+export const NotesRequestModel = mongoose.model('UserRequest', UserRequestSchema);
