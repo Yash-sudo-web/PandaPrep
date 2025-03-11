@@ -77,13 +77,6 @@ const UserRequestSchema = new mongoose.Schema({
     default: 'pdf',
     lowercase: true
   },
-  
-  // Request metadata
-  created_at: {
-    type: Date,
-    default: Date.now
-  },
-  
   // Status tracking
   status: {
     type: String,
