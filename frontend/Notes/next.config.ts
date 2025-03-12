@@ -5,7 +5,8 @@ const nextConfig = {
       'lh3.googleusercontent.com', 
       'upload.wikimedia.org', 
       'github.githubassets.com', 
-      'www.gstatic.com'  
+      'www.gstatic.com',
+      'avatars.githubusercontent.com'  
     ],
   },
 }
