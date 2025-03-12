@@ -44,7 +44,7 @@ export default function Home() {
                     </span>
                   </Button>
                   <h1
-                    className={`text-5xl md:text-8xl bg-clip-text text-transparent bg-gradient-to-b from-neutral-800 to-green-500 font-bold ${funnel_display.className}`}>
+                    className={`text-5xl mb-3 md:text-8xl bg-clip-text text-transparent bg-gradient-to-b from-neutral-800 to-green-500 font-bold ${funnel_display.className}`}>
                     From Chaos to Clarity
                   </h1>
                 </div>

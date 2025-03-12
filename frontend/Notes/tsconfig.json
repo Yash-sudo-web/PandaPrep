@@ -22,6 +22,6 @@
       "@/*": ["./src/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/compnents/ui/Crosshair.js"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "src/compnents/ui/Crosshair.js", "src/firebase/firebaseconfig.ts"],
   "exclude": ["node_modules"]
 }
