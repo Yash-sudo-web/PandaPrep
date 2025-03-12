@@ -3,8 +3,14 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getAuth, signInWithPopup, GoogleAuthProvider, GithubAuthProvider, onAuthStateChanged, User } from 'firebase/auth'
-import  app  from '@/firebase/firebaseconfig'
+import app from '@/firebase/firebaseconfig'
 import Image from 'next/image'
+import { Funnel_Display } from 'next/font/google';
+
+const funnel_display = Funnel_Display({
+  subsets: ['latin'],
+  weight: '400',
+});
 
 const AuthPage = () => {
   const auth = getAuth(app)
@@ -15,7 +21,7 @@ const AuthPage = () => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser)
       if (currentUser) {
-        setTimeout(() => router.push('/'), 1500) 
+        setTimeout(() => router.push('/'), 1500)
       }
     })
     return () => unsubscribe()
@@ -34,14 +40,15 @@ const AuthPage = () => {
   }
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gradient-to-br from-white to-green-100">
-      <div className="w-full max-w-2xl bg-white shadow-2xl rounded-2xl p-8 flex flex-col md:flex-row overflow-hidden">
-        <div className="flex-1 flex flex-col justify-center text-center md:text-left p-8 bg-gradient-to-tr from-green-700 to-green-500 text-white rounded-l-2xl">
-          <h1 className="text-5xl font-extrabold">Welcome</h1>
-          <p className="text-lg mt-2">Sign in to continue your journey with PandaPrep.</p>
+    <div className={`flex justify-center items-center min-h-screen bg-white bg-[radial-gradient(circle_at_center,_#d1fae5,_white)] ${funnel_display.className}`}>
+      <div className="w-3/2 max-w-5xl bg-white shadow-xl rounded-2xl p-6 ">
+        <div className="flex-1 flex flex-col items-center justify-center text-center p-6">
+          <h1 className="text-5xl font-extrabold text-green-700">Welcome</h1>
+          <p className="text-lg mt-2 text-gray-600">Unlock your brain-panda! 
+            Login to unleash the notes.</p>
+          
         </div>
-
-        <div className="flex-1 p-8 bg-white rounded-r-2xl flex flex-col items-center justify-center">
+        <div className="flex-1 p-6 flex flex-col items-center justify-center bg-white rounded-r-2xl">
           {user ? (
             <div className="flex flex-col items-center">
               <Image src={user.photoURL || '/default-avatar.png'} alt="User Avatar" width={50} height={50} className="rounded-full" />
@@ -51,7 +58,6 @@ const AuthPage = () => {
             </div>
           ) : (
             <>
-              <h2 className="text-3xl font-semibold text-green-700">Sign In</h2>
               <button
                 onClick={() => handleSignIn('google')}
                 className="mt-6 w-64 p-3 flex items-center justify-center gap-3 bg-white border border-gray-300 rounded-lg shadow-md hover:shadow-lg hover:border-gray-400 transition duration-300"
@@ -66,6 +72,12 @@ const AuthPage = () => {
                 <Image src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png" alt="GitHub Logo" width={24} height={24} className="w-6 h-6 bg-white rounded-full" />
                 <span className="font-medium">Sign in with GitHub</span>
               </button>
+              <button
+            onClick={() => router.push('/')}
+            className="mt-4 px-6 py-2 bg-white text-green-700 border border-green-700 rounded-lg shadow-md hover:bg-green-700 hover:text-white transition duration-300"
+          >
+            Back to Home
+          </button>
             </>
           )}
         </div>
