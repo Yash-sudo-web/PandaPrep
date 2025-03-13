@@ -16,7 +16,7 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Workly",
+  title: "PandaPrep",
   description: "Single POC",
 };
 
