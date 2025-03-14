@@ -1,5 +1,5 @@
 import { Lock } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 
 interface TabProps {
   label: string;
@@ -11,6 +11,8 @@ interface MultiTabSwitchProps {
   label: string;
   lgSize?: boolean;
   premium_feature?: string[];
+  handleChange: any;
+  field: string;
 }
 
 const MultiTabSwitch: React.FC<MultiTabSwitchProps> = ({
@@ -18,6 +20,8 @@ const MultiTabSwitch: React.FC<MultiTabSwitchProps> = ({
   label,
   lgSize,
   premium_feature,
+  handleChange,
+  field,
 }) => {
   const [selectedOption, setSelectedOption] = useState<string | null>(
     tabs[0].value
@@ -41,11 +45,14 @@ const MultiTabSwitch: React.FC<MultiTabSwitchProps> = ({
                 ? "bg-green-500 text-white"
                 : "bg-white text-black"
             }`}
-            onClick={() => setSelectedOption(option.value)}
+            onClick={() => {
+              setSelectedOption(option.value);
+              handleChange(field, option.value);
+            }}
           >
             <div className="flex justify-center items-center gap-2">
               <p>{option.label}</p>
-              {premium_feature?.includes(option.value) && <Lock size={16}/>}
+              {premium_feature?.includes(option.value) && <Lock size={16} />}
             </div>
           </button>
         ))}
