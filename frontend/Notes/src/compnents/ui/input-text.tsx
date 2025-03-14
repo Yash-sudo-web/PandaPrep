@@ -8,7 +8,9 @@ export function PlaceholdersAndVanishInput({
   placeholders,
   onChange,
   onSubmit,
+  label
 }: {
+  label: string;
   placeholders: string[];
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
@@ -175,6 +177,8 @@ export function PlaceholdersAndVanishInput({
     onSubmit && onSubmit(e);
   };
   return (
+    <div className="w-full flex flex-col items-start gap-3">
+    <label className="text-lg font-semibold text-gray-600 ml-2">{label}</label>
     <form
       className={cn(
         "w-full relative max-w-xl mx-auto bg-white dark:bg-neutral-800 h-12 rounded-full overflow-hidden shadow-[0px_2px_3px_-1px_rgba(0,0,0,0.1),_0px_1px_0px_0px_rgba(25,28,33,0.02),_0px_0px_0px_1px_rgba(25,28,33,0.08)] transition duration-200",
@@ -272,5 +276,7 @@ export function PlaceholdersAndVanishInput({
         </AnimatePresence>
       </div>
     </form>
+    </div>
+    
   );
 }

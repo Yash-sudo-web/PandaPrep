@@ -7,7 +7,7 @@ import { getAuth, onAuthStateChanged, User } from "firebase/auth";
 import app from "@/firebase/firebaseconfig";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { PlaceholdersAndVanishInput } from "@/compnents/ui/search";
+import { PlaceholdersAndVanishInput } from "@/compnents/ui/input-text";
 import { Funnel_Display } from "next/font/google";
 
 const funnel_display = Funnel_Display({
