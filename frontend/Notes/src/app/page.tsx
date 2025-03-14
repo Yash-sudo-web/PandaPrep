@@ -1,16 +1,21 @@
+"use client"
+
 import Navbar from "@/compnents/global/navbar";
 import Image from "next/image";
 import { ContainerScroll } from '@/compnents/global/container-scroll-animation'
 import { Button } from "@/compnents/ui/button";
 import { Funnel_Display } from 'next/font/google';
 import { InfiniteMovingCards } from "@/compnents/global/infinite-moving-cards";
-import { clients,products } from '@/lib/constant'
+import { clients,faqs } from '@/lib/constant'
 import { TextGenerateEffect } from "@/compnents/global/text-effect";
 import { Linkedin, Github } from "lucide-react";
 import { GlowingEffect } from "@/compnents/ui/glowing";
+import { useState } from "react";
 
 import { Box, Lock, Search, Settings, Sparkles } from "lucide-react";
 import { Featuregrid } from "@/compnents/global/feature-grid";
+import { ChevronDown } from "lucide-react";
+
 
 const words = `Stressed about exams? Relax. Drop a topic, and let AI do its magic. `;
 
@@ -24,6 +29,12 @@ const funnel_display = Funnel_Display({
 
 
 export default function Home() {
+
+  const [openIndex, setOpenIndex] = useState<number | null>(null);
+
+  const toggleFAQ = (index: number) => {
+    setOpenIndex(openIndex === index ? null : index);
+  };
   return (
     <main className="bg-white">
       <Navbar />
@@ -59,7 +70,7 @@ export default function Home() {
         direction="right"
         speed="slow"
       />
-
+ <section><TextGenerateEffect className="mb-10 pl-72" words={words}/></section>
       <section className="w-2/3 ml-60 mb-24">
 
 <Featuregrid />
@@ -68,7 +79,37 @@ export default function Home() {
 
       
       
-  <section><TextGenerateEffect className="mb-10  pl-72" words={words}/></section>
+ 
+
+  <section className="relative bg-white min-h-screen flex items-center justify-center">
+    
+      <div className="absolute inset-0 bg-gradient-radial from-green-200 to-transparent">
+      <h2 className={`text-4xl text-green-600 font-bold text-center mt-5  ${funnel_display.className}`}>FAQs</h2>
+      </div>
+      <div className="relative z-0 max-w-2xl  ">
+        
+        <div className="text-black space-y-2">
+          {faqs.map((faq, index) => (
+            <div key={index} className="border rounded-lg">
+              <button
+                onClick={() => toggleFAQ(index)}
+                className={`w-full flex justify-between items-center p-4 text-left font-medium transition-all ${funnel_display.className}`}
+              >
+                {faq.question}
+                <ChevronDown className={`transition-transform ${openIndex === index ? "rotate-180" : ""}`} />
+              </button>
+              <div
+                className={`overflow-hidden transition-max-height duration-300 ${
+                  openIndex === index ? "max-h-40" : "max-h-0"
+                }`}
+              >
+                <div className={`p-4 border-t bg-gray-50 ${funnel_display.className}`}>{faq.answer}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
       
       
       <div className="max-w-7xl mx-auto px-5 grid grid-cols-1 md:grid-cols-4 gap-56 bg-white">

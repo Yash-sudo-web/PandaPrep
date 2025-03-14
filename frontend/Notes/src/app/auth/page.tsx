@@ -21,7 +21,7 @@ const AuthPage = () => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser)
       if (currentUser) {
-        setTimeout(() => router.push('/'), 1500)
+        setTimeout(() => router.push('/generate'), 1500)
       }
     })
     return () => unsubscribe()
@@ -54,7 +54,7 @@ const AuthPage = () => {
               <Image src={user.photoURL || '/default-avatar.png'} alt="User Avatar" width={50} height={50} className="rounded-full" />
               <p className="mt-2 font-medium text-lg">{user.displayName}</p>
               <p className="text-gray-500">{user.email}</p>
-              <p className="text-green-600 font-medium mt-4">Redirecting to home...</p>
+              <p className="text-green-600 font-medium mt-4">Your Notes are just one step away...</p>
             </div>
           ) : (
             <>
