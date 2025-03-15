@@ -40,7 +40,7 @@ const MultiTabSwitch: React.FC<MultiTabSwitchProps> = ({
         {tabs.map((option) => (
           <button
             key={option.value}
-            className={`m-1 px-6 py-2 bg-white text-green-700 rounded-3xl transition duration-300 ${
+            className={`m-1 px-6 py-2 text-green-700 rounded-3xl transition duration-300 ${
               selectedOption === option.value
                 ? "bg-green-500 text-white"
                 : "bg-white text-black"

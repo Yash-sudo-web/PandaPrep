@@ -36,9 +36,24 @@ const NotesGenerate = () => {
   };
 
   const handleSubmit = async () => {
-    const response = await axios.post(`${BASE_URL}/generate-notes`, formData);
-    console.log(response);
-  };
+    try {
+      const response = await axios.post(`${BASE_URL}/generate-notes`, formData, {
+        responseType: "blob",
+      });
+  
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "generated_notes.pdf";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Error generating notes:", error);
+    }
+  };  
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -127,11 +142,11 @@ const NotesGenerate = () => {
                   tabs={[
                     {
                       label: "Yes",
-                      value: "Yes",
+                      value: "yes",
                     },
                     {
                       label: "No",
-                      value: "No",
+                      value: "no",
                     },
                   ]}
                   label="Include Examples?"
@@ -142,11 +157,11 @@ const NotesGenerate = () => {
                   tabs={[
                     {
                       label: "No",
-                      value: "No",
+                      value: "no",
                     },
                     {
                       label: "Yes",
-                      value: "Yes",
+                      value: "yes",
                     },
                   ]}
                   label="Include Visuals?"

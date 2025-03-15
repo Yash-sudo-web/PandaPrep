@@ -41,16 +41,16 @@ function validateRequest(body) {
     errors.push('Note type must be one of: concise, detailed, q&a');
   }
 
-  if (body.include_examples && !['Yes', 'No'].includes(body.include_examples)) {
-    errors.push("include_examples must be 'Yes' or 'No'");
+  if (body.include_examples && !['yes', 'no'].includes(body.include_examples)) {
+    errors.push("include_examples must be 'yes' or 'no'");
   }
 
   if (body.example_types && !Array.isArray(body.example_types)) {
     errors.push('example_types must be an array');
   }
 
-  if (body.include_images && !['Yes', 'No'].includes(body.include_images)) {
-    errors.push("include_images must be 'Yes' or 'No'");
+  if (body.include_images && !['yes', 'no'].includes(body.include_images)) {
+    errors.push("include_images must be 'yes' or 'no'");
   }
 
   return {
@@ -128,9 +128,9 @@ export async function generateNotesController(req, res) {
       syllabus,
       subject_name = 'General Subject',
       note_type = 'detailed',
-      include_examples = 'No',
+      include_examples = 'no',
       example_types = [],
-      include_images = 'No',
+      include_images = 'no',
       user_instructions = '',
        // 'pdf' or 'markdown'
     } = req.body;
@@ -182,7 +182,7 @@ export async function generateNotesController(req, res) {
 
     // Step 3: Handle image suggestions and integration if enabled
     let combinedMarkdown = '';
-    if (include_images === 'Yes') {
+    if (include_images === 'yes') {
       console.log(`[${requestId}] Generating image suggestions...`);
       const imageSuggestions = await ImageSuggestionAgent.generateImageSuggestions(notesResults);
       
@@ -220,7 +220,7 @@ export async function generateNotesController(req, res) {
       fs.writeFileSync(markdownPath, combinedMarkdown);
       
       // If using images, create an images directory and copy the images
-      if (include_images === 'Yes' && imageResults.some(img => img.success)) {
+      if (include_images === 'yes' && imageResults.some(img => img.success)) {
         const imagesDir = path.join(requestOutputDir, 'images');
         if (!fs.existsSync(imagesDir)) {
           fs.mkdirSync(imagesDir, { recursive: true });
@@ -293,7 +293,7 @@ export async function generateNotesController(req, res) {
       fs.writeFileSync(markdownPath, combinedMarkdown);
       
       // If using images, create an images directory and copy the images
-      if (include_images === 'Yes' && imageResults.some(img => img.success)) {
+      if (include_images === 'yes' && imageResults.some(img => img.success)) {
         const imagesDir = path.join(requestOutputDir, 'images');
         if (!fs.existsSync(imagesDir)) {
           fs.mkdirSync(imagesDir, { recursive: true });

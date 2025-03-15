@@ -38,10 +38,10 @@ const UserRequestSchema = new mongoose.Schema({
   include_examples: {
     type: String,
     enum: {
-      values: ['Yes', 'No'],
-      message: 'Include examples must be either "Yes" or "No"'
+      values: ['yes', 'no'],
+      message: 'Include examples must be either "yes" or "no"'
     },
-    default: 'No'
+    default: 'no'
   },
   
   example_types: {
@@ -49,7 +49,7 @@ const UserRequestSchema = new mongoose.Schema({
     validate: {
       validator: function(types) {
         // Only validate if include_examples is "Yes"
-        if (this.include_examples === 'No') return true;
+        if (this.include_examples === 'no') return true;
         
         const validTypes = ['Real-world', 'Hypothetical', 'Historical'];
         return types.every(type => validTypes.includes(type));
