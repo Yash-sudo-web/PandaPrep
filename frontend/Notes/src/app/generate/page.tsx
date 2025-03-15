@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { getAuth, onAuthStateChanged, User } from "firebase/auth";
 import app from "@/firebase/firebaseconfig";
@@ -11,6 +11,7 @@ import { cn } from "@/lib/utils";
 import MultiTabSwitch from "@/compnents/ui/option-switch";
 import axios from "axios";
 import { BASE_URL } from "@/lib/constant";
+import ReactMarkdown from 'react-markdown';
 
 const funnel_display = Funnel_Display({
   subsets: ["latin"],
@@ -21,6 +22,16 @@ const NotesGenerate = () => {
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
   const auth = getAuth(app);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [currentStage, setCurrentStage] = useState("");
+  const [markdownContent, setMarkdownContent] = useState("");
+  const [requestId, setRequestId] = useState("");
+  const [generationComplete, setGenerationComplete] = useState(false);
+  const [downloadId, setDownloadId] = useState("");
+  const [error, setError] = useState("");
+  const [isConnected, setIsConnected] = useState(false);
+  
+  const socketRef = useRef<WebSocket | null>(null);
 
   const [formData, setFormData] = useState({
     syllabus: "",
@@ -35,25 +46,133 @@ const NotesGenerate = () => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const connectWebSocket = (reqId: string) => {
+    // Close existing socket if it exists
+    if (socketRef.current) {
+      socketRef.current.close();
+    }
+
+    // Create a new WebSocket connection
+    const wsUrl = `${BASE_URL.replace('http', 'ws')}/ws?requestId=${reqId}`;
+    const socket = new WebSocket(wsUrl);
+    
+    socket.onopen = () => {
+      console.log("WebSocket connected");
+      setIsConnected(true);
+    };
+    
+    socket.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data);
+        console.log("WebSocket message:", data);
+        
+        if (data.type === 'connected') {
+          console.log("WebSocket connection confirmed");
+        } 
+        else if (data.type === 'stage_update') {
+          setCurrentStage(data.stage);
+          
+          // Handle specific stages
+          if (data.stage === 'generation_complete') {
+            setGenerationComplete(true);
+            console.log(data)
+            if (data.data && data.data.downloadId) {
+              setDownloadId(data.data.downloadId);
+            }
+          }
+        } 
+        else if (data.type === 'content_update') {
+          setMarkdownContent(data.content);
+        } 
+        else if (data.type === 'error') {
+          setError(data.message);
+          setIsGenerating(false);
+        }
+      } catch (err) {
+        console.error("Error parsing WebSocket message:", err);
+      }
+    };
+    
+    socket.onclose = () => {
+      console.log("WebSocket disconnected");
+      setIsConnected(false);
+    };
+    
+    socket.onerror = (error) => {
+      console.error("WebSocket error:", error);
+      setError("WebSocket connection error");
+    };
+    
+    socketRef.current = socket;
+  };
+
   const handleSubmit = async () => {
     try {
-      const response = await axios.post(`${BASE_URL}/generate-notes`, formData, {
-        responseType: "blob",
-      });
-  
-      const blob = new Blob([response.data], { type: "application/pdf" });
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "generated_notes.pdf";
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      setIsGenerating(true);
+      setError("");
+      setMarkdownContent("");
+      setCurrentStage("initializing");
+      setGenerationComplete(false);
+      setDownloadId("");
+      
+      const response = await axios.post(`${BASE_URL}/generate-notes`, formData);
+      
+      if (response.data && response.data.requestId) {
+        setRequestId(response.data.requestId);
+        connectWebSocket(response.data.requestId);
+      } else {
+        throw new Error("No request ID returned from server");
+      }
     } catch (error) {
       console.error("Error generating notes:", error);
+      setError(error.message || "Error generating notes");
+      setIsGenerating(false);
     }
-  };  
+  };
+  
+  const downloadGeneratedNotes = async () => {
+    if (requestId) {
+      try {
+        // Use axios to make the request with the requestId in the body
+        const response = await axios({
+          method: 'post',
+          url: `${BASE_URL}/download-notes`,
+          data: { requestId: downloadId },
+          responseType: 'blob', // Important for handling binary data
+        });
+        
+        // Get the blob from the response
+        const blob = new Blob([response.data], { type: 'application/pdf' });
+        
+        // Create a temporary URL for the blob
+        const url = window.URL.createObjectURL(blob);
+        
+        // Create a temporary link element
+        const link = document.createElement('a');
+        link.href = url;
+        
+        // Get the filename from Content-Disposition header if available, or use a default
+        const contentDisposition = response.headers['content-disposition'];
+        const filenameMatch = contentDisposition && contentDisposition.match(/filename="(.+)"/);
+        const filename = filenameMatch ? filenameMatch[1] : `${formData.subject_name || 'generated'}_notes.pdf`;
+        
+        link.download = filename;
+        
+        // Append to the document, click it, and then remove it
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        // Clean up by revoking the blob URL
+        window.URL.revokeObjectURL(url);
+      } catch (error) {
+        console.error("Error downloading notes:", error);
+        setError(`Failed to download notes: ${error.message}`);
+      }
+    } else {
+      setError("No request ID available for download");
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -64,8 +183,70 @@ const NotesGenerate = () => {
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      unsubscribe();
+      // Clean up WebSocket connection
+      if (socketRef.current) {
+        socketRef.current.close();
+      }
+    };
   }, [auth, router]);
+
+  // Helper function to render current generation status
+  const renderGenerationStatus = () => {
+    if (!isGenerating && !generationComplete) return null;
+    
+    let statusMessage = "";
+    
+    switch (currentStage) {
+      case "initializing":
+        statusMessage = "Initializing generation process...";
+        break;
+      case "generation_started":
+        statusMessage = "Starting note generation...";
+        break;
+      case "analyzing_syllabus":
+        statusMessage = "Analyzing syllabus content...";
+        break;
+      case "syllabus_analyzed":
+        statusMessage = "Syllabus analysis complete!";
+        break;
+      case "generating_image_suggestions":
+        statusMessage = "Generating image suggestions...";
+        break;
+      case "downloading_images":
+        statusMessage = "Finding and downloading images...";
+        break;
+      case "integrating_images":
+        statusMessage = "Integrating images into notes...";
+        break;
+      case "generating_pdf":
+        statusMessage = "Creating PDF document...";
+        break;
+      case "pdf_generation_complete":
+        statusMessage = "PDF generation complete!";
+        break;
+      case "generation_complete":
+        statusMessage = "Notes successfully generated!";
+        break;
+      default:
+        statusMessage = `Processing: ${currentStage.replace(/_/g, ' ')}`;
+    }
+    
+    return (
+      <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
+        <p className="text-green-700">{statusMessage}</p>
+        {generationComplete && (
+          <button 
+            onClick={downloadGeneratedNotes}
+            className="mt-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-300"
+          >
+            Download Notes
+          </button>
+        )}
+      </div>
+    );
+  };
 
   return (
     <div
@@ -171,16 +352,43 @@ const NotesGenerate = () => {
                 />
               </div>
 
+              {error && (
+                <div className="text-red-500 p-2 bg-red-50 rounded-md">
+                  Error: {error}
+                </div>
+              )}
+
+              {renderGenerationStatus()}
+
               <button
                 onClick={handleSubmit}
-                className="px-6 py-2 bg-white text-green-700 border border-green-700 rounded-lg shadow-md hover:bg-green-700 hover:text-white transition duration-300"
+                disabled={isGenerating}
+                className={`px-6 py-2 border rounded-lg shadow-md transition duration-300 ${
+                  isGenerating 
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed" 
+                    : "bg-white text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
+                }`}
               >
-                Generate
+                {isGenerating ? "Generating..." : "Generate"}
               </button>
             </div>
           </div>
           <div className="w-[1px] h-[3/4] bg-green-400 mx-6"></div>
-          <div className="w-[65%] bg-[radial-gradient(circle_at_center,_#d1fae5,_white)]"></div>
+          <div className="w-[65%] bg-[radial-gradient(circle_at_center,_#d1fae5,_white)] p-4 overflow-auto text-left">
+            {markdownContent ? (
+              <div className="markdown-preview bg-white rounded-lg shadow-md p-6 max-h-[70vh] overflow-auto">
+                <ReactMarkdown>{markdownContent}</ReactMarkdown>
+              </div>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <p className="text-gray-500 italic">
+                  {isGenerating 
+                    ? "Notes content will appear here as it's generated..." 
+                    : "Generated notes will appear here"}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>

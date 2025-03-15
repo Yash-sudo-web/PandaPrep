@@ -1,10 +1,12 @@
 import { ChatGroq } from "@langchain/groq";
 import dotenv from "dotenv";
+import { broadcastMarkdownUpdate, broadcastStage } from '../websocket/server.js';
 
 dotenv.config();
 
 class NotesGeneratorAgent {
     static getSystemPrompt(params = {}) {
+      // Existing system prompt code remains the same
       const { 
         note_type = 'detailed',
         include_examples = 'No',
@@ -81,11 +83,16 @@ class NotesGeneratorAgent {
   4. Use tables for comparative information when useful
   5. Make sure headings follow a logical hierarchy
   
+  YOUR RESPONSE MUST BE STRUCTURED FOR STREAMING:
+  1. Each paragraph should be a complete thought
+  2. Use clear section headings to mark progress
+  3. Generate content in logical increments that can be displayed progressively
+  
   Your output should be comprehensive, well-structured study material that directly addresses the topics provided. Generate ONLY the final notes content, properly formatted in markdown.
   `;
     }
   
-    static async generate(prompt, params = {}) {
+    static async generate(prompt, params = {}, requestId = null) {
       // If prompt is a string, use it directly
       // If it's an object from SyllabusAnalyzerAgent, extract the prompt text
       const promptText = typeof prompt === 'string' 
@@ -94,15 +101,42 @@ class NotesGeneratorAgent {
       
       const systemPrompt = this.getSystemPrompt(params);
       
+      if (requestId) {
+        broadcastStage(requestId, 'notes_generation_started', { 
+          promptLength: promptText.length 
+        });
+      }
+      
       const llm = new ChatGroq({
         groqApiKey: process.env.GROQ_API_KEY,
         model: "mixtral-8x7b-32768",
+        streaming: true, // Enable streaming
       });
+      
+      let accumulatedContent = '';
       
       const response = await llm.call([
         { role: "system", content: systemPrompt },
         { role: "user", content: promptText }
-      ]);
+      ], {
+        callbacks: requestId ? [{
+          handleLLMNewToken(token) {
+            // Accumulate tokens and broadcast updates
+            accumulatedContent += token;
+            
+            // Only broadcast every 20 characters to avoid overwhelming the connection
+            // or when we hit a paragraph break
+            if (token.includes('\n\n') || accumulatedContent.length % 20 === 0) {
+              broadcastMarkdownUpdate(requestId, accumulatedContent, null, false);
+            }
+          }
+        }] : undefined
+      });
+      
+      // Send final update with complete content
+      if (requestId) {
+        broadcastMarkdownUpdate(requestId, response.content, null, true);
+      }
       
       return this.formatResponse(response.content);
     }
@@ -125,12 +159,43 @@ class NotesGeneratorAgent {
       return cleanedContent;
     }
   
-    static async generateMultipleNotes(prompts, params = {}) {
+    static async generateMultipleNotes(prompts, params = {}, requestId = null) {
       // Process an array of prompts from SyllabusAnalyzerAgent
       const results = [];
+      const totalPrompts = prompts.length;
       
-      for (const prompt of prompts) {
-        const content = await this.generate(prompt, params);
+      if (requestId) {
+        broadcastStage(requestId, 'notes_generation_overview', { 
+          totalSections: totalPrompts,
+          topics: prompts.map(p => p.topics || []) 
+        });
+      }
+      
+      for (let i = 0; i < prompts.length; i++) {
+        const prompt = prompts[i];
+        
+        if (requestId) {
+          broadcastStage(requestId, 'generating_section', { 
+            sectionIndex: i,
+            sectionNumber: i + 1,
+            totalSections: totalPrompts,
+            topics: prompt.topics || [],
+            progress: Math.round((i / totalPrompts) * 100)
+          });
+        }
+        
+        const content = await this.generate(prompt, params, requestId);
+        
+        if (requestId) {
+          broadcastStage(requestId, 'section_completed', { 
+            sectionIndex: i,
+            sectionNumber: i + 1,
+            totalSections: totalPrompts,
+            topics: prompt.topics || [],
+            progress: Math.round(((i + 1) / totalPrompts) * 100)
+          });
+        }
+        
         results.push({
           topics: prompt.topics || [],
           content: content,
@@ -138,11 +203,24 @@ class NotesGeneratorAgent {
         });
       }
       
+      if (requestId) {
+        broadcastStage(requestId, 'all_sections_completed', { 
+          totalSections: totalPrompts,
+          progress: 100
+        });
+      }
+      
       return results;
     }
   
-    static combineNotes(notesArray) {
+    static combineNotes(notesArray, requestId = null) {
       // Combine multiple notes sections into a single document
+      if (requestId) {
+        broadcastStage(requestId, 'combining_sections', { 
+          totalSections: notesArray.length 
+        });
+      }
+      
       let combinedNotes = "# Complete Study Notes\n\n";
       let tableOfContents = "## Table of Contents\n\n";
       
@@ -154,9 +232,21 @@ class NotesGeneratorAgent {
         // Add section with anchor
         combinedNotes += `\n<a id="section-${index + 1}"></a>\n\n`;
         combinedNotes += noteSection.content + "\n\n---\n\n";
+        
+        // Broadcast progress updates on table of contents
+        if (requestId && index % 2 === 0) {
+          broadcastMarkdownUpdate(requestId, tableOfContents, -1, false);
+        }
       });
       
-      return tableOfContents + "\n\n---\n\n" + combinedNotes;
+      const finalDocument = tableOfContents + "\n\n---\n\n" + combinedNotes;
+      
+      if (requestId) {
+        broadcastMarkdownUpdate(requestId, finalDocument, -1, true);
+        broadcastStage(requestId, 'document_combined', { success: true });
+      }
+      
+      return finalDocument;
     }
   }
   
