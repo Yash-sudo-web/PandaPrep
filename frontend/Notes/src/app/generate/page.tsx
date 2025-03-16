@@ -130,50 +130,33 @@ const NotesGenerate = () => {
     }
   };
   
-  const downloadGeneratedNotes = async () => {
-    if (requestId) {
+  const downloadGeneratedNotes = () => {
+    if (downloadId) {
       try {
-        // Use axios to make the request with the requestId in the body
-        const response = await axios({
-          method: 'post',
-          url: `${BASE_URL}/download-notes`,
-          data: { requestId: downloadId },
-          responseType: 'blob', // Important for handling binary data
-        });
-        
-        // Get the blob from the response
-        const blob = new Blob([response.data], { type: 'application/pdf' });
-        
-        // Create a temporary URL for the blob
-        const url = window.URL.createObjectURL(blob);
-        
         // Create a temporary link element
         const link = document.createElement('a');
-        link.href = url;
+        link.href = downloadId; // Directly use the URL
         
-        // Get the filename from Content-Disposition header if available, or use a default
-        const contentDisposition = response.headers['content-disposition'];
-        const filenameMatch = contentDisposition && contentDisposition.match(/filename="(.+)"/);
-        const filename = filenameMatch ? filenameMatch[1] : `${formData.subject_name || 'generated'}_notes.pdf`;
+        // Extract filename from URL or use a default
+        const urlParts = downloadId.split('/');
+        const defaultFilename = `${formData?.subject_name || 'generated'}_notes.pdf`;
+        const filename = urlParts[urlParts.length - 1] || defaultFilename;
         
         link.download = filename;
         
-        // Append to the document, click it, and then remove it
+        // Append to the document, trigger click, and remove the link
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
-        // Clean up by revoking the blob URL
-        window.URL.revokeObjectURL(url);
       } catch (error) {
         console.error("Error downloading notes:", error);
         setError(`Failed to download notes: ${error.message}`);
       }
     } else {
-      setError("No request ID available for download");
+      setError("No download URL available");
     }
   };
-
+  
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) {

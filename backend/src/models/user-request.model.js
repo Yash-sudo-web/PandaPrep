@@ -103,7 +103,12 @@ const UserRequestSchema = new mongoose.Schema({
     path: String,
     size_bytes: Number,
     created_at: Date
-  }
+  },
+  //secure_url for download
+  secure_url: {
+    type: String,
+  },
+
 }, {
   timestamps: true,
   toJSON: { virtuals: true },

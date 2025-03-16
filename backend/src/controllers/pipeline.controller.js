@@ -8,6 +8,7 @@ import NotesGeneratorAgent from '../agents/NotesGeneratorAgent.js';
 import SyllabusAnalyzerAgent from '../agents/SyllabusAnalyzerAgent.js';
 import ImageSuggestionAgent from '../agents/ImageSuggestionAgent.js';
 import { NotesRequestModel } from '../models/user-request.model.js';
+import { uploadPDFToCloudinary } from '../utils/cloudinary-file-upload.util.js';
 import {
   createRequestId,
   broadcastStage,
@@ -97,9 +98,9 @@ export async function generateNotesController(req, res) {
     } = req.body;
     const format = req.body.format || 'pdf';
 
+    
     // Store request in database
-    await NotesRequestModel.create({
-      request_id: requestId,
+    const request = await NotesRequestModel.create({
       subject_name,
       syllabus,
       note_type,
@@ -123,13 +124,12 @@ export async function generateNotesController(req, res) {
 
     // Start the generation process in the background
     process.nextTick(() => {
-      generateNotes(requestId, req.body).catch((err) => {
+      generateNotes(requestId, req.body, request._id).catch((err) => {
         console.error(`[${requestId}] Background process error:`, err);
         broadcastError(requestId, 'Generation process failed', err.message);
 
         // Update request status
-        NotesRequestModel.updateOne(
-          { request_id: requestId },
+        NotesRequestModel.updateOne({_id: request._id},
           {
             status: 'failed',
             error_message: err.message,
@@ -155,12 +155,13 @@ export async function generateNotesController(req, res) {
  * @param {string} requestId - Unique ID for this request
  * @param {Object} requestBody - The original request body
  */
-async function generateNotes(requestId, requestBody) {
+async function generateNotes(requestId, requestBody, requestIdDb) {
   const startTime = Date.now();
   let markdownPath = null;
   let pdfPath = null;
   let filePrefix = DEFAULT_FILENAME;
   let imageResults = [];
+  let downloadUrl = "";
 
   try {
     const {
@@ -262,7 +263,7 @@ async function generateNotes(requestId, requestBody) {
     filePrefix = `${sanitizedSubject}_${note_type}_${timestamp}`;
 
     // Create a dedicated output directory for this request
-    const requestOutputDir = path.join(OUTPUT_DIR, requestId);
+    const requestOutputDir = path.join(OUTPUT_DIR, requestIdDb.toString());
     if (!fs.existsSync(requestOutputDir)) {
       fs.mkdirSync(requestOutputDir, { recursive: true });
     }
@@ -332,9 +333,20 @@ async function generateNotes(requestId, requestBody) {
         clearInterval(intervalId);
 
         fs.writeFileSync(pdfPath, content);
+        const uploadResponse = await uploadPDFToCloudinary(pdfPath, `${filePrefix}.pdf`); 
+        downloadUrl = uploadResponse.secure_url;
+        if (uploadResponse) {
+          await NotesRequestModel.updateOne(
+            { _id: requestIdDb },
+            {
+              secure_url: uploadResponse.secure_url,
+            }
+          );
+        }
+
         broadcastStage(requestId, 'pdf_generation_complete', {
           path: pdfPath,
-          downloadId: requestId,
+          downloadId: downloadUrl,
         });
       } catch (pdfError) {
         console.error(`[${requestId}] PDF generation error:`, pdfError);
@@ -344,11 +356,11 @@ async function generateNotes(requestId, requestBody) {
         });
 
         // Fallback to creating a zip
-        await createZipArchive(requestId, requestOutputDir, filePrefix);
+        await createZipArchive(requestId, requestOutputDir, filePrefix, downloadUrl);
       }
     } else {
       // Create a ZIP archive for markdown format
-      await createZipArchive(requestId, requestOutputDir, filePrefix);
+      await createZipArchive(requestId, requestOutputDir, filePrefix, downloadUrl);
     }
 
     // Final success message
@@ -356,18 +368,18 @@ async function generateNotes(requestId, requestBody) {
       filePrefix,
       format,
       processingTime: Date.now() - startTime,
-      downloadId: requestId,
+      downloadId: downloadUrl,
     });
 
     // Update request status in database
     await NotesRequestModel.updateOne(
-      { request_id: requestId },
+      { _id: requestIdDb },
       {
         status: 'completed',
         processing_time_ms: Date.now() - startTime,
         output_file: {
           filename: `${filePrefix}.${format.toLowerCase() === 'pdf' ? 'pdf' : 'zip'}`,
-          directory: requestId,
+          directory: requestIdDb.toString(),
         },
         image_count: imageResults.filter((img) => img.success).length,
         completed_at: new Date(),
@@ -379,7 +391,7 @@ async function generateNotes(requestId, requestBody) {
 
     // Update request status in database
     await NotesRequestModel.updateOne(
-      { request_id: requestId },
+      { _id: requestIdDb },
       {
         status: 'failed',
         error_message: error.message,
@@ -395,7 +407,7 @@ async function generateNotes(requestId, requestBody) {
  * @param {string} sourceDir - Directory containing content to zip
  * @param {string} filePrefix - Prefix for the zip filename
  */
-async function createZipArchive(requestId, sourceDir, filePrefix) {
+async function createZipArchive(requestId, sourceDir, filePrefix, downloadUrl) {
   broadcastStage(requestId, 'creating_zip');
 
   const archiver = require('archiver');
@@ -409,7 +421,7 @@ async function createZipArchive(requestId, sourceDir, filePrefix) {
       broadcastStage(requestId, 'zip_created', {
         path: zipPath,
         size: archive.pointer(),
-        downloadId: requestId,
+        downloadId: downloadUrl,
       });
       resolve(zipPath);
     });
@@ -474,22 +486,22 @@ export async function downloadGeneratedNotesController(req, res) {
   console.log(`Downloading file for request ${requestId}`);
   try {
     // Verify the request exists and is completed
-    const request = await NotesRequestModel.findOne({ request_id: requestId });
+    const request = await NotesRequestModel.findOne({ _id: requestId });
 
-    // if (!request) {
-    //   return res.status(404).json({
-    //     success: false,
-    //     error: 'Request not found',
-    //   });
-    // }
+    if (!request) {
+      return res.status(404).json({
+        success: false,
+        error: 'Request not found',
+      });
+    }
 
-    // if (request.status !== 'completed') {
-    //   return res.status(400).json({
-    //     success: false,
-    //     error: 'Notes generation is not yet complete',
-    //     status: request.status,
-    //   });
-    // }
+    if (request.status !== 'completed') {
+      return res.status(400).json({
+        success: false,
+        error: 'Notes generation is not yet complete',
+        status: request.status,
+      });
+    }
 
     // Construct the directory path
     const dirPath = path.join(OUTPUT_DIR, requestId);
@@ -501,10 +513,12 @@ export async function downloadGeneratedNotesController(req, res) {
         error: 'Output directory not found',
       });
     }
-
+    
     // Find PDF files in the directory
     const files = fs.readdirSync(dirPath).filter(file => file.endsWith('.pdf'));
 
+    console.log(files);
+    
     if (files.length === 0) {
       return res.status(404).json({
         success: false,
@@ -537,7 +551,7 @@ export async function getGenerationStatus(req, res) {
   const { requestId } = req.params;
 
   try {
-    const request = await NotesRequestModel.findOne({ request_id: requestId });
+    const request = await NotesRequestModel.findOne({ _id: requestId });
 
     if (!request) {
       return res.status(404).json({
