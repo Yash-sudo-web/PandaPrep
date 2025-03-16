@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import MultiTabSwitch from "@/compnents/ui/option-switch";
 import axios from "axios";
 import { BASE_URL } from "@/lib/constant";
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown from "react-markdown";
 import PDFLikeMarkdownDisplay from "@/compnents/global/PDFdisplay";
 
 const funnel_display = Funnel_Display({
@@ -19,9 +19,7 @@ const funnel_display = Funnel_Display({
   weight: "400",
 });
 
-
 const NotesGenerate = () => {
-  
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
   const auth = getAuth(app);
@@ -34,7 +32,7 @@ const NotesGenerate = () => {
   const [error, setError] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [showGenerateButton, setShowGenerateButton] = useState(true);
-  
+
   const socketRef = useRef<WebSocket | null>(null);
 
   const [formData, setFormData] = useState({
@@ -57,38 +55,35 @@ const NotesGenerate = () => {
     }
 
     // Create a new WebSocket connection
-    const wsUrl = `${BASE_URL.replace('http', 'ws')}/ws?requestId=${reqId}`;
+    const wsUrl = `${BASE_URL.replace("http", "ws")}/ws?requestId=${reqId}`;
     const socket = new WebSocket(wsUrl);
-    
+
     socket.onopen = () => {
       console.log("WebSocket connected");
       setIsConnected(true);
     };
-    
+
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
         console.log("WebSocket message:", data);
-        
-        if (data.type === 'connected') {
+
+        if (data.type === "connected") {
           console.log("WebSocket connection confirmed");
-        } 
-        else if (data.type === 'stage_update') {
+        } else if (data.type === "stage_update") {
           setCurrentStage(data.stage);
-          
+
           // Handle specific stages
-          if (data.stage === 'generation_complete') {
+          if (data.stage === "generation_complete") {
             setGenerationComplete(true);
-            console.log(data)
+            console.log(data);
             if (data.data && data.data.downloadId) {
               setDownloadId(data.data.downloadId);
             }
           }
-        } 
-        else if (data.type === 'content_update') {
+        } else if (data.type === "content_update") {
           setMarkdownContent(data.content);
-        } 
-        else if (data.type === 'error') {
+        } else if (data.type === "error") {
           setError(data.message);
           setIsGenerating(false);
         }
@@ -96,32 +91,32 @@ const NotesGenerate = () => {
         console.error("Error parsing WebSocket message:", err);
       }
     };
-    
+
     socket.onclose = () => {
       console.log("WebSocket disconnected");
       setIsConnected(false);
     };
-    
+
     socket.onerror = (error) => {
       console.error("WebSocket error:", error);
       setError("WebSocket connection error");
     };
-    
+
     socketRef.current = socket;
   };
 
   const handleSubmit = async () => {
     try {
       setIsGenerating(true);
-      setShowGenerateButton(false); 
+      setShowGenerateButton(false);
       setError("");
       setMarkdownContent("");
       setCurrentStage("initializing");
       setGenerationComplete(false);
       setDownloadId("");
-  
+
       const response = await axios.post(`${BASE_URL}/generate-notes`, formData);
-  
+
       if (response.data && response.data.requestId) {
         setRequestId(response.data.requestId);
         connectWebSocket(response.data.requestId);
@@ -136,27 +131,29 @@ const NotesGenerate = () => {
         setError("Error generating notes");
       }
       setIsGenerating(false);
-      setShowGenerateButton(true); 
+      setShowGenerateButton(true);
     }
   };
-  
+
   const downloadGeneratedNotes = () => {
     if (downloadId) {
       try {
         // Create a temporary link element
-        const link = document.createElement('a');
+        const link = document.createElement("a");
         link.href = downloadId; // Directly use the URL
-        
+
         // Set target to _blank to open in a new tab
         link.target = "_blank";
-        
+
         // Extract filename from URL or use a default
-        const urlParts = downloadId.split('/');
-        const defaultFilename = `${formData?.subject_name || 'generated'}_notes.pdf`;
+        const urlParts = downloadId.split("/");
+        const defaultFilename = `${
+          formData?.subject_name || "generated"
+        }_notes.pdf`;
         const filename = urlParts[urlParts.length - 1] || defaultFilename;
-        
+
         link.download = filename;
-        
+
         // Append to the document, trigger click, and remove the link
         document.body.appendChild(link);
         link.click();
@@ -174,7 +171,7 @@ const NotesGenerate = () => {
       setError("No download URL available");
     }
   };
-  
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (!user) {
@@ -196,9 +193,9 @@ const NotesGenerate = () => {
   // Helper function to render current generation status
   const renderGenerationStatus = () => {
     if (!isGenerating && !generationComplete) return null;
-    
+
     let statusMessage = "";
-    
+
     switch (currentStage) {
       case "initializing":
         statusMessage = "Initializing generation process...";
@@ -231,15 +228,14 @@ const NotesGenerate = () => {
         statusMessage = "Notes successfully generated!";
         break;
       default:
-        statusMessage = `Processing: ${currentStage.replace(/_/g, ' ')}`;
+        statusMessage = `Processing: ${currentStage.replace(/_/g, " ")}`;
     }
-    
 
     return (
       <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
         <p className="text-green-700">{statusMessage}</p>
         {generationComplete && (
-          <button 
+          <button
             onClick={downloadGeneratedNotes}
             className="mt-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-300"
           >
@@ -363,28 +359,29 @@ const NotesGenerate = () => {
               {renderGenerationStatus()}
 
               {showGenerateButton && (
-  <button
-    onClick={handleSubmit}
-    disabled={isGenerating}
-    className={`px-6 py-2 border rounded-lg shadow-md transition duration-300 ${
-      isGenerating
-        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-        : "bg-white text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
-    }`}
-  >
-    {isGenerating ? "Generating..." : "Generate"}
-  </button>
-)}
+                <button
+                  onClick={handleSubmit}
+                  disabled={isGenerating}
+                  className={`px-6 py-2 border rounded-lg shadow-md transition duration-300 ${
+                    isGenerating
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-white text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
+                  }`}
+                >
+                  {isGenerating ? "Generating..." : "Generate"}
+                </button>
+              )}
             </div>
           </div>
           <div className="w-[1px] h-[3/4] bg-green-400 mx-6"></div>
-           <div className="w-[65%] ">  
-         {/* bg-[radial-gradient(circle_at_center,_#d1fae5,_white)] p-4 overflow-auto text-left */}
-  <PDFLikeMarkdownDisplay 
-    markdownContent={markdownContent} 
-    isGenerating={isGenerating} 
-  />
-</div>
+          <div className="w-[65%] ">
+            {/* bg-[radial-gradient(circle_at_center,_#d1fae5,_white)] p-4 overflow-auto text-left */}
+            <PDFLikeMarkdownDisplay
+              markdownContent={markdownContent}
+              isGenerating={isGenerating}
+              downloadId={downloadId}
+            />
+          </div>
         </div>
       </main>
     </div>
