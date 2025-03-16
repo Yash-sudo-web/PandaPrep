@@ -12,13 +12,16 @@ import MultiTabSwitch from "@/compnents/ui/option-switch";
 import axios from "axios";
 import { BASE_URL } from "@/lib/constant";
 import ReactMarkdown from 'react-markdown';
+import PDFLikeMarkdownDisplay from "@/compnents/global/PDFdisplay";
 
 const funnel_display = Funnel_Display({
   subsets: ["latin"],
   weight: "400",
 });
 
+
 const NotesGenerate = () => {
+  
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
   const auth = getAuth(app);
@@ -30,6 +33,7 @@ const NotesGenerate = () => {
   const [downloadId, setDownloadId] = useState("");
   const [error, setError] = useState("");
   const [isConnected, setIsConnected] = useState(false);
+  const [showGenerateButton, setShowGenerateButton] = useState(true);
   
   const socketRef = useRef<WebSocket | null>(null);
 
@@ -109,14 +113,15 @@ const NotesGenerate = () => {
   const handleSubmit = async () => {
     try {
       setIsGenerating(true);
+      setShowGenerateButton(false); 
       setError("");
       setMarkdownContent("");
       setCurrentStage("initializing");
       setGenerationComplete(false);
       setDownloadId("");
-      
+  
       const response = await axios.post(`${BASE_URL}/generate-notes`, formData);
-      
+  
       if (response.data && response.data.requestId) {
         setRequestId(response.data.requestId);
         connectWebSocket(response.data.requestId);
@@ -125,8 +130,13 @@ const NotesGenerate = () => {
       }
     } catch (error) {
       console.error("Error generating notes:", error);
-      setError(error.message || "Error generating notes");
+      if (error instanceof Error) {
+        setError(error.message);
+      } else {
+        setError("Error generating notes");
+      }
       setIsGenerating(false);
+      setShowGenerateButton(true); 
     }
   };
   
@@ -136,6 +146,9 @@ const NotesGenerate = () => {
         // Create a temporary link element
         const link = document.createElement('a');
         link.href = downloadId; // Directly use the URL
+        
+        // Set target to _blank to open in a new tab
+        link.target = "_blank";
         
         // Extract filename from URL or use a default
         const urlParts = downloadId.split('/');
@@ -150,7 +163,12 @@ const NotesGenerate = () => {
         document.body.removeChild(link);
       } catch (error) {
         console.error("Error downloading notes:", error);
-        setError(`Failed to download notes: ${error.message}`);
+        // Fix the TypeScript error with proper type checking
+        if (error instanceof Error) {
+          setError(`Failed to download notes: ${error.message}`);
+        } else {
+          setError("Failed to download notes");
+        }
       }
     } else {
       setError("No download URL available");
@@ -216,6 +234,7 @@ const NotesGenerate = () => {
         statusMessage = `Processing: ${currentStage.replace(/_/g, ' ')}`;
     }
     
+
     return (
       <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
         <p className="text-green-700">{statusMessage}</p>
@@ -343,35 +362,29 @@ const NotesGenerate = () => {
 
               {renderGenerationStatus()}
 
-              <button
-                onClick={handleSubmit}
-                disabled={isGenerating}
-                className={`px-6 py-2 border rounded-lg shadow-md transition duration-300 ${
-                  isGenerating 
-                    ? "bg-gray-300 text-gray-500 cursor-not-allowed" 
-                    : "bg-white text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
-                }`}
-              >
-                {isGenerating ? "Generating..." : "Generate"}
-              </button>
+              {showGenerateButton && (
+  <button
+    onClick={handleSubmit}
+    disabled={isGenerating}
+    className={`px-6 py-2 border rounded-lg shadow-md transition duration-300 ${
+      isGenerating
+        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+        : "bg-white text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
+    }`}
+  >
+    {isGenerating ? "Generating..." : "Generate"}
+  </button>
+)}
             </div>
           </div>
           <div className="w-[1px] h-[3/4] bg-green-400 mx-6"></div>
-          <div className="w-[65%] bg-[radial-gradient(circle_at_center,_#d1fae5,_white)] p-4 overflow-auto text-left">
-            {markdownContent ? (
-              <div className="markdown-preview bg-white rounded-lg shadow-md p-6 max-h-[70vh] overflow-auto">
-                <ReactMarkdown>{markdownContent}</ReactMarkdown>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-gray-500 italic">
-                  {isGenerating 
-                    ? "Notes content will appear here as it's generated..." 
-                    : "Generated notes will appear here"}
-                </p>
-              </div>
-            )}
-          </div>
+           <div className="w-[65%] ">  
+         {/* bg-[radial-gradient(circle_at_center,_#d1fae5,_white)] p-4 overflow-auto text-left */}
+  <PDFLikeMarkdownDisplay 
+    markdownContent={markdownContent} 
+    isGenerating={isGenerating} 
+  />
+</div>
         </div>
       </main>
     </div>
