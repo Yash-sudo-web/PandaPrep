@@ -83,11 +83,6 @@ class NotesGeneratorAgent {
   4. Use tables for comparative information when useful
   5. Make sure headings follow a logical hierarchy
   
-  YOUR RESPONSE MUST BE STRUCTURED FOR STREAMING:
-  1. Each paragraph should be a complete thought
-  2. Use clear section headings to mark progress
-  3. Generate content in logical increments that can be displayed progressively
-  
   Your output should be comprehensive, well-structured study material that directly addresses the topics provided. Generate ONLY the final notes content, properly formatted in markdown.
   `;
     }
@@ -109,7 +104,7 @@ class NotesGeneratorAgent {
       
       const llm = new ChatGroq({
         groqApiKey: process.env.GROQ_API_KEY,
-        model: "mixtral-8x7b-32768",
+        model: "llama-3.3-70b-versatile",
         streaming: true, // Enable streaming
       });
       
