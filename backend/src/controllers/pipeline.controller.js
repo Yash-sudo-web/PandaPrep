@@ -8,6 +8,7 @@ import NotesGeneratorAgent from '../agents/NotesGeneratorAgent.js';
 import SyllabusAnalyzerAgent from '../agents/SyllabusAnalyzerAgent.js';
 import ImageSuggestionAgent from '../agents/ImageSuggestionAgent.js';
 import { NotesRequestModel } from '../models/user-request.model.js';
+import { UserModel } from '../models/user.model.js';
 import { uploadPDFToCloudinary } from '../utils/cloudinary-file-upload.util.js';
 import {
   createRequestId,
@@ -15,6 +16,7 @@ import {
   broadcastMarkdownUpdate,
   broadcastError,
 } from '../websocket/server.js';
+
 
 dotenv.config();
 
@@ -88,6 +90,7 @@ export async function generateNotesController(req, res) {
     }
 
     const {
+      email,
       syllabus,
       subject_name = 'General Subject',
       note_type = 'detailed',
@@ -97,10 +100,11 @@ export async function generateNotesController(req, res) {
       user_instructions = '',
     } = req.body;
     const format = req.body.format || 'pdf';
-
+    const userDoc= await UserModel.findOne({email:email});
     
     // Store request in database
     const request = await NotesRequestModel.create({
+      _userID: userDoc._id,
       subject_name,
       syllabus,
       note_type,

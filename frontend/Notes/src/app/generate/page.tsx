@@ -13,6 +13,7 @@ import axios from "axios";
 import { BASE_URL } from "@/lib/constant";
 import ReactMarkdown from "react-markdown";
 import PDFLikeMarkdownDisplay from "@/compnents/global/PDFdisplay";
+import { getCookie } from "@/lib/utils";
 
 const funnel_display = Funnel_Display({
   subsets: ["latin"],
@@ -34,8 +35,10 @@ const NotesGenerate = () => {
   const [showGenerateButton, setShowGenerateButton] = useState(true);
 
   const socketRef = useRef<WebSocket | null>(null);
+  const email=getCookie('email')
 
   const [formData, setFormData] = useState({
+    email: email,
     syllabus: "",
     subject_name: "",
     user_instructions: "",
@@ -115,7 +118,7 @@ const NotesGenerate = () => {
       setGenerationComplete(false);
       setDownloadId("");
 
-      const response = await axios.post(`${BASE_URL}/generate-notes`, formData);
+      const response = await axios.post(`${BASE_URL}/pipeline/generate-notes`, formData);
 
       if (response.data && response.data.requestId) {
         setRequestId(response.data.requestId);
@@ -303,7 +306,7 @@ const NotesGenerate = () => {
                   },
                   {
                     label: "QnA",
-                    value: "qna",
+                    value: "q&a",
                   },
                   {
                     label: "Detailed",

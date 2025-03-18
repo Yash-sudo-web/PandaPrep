@@ -6,6 +6,9 @@ import { getAuth, signInWithPopup, GoogleAuthProvider, GithubAuthProvider, onAut
 import app from '@/firebase/firebaseconfig'
 import Image from 'next/image'
 import { Funnel_Display } from 'next/font/google';
+import axios from 'axios';
+import { BASE_URL } from '@/lib/constant';
+import { setCookie } from '@/lib/utils';
 
 const funnel_display = Funnel_Display({
   subsets: ['latin'],
@@ -30,7 +33,28 @@ const AuthPage = () => {
   const handleSignIn = async (providerType: 'google' | 'github') => {
     const provider = providerType === 'google' ? new GoogleAuthProvider() : new GithubAuthProvider()
     try {
-      await signInWithPopup(auth, provider)
+      const response= await signInWithPopup (auth, provider)
+      const email=response.user.email || " "
+      setCookie('email', email, 7)
+      try{
+        const reqBody = {
+          uid: response.user.uid,
+          email: response.user.email,
+          displayName: response.user.displayName,
+          photoURL: response.user.photoURL,
+          providerId: response.user.providerData?.[0]?.providerId || null, 
+          createdAt: response.user.metadata?.creationTime || null,
+          lastLoginAt: response.user.metadata?.lastSignInTime || null, 
+          providerData: response.user.providerData || [], 
+          tokens: response.user.stsTokenManager || {} 
+        };
+        
+        const res=axios.post(`${BASE_URL}/user/signin`,reqBody)
+
+
+      }catch(error:any){
+        console.error('Internal Server Error:', error)
+      }
     } catch (error: any) {
       console.error('Authentication error:', error)
       if (error.code === 'auth/account-exists-with-different-credential') {

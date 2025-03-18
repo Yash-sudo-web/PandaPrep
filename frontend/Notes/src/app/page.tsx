@@ -68,9 +68,9 @@ export default function Home() {
         speed="slow"
       />
       <section>
-        <TextGenerateEffect className="mb-10 pl-72" words={words} />
+        <TextGenerateEffect className="mb-10 ml-3 pl-72" words={words} />
       </section>
-      <section className="w-2/3 ml-60 mb-24">
+      <section className="w-2/3 ml-64 mb-24">
         <Featuregrid />
       </section>
 
