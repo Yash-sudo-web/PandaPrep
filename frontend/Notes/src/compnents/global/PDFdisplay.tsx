@@ -61,7 +61,6 @@ const PDFLikeMarkdownDisplay = ({
         <div
           ref={containerRef}
           className="pdf-container flex flex-col items-center gap-6 py-8 overflow-y-auto h-full bg-gray-100 rounded-xl w-full px-4"
-          style={{ height: "100vh" }}
         >
           {pages.length === 0 && (
             <p className="text-gray-500 text-lg mt-64 italic text-center">

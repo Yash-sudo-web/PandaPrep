@@ -378,8 +378,7 @@ const NotesGenerate = () => {
             </div>
           </div>
           <div className="w-[1px] h-[3/4] bg-green-400 mx-6"></div>
-          <div className="w-[65%] ">
-            {/* bg-[radial-gradient(circle_at_center,_#d1fae5,_white)] p-4 overflow-auto text-left */}
+          <div className="w-[65%]">
             <PDFLikeMarkdownDisplay
               markdownContent={markdownContent}
               isGenerating={isGenerating}
