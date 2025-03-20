@@ -11,7 +11,6 @@ import { cn } from "@/lib/utils";
 import MultiTabSwitch from "@/compnents/ui/option-switch";
 import axios from "axios";
 import { BASE_URL } from "@/lib/constant";
-import ReactMarkdown from "react-markdown";
 import PDFLikeMarkdownDisplay from "@/compnents/global/PDFdisplay";
 import { getCookie } from "@/lib/utils";
 import Footer from "@/compnents/global/footer";
@@ -37,7 +36,7 @@ const NotesGenerate = () => {
   const [showGenerateButton, setShowGenerateButton] = useState(true);
 
   const socketRef = useRef<WebSocket | null>(null);
-  const email=getCookie('email')
+  const email=getCookie('email') || "";
 
   const [formData, setFormData] = useState({
     email: email,

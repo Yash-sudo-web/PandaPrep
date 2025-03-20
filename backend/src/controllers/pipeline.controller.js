@@ -128,7 +128,7 @@ export async function generateNotesController(req, res) {
 
     // Start the generation process in the background
     process.nextTick(() => {
-      generateNotes(requestId, req.body, request._id).catch((err) => {
+      generateNotes(requestId, req.body, request._id, request._userID).catch((err) => {
         console.error(`[${requestId}] Background process error:`, err);
         broadcastError(requestId, 'Generation process failed', err.message);
 
@@ -159,7 +159,7 @@ export async function generateNotesController(req, res) {
  * @param {string} requestId - Unique ID for this request
  * @param {Object} requestBody - The original request body
  */
-async function generateNotes(requestId, requestBody, requestIdDb) {
+async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
   const startTime = Date.now();
   let markdownPath = null;
   let pdfPath = null;
@@ -337,7 +337,7 @@ async function generateNotes(requestId, requestBody, requestIdDb) {
         clearInterval(intervalId);
 
         fs.writeFileSync(pdfPath, content);
-        const uploadResponse = await uploadPDFToCloudinary(pdfPath, `${filePrefix}.pdf`); 
+        const uploadResponse = await uploadPDFToCloudinary(_userId, pdfPath, `${filePrefix}.pdf`); 
         downloadUrl = uploadResponse.secure_url;
         if (uploadResponse) {
           await NotesRequestModel.updateOne(

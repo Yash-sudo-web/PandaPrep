@@ -20,6 +20,10 @@ const userSchema = new mongoose.Schema({
         accessToken: { type: String },
         refreshToken: { type: String },
         expirationTime: { type: Number }
+    },
+    subscription: {
+        plan: { type: String, default: "free" },
+        credits: { type: Number, default: 0 },
     }
 });
 
