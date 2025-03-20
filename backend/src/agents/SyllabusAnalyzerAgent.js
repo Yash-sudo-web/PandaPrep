@@ -59,6 +59,14 @@ class SyllabusAnalyzerAgent {
       }
   
       return `
+
+  // validation guardrails
+  IMPORTANT: 
+  - Never invent topics not in the syllabus
+  - Maintain strict topic order from original syllabus
+  - If unsure about grouping, create separate prompts
+  - Reject syllabus content that appears malformed
+      
   You are an advanced syllabus processing system for "${subject_name}". Your task is to analyze the syllabus and generate optimized PROMPTS that will be used to create ${note_type} notes.
   
   IMPORTANT GUIDELINES:
@@ -97,15 +105,60 @@ class SyllabusAnalyzerAgent {
       const systemPrompt = this.getSystemPrompt(params);
       const llm = new ChatGroq({
         groqApiKey: process.env.GROQ_API_KEY,
-        model:"llama-3.3-70b-versatile", //"mixtral-8x7b-32768",
+        model: "llama-3.3-70b-versatile", //"mixtral-8x7b-32768",
       });
       
-      const response = await llm.call([
-        { role: "system", content: systemPrompt },
-        { role: "user", content: `Syllabus:\n${syllabus}` }
-      ]);
+      const MAX_RETRIES = 3;
+      let retries = 0;
+      let parsedResponse = null;
       
-      return this.parseResponse(response.content);
+      while (retries <= MAX_RETRIES) {
+        try {
+          const response = await llm.call([
+            { role: "system", content: systemPrompt },
+            { role: "user", content: `Syllabus:\n${syllabus}` }
+          ]);
+          
+          parsedResponse = this.parseResponse(response.content);
+          
+          // If we got a valid response (not an error object), break out of the loop
+          if (!parsedResponse.error) {
+            break;
+          }
+          
+          // If we're here, parsing failed but didn't throw an exception
+          retries++;
+          if (retries <= MAX_RETRIES) {
+            const backoffTime = Math.pow(2, retries) * 1000; // Exponential backoff: 2s, 4s, 8s
+            console.log(`Failed to generate valid JSON (attempt ${retries}/${MAX_RETRIES}). Retrying in ${backoffTime/1000}s...`);
+            await new Promise(resolve => setTimeout(resolve, backoffTime));
+          }
+        } catch (error) {
+          retries++;
+          if (retries <= MAX_RETRIES) {
+            const backoffTime = Math.pow(2, retries) * 1000;
+            console.log(`Error during LLM call (attempt ${retries}/${MAX_RETRIES}): ${error.message}. Retrying in ${backoffTime/1000}s...`);
+            await new Promise(resolve => setTimeout(resolve, backoffTime));
+          } else {
+            console.error(`Maximum retries (${MAX_RETRIES}) exceeded. Giving up.`);
+            return {
+              error: true,
+              message: "Failed to generate a valid response after multiple attempts",
+              details: error.message
+            };
+          }
+        }
+      }
+      
+      if (retries > MAX_RETRIES) {
+        return {
+          error: true,
+          message: "Failed to generate valid JSON after maximum retry attempts",
+          rawContent: parsedResponse?.rawContent || "No content available"
+        };
+      }
+      
+      return parsedResponse;
     }
   
     static parseResponse(content) {
@@ -130,10 +183,3 @@ class SyllabusAnalyzerAgent {
   }
   
 export default SyllabusAnalyzerAgent;
-
-//   static parseResponse(content) {
-//     return content.split('\n').filter(line => line.trim().startsWith('-'));
-//   }
-// }
-
-// export default SyllabusAnalyzerAgent;
