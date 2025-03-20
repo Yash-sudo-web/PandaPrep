@@ -79,4 +79,45 @@ export const products = [
       answer: "No, Pandaprep is a productivity tool designed to enhance learning and efficiency.",
     },
   ];
+
   
+export const PLANS = [
+  {
+    title: "Hobby",
+    price: "$0",
+    features: [
+      "3 Free automations",
+      "100 tasks per month",
+      "Two-step Actions"
+    ],
+    limitations: [
+      "No team collaboration",
+      "Limited integrations"
+    ],
+  },
+  {
+    title: "Pro Plan",
+    price: "$29",
+    features: [
+      "Unlimited automations",
+      "1000 tasks per month",
+      "Multi-step Actions",
+      "Multi-step Actions"
+    ],
+    limitations: [
+      "Limited AI features"
+    ],
+  },
+  {
+    title: "Unlimited",
+    price: "$99",
+    features: [
+      "Unlimited everything",
+      "Priority support",
+      "AI-powered workflows",
+      "Multi-step Actions",
+      "Multi-step Actions"
+    ],
+    limitations: [],
+  },
+];

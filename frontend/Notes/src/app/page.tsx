@@ -16,6 +16,7 @@ import { Box, Lock, Search, Settings, Sparkles } from "lucide-react";
 import { Featuregrid } from "@/compnents/global/feature-grid";
 import { ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
+import Footer from "@/compnents/global/footer";
 
 const words = `Stressed about exams? Relax. Drop a topic, and let AI do its magic. `;
 
@@ -114,99 +115,7 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="max-w-7xl mx-auto px-5 grid grid-cols-1 md:grid-cols-4 gap-56 bg-white">
-        <div>
-          <h2
-            className={`text-2xl font-bold text-green-700 ${funnel_display.className}`}
-          >
-            PandaPrep
-          </h2>
-          <p
-            className={`mt-2 text-sm text-neutral-600 ${funnel_display.className}`}
-          >
-            yaha pe description and logo daalni h
-          </p>
-        </div>
-
-        <div>
-          <h3
-            className={`text-2xl font-semibold text-black ${funnel_display.className}`}
-          >
-            Quick Links
-          </h3>
-          <ul className={`mt-3 space-y-2 ${funnel_display.className}`}>
-            <li>
-              <a href="#" className="text-black hover:text-green-700">
-                Home
-              </a>
-            </li>
-            <li>
-              <a href="#" className="text-black hover:text-green-700">
-                Resources
-              </a>
-            </li>
-            <li>
-              <a href="#" className="text-black hover:text-green-700">
-                Documentation
-              </a>
-            </li>
-          </ul>
-        </div>
-
-        <div>
-          <h3
-            className={`text-2xl font-semibold text-black ${funnel_display.className}`}
-          >
-            Support
-          </h3>
-          <ul className={`mt-3 space-y-2 ${funnel_display.className}`}>
-            <li>
-              <a href="#" className="text-black hover:text-green-700">
-                Help Center
-              </a>
-            </li>
-            <li>
-              <a href="#" className="text-black hover:text-green-700">
-                Contact Us
-              </a>
-            </li>
-          </ul>
-        </div>
-
-        <div>
-          <h3
-            className={`text-2xl font-semibold text-black ${funnel_display.className}`}
-          >
-            Follow Us
-          </h3>
-          <div className={`mt-3 flex space-x-6 ${funnel_display.className}`}>
-            <a
-              href="#"
-              className="group transition duration-300 hover:scale-110"
-            >
-              <Linkedin
-                size={40}
-                className={`text-gray-600 transition-all duration-300 group-hover:text-green-700 ${funnel_display.className}`}
-              />
-            </a>
-            <a
-              href="#"
-              className="group transition duration-300 hover:scale-110"
-            >
-              <Github
-                size={40}
-                className={`text-gray-600 transition-all duration-300 group-hover:text-green-700 ${funnel_display.className}`}
-              />
-            </a>
-          </div>
-        </div>
-      </div>
-
-      <div
-        className={`mt-8 text-center text-black text-sm border-t border-gray-300 pt-4 ${funnel_display.className}`}
-      >
-        <p>© {new Date().getFullYear()} PandaPrep. All rights reserved.</p>
-      </div>
+      <Footer/>
     </main>
   );
 }

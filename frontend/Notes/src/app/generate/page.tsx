@@ -14,6 +14,8 @@ import { BASE_URL } from "@/lib/constant";
 import ReactMarkdown from "react-markdown";
 import PDFLikeMarkdownDisplay from "@/compnents/global/PDFdisplay";
 import { getCookie } from "@/lib/utils";
+import Footer from "@/compnents/global/footer";
+
 
 const funnel_display = Funnel_Display({
   subsets: ["latin"],
@@ -386,6 +388,14 @@ const NotesGenerate = () => {
             />
           </div>
         </div>
+
+
+        <section className="w-screen bg-white mt-10"> 
+                <div className="mt-8">
+                    <Footer />
+                </div>
+
+            </section>
       </main>
     </div>
   );

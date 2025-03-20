@@ -49,10 +49,13 @@ const Navbar = () => {
             <Link href="/generate" className={`bg-gradient-to-tr from-green-600 to-green-900 bg-clip-text text-transparent text-lg ${funnel_display.className}`}>Notes Generation</Link>
           </li>
           <li>
-            <Link href="/auth" className={`bg-gradient-to-tr from-green-600 to-green-900 bg-clip-text text-transparent text-lg ${funnel_display.className}`}>Chat</Link>
+            <Link href="/pricing" className={`bg-gradient-to-tr from-green-600 to-green-900 bg-clip-text text-transparent text-lg ${funnel_display.className}`}>Subscription</Link>
           </li>
+          {/* <li>
+            <Link href="/auth" className={`bg-gradient-to-tr from-green-600 to-green-900 bg-clip-text text-transparent text-lg ${funnel_display.className}`}>Chat</Link>
+          </li> */}
           <li>
-            <Link href="#" className={`bg-gradient-to-tr from-green-600 to-green-900 bg-clip-text text-transparent text-lg ${funnel_display.className}`}>Documentation</Link>
+            <Link href="/history" className={`bg-gradient-to-tr from-green-600 to-green-900 bg-clip-text text-transparent text-lg ${funnel_display.className}`}>History</Link>
           </li>
         </ul>
       </nav>
