@@ -1,6 +1,7 @@
 import express from "express";
 import notesRoutes from "./routes/pipeline.route.js";
 import userRoutes from "./routes/user.route.js";
+import userHistoryRoutes from "./routes/userHistory.route.js";
 import cors from "cors"
 const app = express();
 
@@ -13,5 +14,6 @@ app.use(express.urlencoded({extended:true, limit: "16kb"}));
 app.use(express.static("public"));
 app.use("/api/pipeline", notesRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/userHistory", userHistoryRoutes);
 
 export { app }
