@@ -50,3 +50,30 @@ export const uploadPDFToCloudinary = async (_userId, pdfPath, pdfName) => {
         return null;
     }
 };
+
+/**
+ * Deletes a PDF file from Cloudinary.
+ * @param {string} publicId The public ID of the file in Cloudinary.
+ * @returns {Object} The response from Cloudinary, or null if the deletion fails.
+ */
+
+export const deletePDFFromCloudinary = async (publicId) => {
+    try {
+        console.log("Deleting PDF from Cloudinary...", publicId);
+        if (!publicId) {
+            console.error("Missing public ID.");
+            return null;
+        }
+
+        // Delete the PDF file from Cloudinary
+        const response = await cloudinary.uploader.destroy(publicId, {
+            resource_type: "raw",
+        });
+
+        console.log("Cloudinary Delete Response:", response);
+        return response;
+    } catch (error) {
+        console.error("Cloudinary Delete Error:", error);
+        return null;
+    }
+}

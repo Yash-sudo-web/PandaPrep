@@ -9,15 +9,15 @@ import {
 const router = express.Router();
 
 // Get all notes for a user
-router.get('/:email/notes', getUserNotesHistoryController);
+router.post('/notes', getUserNotesHistoryController);
   
-// Get details for a specific note
-router.get('/:email/notes/:requestId', getSingleNoteHistoryController);
+// // Get details for a specific note
+// router.post('/notes/:requestId', getSingleNoteHistoryController);
   
 // Get note statistics for a user
 router.get('/:email/notes-stats', getUserNotesStatsController);
   
 // Delete a note
-router.delete('/:email/notes/:requestId', deleteUserNoteController);
+router.post('/notes/delete', deleteUserNoteController);
 
 export default router;

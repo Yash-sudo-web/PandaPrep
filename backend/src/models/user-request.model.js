@@ -26,7 +26,7 @@ const UserRequestSchema = new mongoose.Schema({
   note_type: {
     type: String,
     enum: {
-      values: ['concise', 'detailed', 'q&a'],
+      values: ['concise', 'detailed', 'qa'],
       message: '{VALUE} is not a supported note type'
     },
     default: 'detailed',
@@ -109,6 +109,10 @@ const UserRequestSchema = new mongoose.Schema({
     type: String,
   },
 
+  public_id: {
+    type: String,
+  },
+  
 }, {
   timestamps: true,
   toJSON: { virtuals: true },

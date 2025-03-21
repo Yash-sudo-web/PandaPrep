@@ -65,7 +65,7 @@ const Footer = () => {
         </div>
       </div>
     <div className="w-screen">
-      <div className="w-3/4 flex justify-center border-t border-gray-300 pt-4">
+      <div className="w-3/4 flex justify-center border-t border-gray-300 py-4">
         <p className="text-center text-black text-sm">© {new Date().getFullYear()} PandaPrep. All rights reserved.</p>
       </div>
       </div>

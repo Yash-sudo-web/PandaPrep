@@ -1,5 +1,4 @@
 // File: controllers/pipeline.controller.js
-import { ChatGroq } from '@langchain/groq';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
@@ -10,13 +9,13 @@ import ImageSuggestionAgent from '../agents/ImageSuggestionAgent.js';
 import { NotesRequestModel } from '../models/user-request.model.js';
 import { UserModel } from '../models/user.model.js';
 import { uploadPDFToCloudinary } from '../utils/cloudinary-file-upload.util.js';
+import { addWatermarkToPdf } from '../utils/pdf-watermark-addition.util.js';
 import {
   createRequestId,
   broadcastStage,
   broadcastMarkdownUpdate,
   broadcastError,
 } from '../websocket/server.js';
-
 
 dotenv.config();
 
@@ -45,8 +44,8 @@ function validateRequest(body) {
     errors.push('Subject name must be a string');
   }
 
-  if (body.note_type && !['concise', 'detailed', 'q&a'].includes(body.note_type.toLowerCase())) {
-    errors.push('Note type must be one of: concise, detailed, q&a');
+  if (body.note_type && !['concise', 'detailed', 'qa'].includes(body.note_type.toLowerCase())) {
+    errors.push('Note type must be one of: concise, detailed, qa');
   }
 
   if (body.include_examples && !['yes', 'no'].includes(body.include_examples)) {
@@ -337,6 +336,9 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
         clearInterval(intervalId);
 
         fs.writeFileSync(pdfPath, content);
+
+        await addWatermarkToPdf(pdfPath);
+
         const uploadResponse = await uploadPDFToCloudinary(_userId, pdfPath, `${filePrefix}.pdf`); 
         downloadUrl = uploadResponse.secure_url;
         if (uploadResponse) {
@@ -344,6 +346,7 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
             { _id: requestIdDb },
             {
               secure_url: uploadResponse.secure_url,
+              public_id: uploadResponse.public_id,
             }
           );
         }
@@ -472,7 +475,7 @@ function calculateEstimatedTime(syllabusLength, noteType, includeImages) {
 
   // Adjust for note type
   if (noteType === 'detailed') baseTime *= 1.5;
-  if (noteType === 'q&a') baseTime *= 1.3;
+  if (noteType === 'qa') baseTime *= 1.3;
 
   // Add time for images
   if (includeImages === 'yes') baseTime += 45;

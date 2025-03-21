@@ -269,9 +269,9 @@ const NotesGenerate = () => {
           <div className="w-[35%] flex">
             <div className="flex flex-col gap-8">
               <PlaceholdersAndVanishInput
-                label="Enter Domain"
+                label="Enter Subject Name"
                 placeholders={[
-                  "Enter domain...",
+                  "Enter subject...",
                   "E.g., Machine Learning",
                   "E.g., Web Development",
                 ]}
@@ -307,7 +307,7 @@ const NotesGenerate = () => {
                   },
                   {
                     label: "QnA",
-                    value: "q&a",
+                    value: "qa",
                   },
                   {
                     label: "Detailed",
@@ -362,7 +362,7 @@ const NotesGenerate = () => {
 
               {renderGenerationStatus()}
 
-              {showGenerateButton && (
+
                 <button
                   onClick={handleSubmit}
                   disabled={isGenerating}
@@ -374,7 +374,7 @@ const NotesGenerate = () => {
                 >
                   {isGenerating ? "Generating..." : "Generate"}
                 </button>
-              )}
+
             </div>
           </div>
           <div className="w-[1px] h-[3/4] bg-green-400 mx-6"></div>
