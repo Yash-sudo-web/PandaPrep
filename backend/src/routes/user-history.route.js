@@ -4,7 +4,7 @@ import {
     getSingleNoteHistoryController,
     getUserNotesStatsController,
     deleteUserNoteController
-  } from '../controllers/userHistory.controller.js';
+  } from '../controllers/user-history.controller.js';
   
 const router = express.Router();
 

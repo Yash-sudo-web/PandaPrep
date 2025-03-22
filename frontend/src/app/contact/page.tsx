@@ -4,6 +4,8 @@ import Navbar from "@/compnents/global/navbar";
 import { cn } from "@/lib/utils";
 import { Funnel_Display } from "next/font/google";
 import { useState } from "react";
+import axios from "axios";
+import { BASE_URL } from "@/lib/constant";
 
 const funnel_display = Funnel_Display({
     subsets: ["latin"],
@@ -23,27 +25,80 @@ export default function Contact() {
         { value: "other", label: "Other" }
     ];
 
-    const [email, setEmail] = useState("");
-    const [phone, setPhone] = useState("");
+    const [form, setForm] = useState({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phoneNumber: "",
+        subject: subjectOptions[0].value,
+        message: ""
+    });
     const [emailError, setEmailError] = useState("");
     const [phoneError, setPhoneError] = useState("");
 
-    // ✅ Move these functions above the inputFields array
+    const handleInputChange = (field: string, value: string) => {
+        setForm({
+            ...form,
+            [field]: value
+        });
+    };
+
     const validateEmail = (value: string) => {
         const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        setEmail(value);
+        handleInputChange("email", value);
         setEmailError(emailPattern.test(value) ? "" : "Invalid email format");
     };
 
     const validatePhone = (value: string) => {
         const phonePattern = /^\d{10,15}$/;
-        setPhone(value);
+        handleInputChange("phoneNumber", value);
         setPhoneError(phonePattern.test(value) ? "" : "Invalid phone number");
     };
 
+    const handleSubjectChange = (value: string) => {
+        handleInputChange("subject", value);
+    };
+
+    const handleSendMessage = async (e: React.FormEvent) => {
+        e.preventDefault();
+        try {
+            const res = await axios.post(`${BASE_URL}/contact`, form );
+            // Handle successful submission
+            alert("Message sent successfully!");
+            // Reset form
+            setForm({
+                firstName: "",
+                lastName: "",
+                email: "",
+                phoneNumber: "",
+                subject: subjectOptions[0].value,
+                message: ""
+            });
+        } catch (error) {
+            // Handle error
+            console.error("Error sending message:", error);
+            alert("Failed to send message. Please try again.");
+        }
+    };
+
     const inputFields = [
-        { type: 'email', placeholder: 'Email', value: email, onChange: validateEmail, error: emailError },
-        { type: 'tel', placeholder: 'Phone Number', value: phone, onChange: validatePhone, error: phoneError, inputPlaceholder: '+1 (02) 3456 789' }
+        { 
+            type: 'email', 
+            placeholder: 'Email', 
+            value: form.email, 
+            onChange: validateEmail, 
+            error: emailError, 
+            field: 'email' 
+        },
+        { 
+            type: 'tel', 
+            placeholder: 'Phone Number', 
+            value: form.phoneNumber, 
+            onChange: validatePhone, 
+            error: phoneError, 
+            inputPlaceholder: '+1 (02) 3456 789',
+            field: 'phoneNumber'
+        }
     ];
 
     return (
@@ -130,17 +185,26 @@ export default function Contact() {
                         </div>
                     </div>
                     <div className="p-8 w-3/5">
-                        <form className="space-y-6">
+                        <form className="space-y-6" onSubmit={handleSendMessage}>
                             <div className="grid grid-cols-2 gap-6">
-                                {['First Name', 'Last Name'].map((placeholder, index) => (
-                                    <div key={index}>
-                                        <label className="block text-sm text-gray-600 mb-1">{placeholder}</label>
-                                        <input
-                                            type="text"
-                                            className="w-full border-b border-gray-300 py-2 px-3 focus:outline-none focus:border-black bg-neutral-800 rounded-xl"
-                                        />
-                                    </div>
-                                ))}
+                                <div>
+                                    <label className="block text-sm text-gray-600 mb-1">First Name</label>
+                                    <input
+                                        type="text"
+                                        className="w-full border-b border-gray-300 py-2 px-3 focus:outline-none focus:border-black bg-neutral-800 rounded-xl"
+                                        value={form.firstName}
+                                        onChange={(e) => handleInputChange("firstName", e.target.value)}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-sm text-gray-600 mb-1">Last Name</label>
+                                    <input
+                                        type="text"
+                                        className="w-full border-b border-gray-300 py-2 px-3 focus:outline-none focus:border-black bg-neutral-800 rounded-xl"
+                                        value={form.lastName}
+                                        onChange={(e) => handleInputChange("lastName", e.target.value)}
+                                    />
+                                </div>
                             </div>
                             <div className="grid grid-cols-2 gap-6">
                                 {inputFields.map((field, index) => (
@@ -167,7 +231,8 @@ export default function Contact() {
                                                 id={`subject-${option.value}`}
                                                 name="subject"
                                                 className="h-4 w-4 mr-2"
-                                                defaultChecked={index === 0}
+                                                checked={form.subject === option.value}
+                                                onChange={() => handleSubjectChange(option.value)}
                                             />
                                             <label htmlFor={`subject-${option.value}`} className="text-sm">{option.label}</label>
                                         </div>
@@ -180,13 +245,15 @@ export default function Contact() {
                                     className="w-full border-b border-gray-300 py-2 px-3 focus:outline-none focus:border-black bg-neutral-800 rounded-xl"
                                     rows={4}
                                     placeholder="Write your message..."
+                                    value={form.message}
+                                    onChange={(e) => handleInputChange("message", e.target.value)}
                                 ></textarea>
                             </div>
                             <div className="flex justify-end">
                                 <button
                                     type="submit"
                                     className="bg-neutral-800 text-white px-8 py-3 rounded-md hover:bg-gray-800 transition-colors"
-                                    disabled={emailError !== "" || phoneError !== ""}
+                                    disabled={emailError !== "" || phoneError !== "" || !form.email || !form.phoneNumber}
                                 >
                                     Send Message
                                 </button>
