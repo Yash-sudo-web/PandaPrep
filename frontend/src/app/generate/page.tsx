@@ -36,7 +36,13 @@ const NotesGenerate = () => {
   const [showGenerateButton, setShowGenerateButton] = useState(true);
 
   const socketRef = useRef<WebSocket | null>(null);
-  const email=getCookie('email') || "";
+  let email = "";
+
+  useEffect(() => {
+    email = getCookie('email') || "";
+    setFormData((prev) => ({ ...prev, email: email }));
+  }, []);
+  
 
   const [formData, setFormData] = useState({
     email: email,
