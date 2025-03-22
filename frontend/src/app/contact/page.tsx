@@ -1,6 +1,6 @@
 'use client';
 
-import Navbar from "@/compnents/global/navbar";
+import Navbar from "@/components/global/navbar";
 import { cn } from "@/lib/utils";
 import { Funnel_Display } from "next/font/google";
 import { useState } from "react";

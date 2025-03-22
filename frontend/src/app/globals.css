@@ -1,6 +1,4 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 *,
 *::before,
@@ -67,10 +65,10 @@
 }
 
 @layer base {
-  * {
+  /* * {
     @apply border-border;
   }
   body {
     @apply bg-background text-foreground;
-  }
+  } */
 }

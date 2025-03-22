@@ -12,7 +12,7 @@ const Footer = () => {
     <div className={cn("max-w-8xl mx-auto ml-40 px-5 grid grid-cols-1 md:grid-cols-4 gap-12 bg-white", funnel_display.className)}>
       <div>
         <h2 className="text-2xl font-bold text-green-700">PandaPrep</h2>
-        <p className="mt-2 text-sm text-neutral-600">yaha pe description and logo daalni h</p>
+        <p className="mt-2 text-sm text-neutral-600">PandaPrep is the ultimate AI-powered notes generator that turns your syllabus into structured, concise, and exam-ready notes in seconds.</p>
       </div>
 
       <div>

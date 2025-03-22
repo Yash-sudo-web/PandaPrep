@@ -1,12 +1,12 @@
 "use client";
 
-import Navbar from "@/compnents/global/navbar";
-import { CardContainer, CardBody, CardItem } from "@/compnents/ui/pricing-card";
+import Navbar from "@/components/global/navbar";
+import { CardContainer, CardBody, CardItem } from "@/components/ui/pricing-card";
 import { CheckIcon, XIcon } from "lucide-react";
 import { Funnel_Display } from "next/font/google";
 import { cn } from "@/lib/utils";
 import { PLANS } from "@/lib/constant";
-import Footer from "@/compnents/global/footer";
+import Footer from "@/components/global/footer";
 
 const funnel_display = Funnel_Display({
     subsets: ["latin"],

@@ -1,22 +1,22 @@
 "use client";
 
-import Navbar from "@/compnents/global/navbar";
+import Navbar from "@/components/global/navbar";
 import Image from "next/image";
-import { ContainerScroll } from "@/compnents/global/container-scroll-animation";
-import { Button } from "@/compnents/ui/button";
+import { ContainerScroll } from "@/components/global/container-scroll-animation";
+import { Button } from "@/components/ui/button";
 import { Funnel_Display } from "next/font/google";
-import { InfiniteMovingCards } from "@/compnents/global/infinite-moving-cards";
+import { InfiniteMovingCards } from "@/components/global/infinite-moving-cards";
 import { clients, faqs } from "@/lib/constant";
-import { TextGenerateEffect } from "@/compnents/global/text-effect";
+import { TextGenerateEffect } from "@/components/global/text-effect";
 import { Linkedin, Github } from "lucide-react";
-import { GlowingEffect } from "@/compnents/ui/glowing";
+import { GlowingEffect } from "@/components/ui/glowing";
 import { useState } from "react";
 
 import { Box, Lock, Search, Settings, Sparkles } from "lucide-react";
-import { Featuregrid } from "@/compnents/global/feature-grid";
+import { Featuregrid } from "@/components/global/feature-grid";
 import { ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
-import Footer from "@/compnents/global/footer";
+import Footer from "@/components/global/footer";
 
 const words = `Stressed about exams? Relax. Drop a topic, and let AI do its magic. `;
 

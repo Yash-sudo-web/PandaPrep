@@ -5,15 +5,15 @@ import { useRouter } from "next/navigation";
 import { getAuth, onAuthStateChanged, User } from "firebase/auth";
 import app from "@/firebase/firebaseconfig";
 import { Funnel_Display } from "next/font/google";
-import Navbar from "@/compnents/global/navbar";
-import { PlaceholdersAndVanishInput } from "@/compnents/ui/input-text";
+import Navbar from "@/components/global/navbar";
+import { PlaceholdersAndVanishInput } from "@/components/ui/input-text";
 import { cn } from "@/lib/utils";
-import MultiTabSwitch from "@/compnents/ui/option-switch";
+import MultiTabSwitch from "@/components/ui/option-switch";
 import axios from "axios";
 import { BASE_URL } from "@/lib/constant";
-import PDFLikeMarkdownDisplay from "@/compnents/global/PDFdisplay";
+import PDFLikeMarkdownDisplay from "@/components/global/PDFdisplay";
 import { getCookie } from "@/lib/utils";
-import Footer from "@/compnents/global/footer";
+import Footer from "@/components/global/footer";
 
 
 const funnel_display = Funnel_Display({

@@ -7,15 +7,7 @@ export const BASE_URL = "http://localhost:8000/api";
 export const faqs = [
   {
     question: "How much does Pandaprep cost to use?",
-    answer: "Pandaprep is free to use with premium features available for a subscription.",
-  },
-  {
-    question: "How do I integrate my own knowledge bases?",
-    answer: "You can integrate your knowledge bases via API or file uploads.",
-  },
-  {
-    question: "Is collaboration and space sharing supported?",
-    answer: "Yes, Pandaprep allows real-time collaboration and shared workspaces.",
+    answer: "Pandaprep is free to use with premium features available via subscription.",
   },
   {
     question: "How does Pandaprep work?",
@@ -23,7 +15,7 @@ export const faqs = [
   },
   {
     question: "Can I access Pandaprep via API?",
-    answer: "Yes, Pandaprep provides an API for integration with other applications.",
+    answer: "API integration will be available soon.",
   },
   {
     question: "How is my data being stored and managed?",
@@ -38,40 +30,39 @@ export const faqs = [
 
 export const PLANS = [
   {
-    title: "Hobby",
-    price: "$0",
+    title: "Starter",
+    price: "$11.99",
+    credits: 100,
     features: [
-      "3 Free automations",
-      "100 tasks per month",
-      "Two-step Actions"
+      "Credits - 100",
+      "Access to all features",
+      
     ],
     limitations: [
-      "No team collaboration",
-      "Limited integrations"
+      
     ],
   },
   {
-    title: "Pro Plan",
-    price: "$29",
+    title: "Growth",
+    price: "$24.99",
+    credits: 500,
     features: [
-      "Unlimited automations",
-      "1000 tasks per month",
-      "Multi-step Actions",
-      "Multi-step Actions"
+      "Credits - 500",
+      "Access to all features",
+      
     ],
     limitations: [
-      "Limited AI features"
+      
     ],
   },
   {
-    title: "Unlimited",
-    price: "$99",
+    title: "Scale",
+    price: "$44.99",
+    credits: 1000,
     features: [
-      "Unlimited everything",
-      "Priority support",
-      "AI-powered workflows",
-      "Multi-step Actions",
-      "Multi-step Actions"
+      "Credits - 1000",
+      "Access to all features",
+      
     ],
     limitations: [],
   },

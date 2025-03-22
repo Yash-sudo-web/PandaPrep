@@ -1,7 +1,7 @@
 "use client";
 
 import { BookOpen, Filter, FileText, MessageCircle, Bot } from "lucide-react";
-import { GlowingEffect } from "@/compnents/ui/glowing";
+import { GlowingEffect } from "@/components/ui/glowing";
 import { Funnel_Display } from 'next/font/google';
 
 const funnel_display = Funnel_Display({

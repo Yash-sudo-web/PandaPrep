@@ -1,6 +1,6 @@
 "use client";
 
-import Navbar from "@/compnents/global/navbar";
+import Navbar from "@/components/global/navbar";
 import { cn, getCookie } from "@/lib/utils";
 import { Funnel_Display } from "next/font/google";
 import { Eye, Search, Trash2 } from "lucide-react";
