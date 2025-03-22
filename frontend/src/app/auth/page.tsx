@@ -43,7 +43,7 @@ const AuthPage = () => {
         ? new GoogleAuthProvider()
         : new GithubAuthProvider();
     try {
-      const response = await signInWithPopup(auth, provider);
+      const response: any = await signInWithPopup(auth, provider);
       const email = response.user.email || " ";
       setCookie("email", email, 7);
       try {

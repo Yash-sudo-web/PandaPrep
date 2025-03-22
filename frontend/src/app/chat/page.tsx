@@ -121,11 +121,11 @@ function ChatWindow() {
       <div className="chat-container flex-1 overflow-y-auto p-4">
         {/* Chat messages go here */}
       </div>
-      <PlaceholdersAndVanishInput
+      {/* <PlaceholdersAndVanishInput
         placeholders={["Type a message..."]}
         onChange={() => {}}
         onSubmit={() => {}}
-      />
+      /> */}
     </div>
   );
 }

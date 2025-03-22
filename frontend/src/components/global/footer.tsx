@@ -1,6 +1,7 @@
 import { Linkedin, Github } from "lucide-react";
 import { Funnel_Display } from "next/font/google";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 const funnel_display = Funnel_Display({
   subsets: ["latin"],
@@ -19,9 +20,9 @@ const Footer = () => {
         <h3 className="text-2xl font-semibold text-black">Quick Links</h3>
         <ul className="mt-3 space-y-2">
           <li>
-            <a href="/" className="text-black hover:text-green-700">
+            <Link href="/" className="text-black hover:text-green-700">
               Home
-            </a>
+            </Link>
           </li>
           <li>
             <a href="/pricing" className="text-black hover:text-green-700">
