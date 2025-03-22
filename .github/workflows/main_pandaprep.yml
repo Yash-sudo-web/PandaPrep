@@ -1,3 +1,6 @@
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+
 name: Build and deploy Node.js app to Azure Web App - PandaPrep
 
 on:
@@ -10,7 +13,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     permissions:
-      contents: read # This is required for actions/checkout
+      contents: read #This is required for actions/checkout
 
     steps:
       - uses: actions/checkout@v4
@@ -19,7 +22,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: '22.x'
-        working-directory: backend
 
       - name: npm install, build, and test
         run: |
@@ -27,11 +29,8 @@ jobs:
           npm install
           npm run build --if-present
           npm run test --if-present
-
       - name: Zip artifact for deployment
-        run: |
-          cd backend
-          zip -r ../release.zip ./*
+        run: zip release.zip ./* -r
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
