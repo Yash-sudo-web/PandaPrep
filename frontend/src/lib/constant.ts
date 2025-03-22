@@ -2,7 +2,7 @@ export const clients = [...new Array(10)].map((client, index) => ({
   href: `/${index + 1}.png`,
 }))
 
-export const BASE_URL = "http://localhost:8000/api";
+export const BASE_URL = process.env.PROD_BASE_URL;
 
 export const faqs = [
   {
