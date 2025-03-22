@@ -62,12 +62,13 @@ export default function Home() {
           </div>
         </div>
       </section>
-      <InfiniteMovingCards
+      {/* <InfiniteMovingCards
         className="ml-32 mt-96 pt-20"
         items={clients}
         direction="right"
         speed="slow"
-      />
+      /> */}
+      <div className="ml-32 mt-96 pt-20"></div>
       <section>
         <TextGenerateEffect className="mb-10 ml-3 pl-72" words={words} />
       </section>

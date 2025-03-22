@@ -21,16 +21,16 @@ export function Featuregrid() {
 
       <GridItem
         area="md:[grid-area:1/7/2/13] xl:[grid-area:2/1/3/5]"
-        icon={<Filter className="h-4 w-4 text-white" />}
-        title="Smart Filters"
-        description="Easily find and organize your notes with AI-powered filtering."
+        icon={<BookOpen className="h-4 w-4 text-white" />}
+        title="All Your Notes, One Place"
+        description="Keep all your notes well-organized and accessible in one central hub."
       />
 
       <GridItem
         area="md:[grid-area:2/1/3/7] xl:[grid-area:1/5/3/8]"
-        icon={<BookOpen className="h-4 w-4 text-white" />}
-        title="All Your Notes, One Place"
-        description="Keep all your notes well-organized and accessible in one central hub."
+        icon={<Filter className="h-4 w-4 text-white" />}
+        title="Capture Notes, Your Way"
+        description="Summarize swiftly, dive deep, or go interactive with Q&A. Supercharge your notes with stunning visuals, images, and diagrams—turn ideas into unforgettable insights!"
       />
 
       <GridItem
@@ -43,8 +43,8 @@ export function Featuregrid() {
       <GridItem
         area="md:[grid-area:3/1/4/13] xl:[grid-area:2/8/3/13]"
         icon={<Bot className="h-4 w-4 text-white" />}
-        title="Your AI Study Buddy"
-        description="Get AI-generated insights, suggestions, and explanations while studying."
+        title="AI-Powered Learning, Just Like a Personal Tutor"
+        description="Experience AI as your personal tutor—explaining concepts, breaking down topics, and guiding you just like a real teacher."
       />
     </ul>
   );

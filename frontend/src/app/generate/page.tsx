@@ -80,6 +80,8 @@ const NotesGenerate = () => {
           // Handle specific stages
           if (data.stage === "generation_complete") {
             setGenerationComplete(true);
+            setIsGenerating(false);
+            setShowGenerateButton(true); 
             console.log(data);
             if (data.data && data.data.downloadId) {
               setDownloadId(data.data.downloadId);
@@ -372,7 +374,7 @@ const NotesGenerate = () => {
                       : "bg-white text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
                   }`}
                 >
-                  {isGenerating ? "Generating..." : "Generate"}
+                  {isGenerating ? "Generating..." : generationComplete ? "Generate Again" : "Generate"}
                 </button>
 
             </div>
