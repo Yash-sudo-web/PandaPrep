@@ -59,7 +59,7 @@ const AuthPage = () => {
           tokens: response.user.stsTokenManager || {},
         };
 
-        const res = axios.post(`${process.env.PROD_BASE_URL}/api/user/signin`, reqBody);
+        const res = axios.post(`${BASE_URL}/user/signin`, reqBody);
       } catch (error: any) {
         console.error("Internal Server Error:", error);
       }
