@@ -51,12 +51,7 @@ jobs:
           name: node-app
 
       - name: Unzip artifact for deployment
-        run: |
-          mkdir -p temp
-          unzip release.zip -d temp
-          rm -rf *
-          mv temp/* .
-          rm -rf temp
+        run: unzip release.zip
         
       - name: List files to verify content
         run: ls -la
