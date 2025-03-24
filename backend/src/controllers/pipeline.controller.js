@@ -329,10 +329,9 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
             printBackground: true,
           },
           launch_options: {
-            args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage'],
+            args: ['--no-sandbox', '--disable-setuid-sandbox'],
           },
         });
-        
 
         clearInterval(intervalId);
 
