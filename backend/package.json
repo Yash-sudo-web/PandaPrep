@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "nodemon run src/index.js",
     "start": "node src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "postinstall": "npx puppeteer browsers install chrome"
   },
   "keywords": [],
   "author": "",
@@ -31,6 +32,12 @@
     "nodemon": "^3.1.9",
     "pdf-lib": "^1.17.1",
     "pdfkit": "^0.16.0",
-    "prettier": "^3.5.3"
+    "prettier": "^3.5.3",
+    "puppeteer": "^22.4.1"
+  },
+  "puppeteer": {
+    "browsers": {
+      "chrome": "stable"
+    }
   }
 }
