@@ -13,19 +13,27 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Set up Node.js version
+      - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18.x'  # Using a more stable version
+          node-version: '18.x'
 
-      - name: npm install, build, and test
+      - name: Install dependencies, including Puppeteer
         run: |
           cd backend
+          rm -rf node_modules package-lock.json  # Clean previous installs
+          npm cache clean --force
           npm install
+          npm install puppeteer --save  # Ensure Puppeteer is installed
+
+      - name: Build the app
+        run: |
+          cd backend
           npm run build --if-present
-          
+
       - name: Zip artifact for deployment
         run: |
           cd backend
@@ -52,13 +60,18 @@ jobs:
 
       - name: Unzip artifact for deployment
         run: |
-         unzip release.zip
-         npx puppeteer browsers install
+          unzip release.zip
+
+      - name: Ensure Puppeteer is Installed
+        run: npm install puppeteer --save
+
+      - name: Install Browsers for Puppeteer
+        run: npx puppeteer browsers install
 
       - name: List files to verify content
         run: ls -la
-      
-      - name: 'Deploy to Azure Web App'
+
+      - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
