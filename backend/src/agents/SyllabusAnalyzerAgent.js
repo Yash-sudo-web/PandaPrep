@@ -105,7 +105,11 @@ class SyllabusAnalyzerAgent {
       const systemPrompt = this.getSystemPrompt(params);
       const llm = new ChatGroq({
         groqApiKey: process.env.GROQ_API_KEY,
+<<<<<<< HEAD
         model: "llama3-70b-8192", //"mixtral-8x7b-32768",
+=======
+        model: "mixtral-8x7b-32768", //llama-3.3-70b-versatile
+>>>>>>> ba8ce7d31019a2dafd2af675efb7cd6090e01d2e
       });
       
       const MAX_RETRIES = 3;
