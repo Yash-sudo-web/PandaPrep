@@ -16,6 +16,8 @@ import {
   broadcastMarkdownUpdate,
   broadcastError,
 } from '../websocket/server.js';
+import axios from 'axios';
+import { cssStyles } from '../constants/md-css.js';
 
 dotenv.config();
 
@@ -99,8 +101,8 @@ export async function generateNotesController(req, res) {
       user_instructions = '',
     } = req.body;
     const format = req.body.format || 'pdf';
-    const userDoc= await UserModel.findOne({email:email});
-    
+    const userDoc = await UserModel.findOne({ email: email });
+
     // Store request in database
     const request = await NotesRequestModel.create({
       _userID: userDoc._id,
@@ -132,7 +134,8 @@ export async function generateNotesController(req, res) {
         broadcastError(requestId, 'Generation process failed', err.message);
 
         // Update request status
-        NotesRequestModel.updateOne({_id: request._id},
+        NotesRequestModel.updateOne(
+          { _id: request._id },
           {
             status: 'failed',
             error_message: err.message,
@@ -164,7 +167,8 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
   let pdfPath = null;
   let filePrefix = DEFAULT_FILENAME;
   let imageResults = [];
-  let downloadUrl = "";
+  let downloadUrl = '';
+  let content = '';
 
   try {
     const {
@@ -321,25 +325,44 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
         }, 500);
 
         // Setup PDF generation with relative path support for images
-        const { content } = await mdToPdf({
-          path: markdownPath,
-          pdf_options: {
-            format: 'A4',
-            margin: '20mm',
-            printBackground: true,
-          },
-          launch_options: {
-            args: ['--no-sandbox', '--disable-setuid-sandbox'],
-          },
-        });
+        // const { content } = await mdToPdf({
+        //   path: markdownPath,
+        //   pdf_options: {
+        //     format: 'A4',
+        //     margin: '20mm',
+        //     printBackground: true,
+        //   },
+        //   launch_options: {
+        //     executablePath: require('puppeteer').executablePath(),
+        //     args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        //   },
+        // });
+
+        try {
+          const markdownContent = await fs.promises.readFile(markdownPath, 'utf8');
+
+          const data = {
+            markdown: markdownContent,
+            css: cssStyles,
+          };
+
+          content = await axios.post(process.env.MICROSERVICE_LINK, data, {
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            responseType: 'arraybuffer',
+          });
+
+        } catch (error) {
+          console.log(error);
+        }
+
+        fs.writeFileSync(pdfPath, content.data);
+        await addWatermarkToPdf(pdfPath);
 
         clearInterval(intervalId);
 
-        fs.writeFileSync(pdfPath, content);
-
-        await addWatermarkToPdf(pdfPath);
-
-        const uploadResponse = await uploadPDFToCloudinary(_userId, pdfPath, `${filePrefix}.pdf`); 
+        const uploadResponse = await uploadPDFToCloudinary(_userId, pdfPath, `${filePrefix}.pdf`);
         downloadUrl = uploadResponse.secure_url;
         if (uploadResponse) {
           await NotesRequestModel.updateOne(
@@ -520,12 +543,12 @@ export async function downloadGeneratedNotesController(req, res) {
         error: 'Output directory not found',
       });
     }
-    
+
     // Find PDF files in the directory
-    const files = fs.readdirSync(dirPath).filter(file => file.endsWith('.pdf'));
+    const files = fs.readdirSync(dirPath).filter((file) => file.endsWith('.pdf'));
 
     console.log(files);
-    
+
     if (files.length === 0) {
       return res.status(404).json({
         success: false,
