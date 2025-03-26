@@ -52,7 +52,7 @@ Return a JSON array where each object contains:
       
       const llm = new ChatGroq({
         groqApiKey: process.env.GROQ_API_KEY,
-        model: "llama-3.3-70b-versatile", //mixtral-8x7b-32768
+        model: "mixtral-8x7b-32768 ", //llama-3.3-70b-versatile
       });
       
       console.log("Generating image suggestions for topics:", topics.join(", "));
