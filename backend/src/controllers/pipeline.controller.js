@@ -329,6 +329,7 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
             printBackground: true,
           },
           launch_options: {
+            executablePath: require('puppeteer').executablePath(),
             args: ['--no-sandbox', '--disable-setuid-sandbox'],
           },
         });
