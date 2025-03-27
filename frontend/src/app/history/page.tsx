@@ -18,11 +18,22 @@ const History = () => {
     { id: 1, subject_name: "Note 1", createdAt: "", secure_url: "" },
   ]);
   const [selectedNotes, setSelectedNotes] = useState<number[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [allSelected, setAllSelected] = useState(false);
 
   const toggleSelection = (id: number) => {
-    setSelectedNotes((prev: number[]) =>
+    setSelectedNotes((prev) =>
       prev.includes(id) ? prev.filter((noteId) => noteId !== id) : [...prev, id]
     );
+  };
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedNotes([]);
+    } else {
+      setSelectedNotes(notes.map((note) => note.id));
+    }
+    setAllSelected(!allSelected);
   };
 
   const handleGetAllNotes = async () => {
@@ -31,7 +42,6 @@ const History = () => {
       const response = await axios.post(`${BASE_URL}/userHistory/notes`, {
         email,
       });
-      console.log(response.data.data);
       setNotes(response.data.data);
     } catch (error) {
       console.error(error);
@@ -45,8 +55,8 @@ const History = () => {
         email,
         requestId: ids,
       });
-      setSelectedNotes([]); // Clear selection after deletion
-      handleGetAllNotes(); // Refresh notes list
+      setSelectedNotes([]);
+      handleGetAllNotes();
     } catch (error) {
       console.error(error);
     }
@@ -55,6 +65,14 @@ const History = () => {
   useEffect(() => {
     handleGetAllNotes();
   }, []);
+
+  useEffect(() => {
+    setAllSelected(selectedNotes.length === notes.length && notes.length > 0);
+  }, [selectedNotes, notes]);
+
+  const filteredNotes = notes.filter((note) =>
+    note.subject_name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   return (
     <main
@@ -66,11 +84,10 @@ const History = () => {
       <Navbar />
 
       <section className="w-full max-w-3xl px-4 flex flex-col items-center">
-        <div className="fixed top-32 left-0 w-full  z-10 py-4 flex flex-col items-center">
-          <h1 className="text-4xl font-semibold text-center  text-green-600">
+        <div className="fixed top-32 left-0 w-full z-10 py-4 flex flex-col items-center">
+          <h1 className="text-4xl font-semibold text-center text-green-600">
             History
           </h1>
-
           <div className="relative mt-4 w-full max-w-3xl px-4">
             <div className="absolute inset-y-0 left-7 flex items-center pointer-events-none">
               <Search className="h-5 w-5 text-white" />
@@ -78,6 +95,8 @@ const History = () => {
             <input
               type="text"
               placeholder="Search your notes..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 bg-neutral-900 bg-opacity-30 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-white placeholder:text-white"
             />
           </div>
@@ -90,7 +109,7 @@ const History = () => {
                 <p>{selectedNotes.length} selected</p>
                 <button
                   onClick={() => handleDeleteNote(selectedNotes)}
-                  className="text-red-500"
+                  className="text-red-500 cursor-pointer"
                 >
                   <Trash2 className="h-5 w-5" />
                 </button>
@@ -103,8 +122,18 @@ const History = () => {
             )}
           </div>
 
+          <div onClick={toggleSelectAll} className="flex items-center justify-end mb-4 gap-2 cursor-pointer">
+            <input
+              type="checkbox"
+              className="h-5 w-5 text-green-600 focus:ring-green-500 cursor-pointer"
+              checked={allSelected}
+              onChange={toggleSelectAll}
+            />
+            <label className="text-gray-800">{ !allSelected ? `Select All` : `Deselect All`}</label>
+          </div>
+
           <div className="space-y-4 w-full max-h-[70vh] overflow-y-auto">
-            {notes.map((note) => (
+            {filteredNotes.map((note) => (
               <div
                 key={note.id}
                 className="flex items-center justify-between p-4 border border-gray-300 rounded-lg bg-white shadow-md"
