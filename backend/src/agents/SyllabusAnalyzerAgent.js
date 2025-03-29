@@ -10,7 +10,6 @@ class SyllabusAnalyzerAgent {
         syllabus, 
         note_type = 'detailed', 
         include_examples = 'No',
-        example_types = [],
         user_instructions = '' 
       } = params;
   
@@ -41,19 +40,6 @@ class SyllabusAnalyzerAgent {
       let examplesInstruction = '';
       if (include_examples === 'Yes') {
         examplesInstruction = 'Include relevant examples';
-        
-        if (example_types && example_types.length > 0) {
-          const examplePreferences = example_types.map(type => {
-            switch(type) {
-              case 'Real-world': return 'practical real-world applications';
-              case 'Hypothetical': return 'hypothetical scenarios';
-              case 'Historical': return 'historical examples';
-              default: return type;
-            }
-          }).join(', ');
-          
-          examplesInstruction += ` focusing on ${examplePreferences}`;
-        }
       } else {
         examplesInstruction = 'Focus on theoretical concepts without examples';
       }

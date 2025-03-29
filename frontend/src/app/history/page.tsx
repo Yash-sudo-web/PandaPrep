@@ -14,6 +14,15 @@ const funnel_display = Funnel_Display({
 });
 
 const History = () => {
+  let authToken = "";
+  useEffect(() => {
+    const token = getCookie("jwt-auth");
+    if (!token) {
+      window.location.href = "/auth";
+    } else {
+      authToken = token;
+    }
+  }, []);
   const [notes, setNotes] = useState([
     { id: 1, subject_name: "Note 1", createdAt: "", secure_url: "" },
   ]);
@@ -39,9 +48,16 @@ const History = () => {
   const handleGetAllNotes = async () => {
     try {
       const email = getCookie("email");
-      const response = await axios.post(`${BASE_URL}/userHistory/notes`, {
-        email,
-      });
+      const response = await axios.post(
+        `${BASE_URL}/userHistory/notes`,
+        { email },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
       setNotes(response.data.data);
     } catch (error) {
       console.error(error);
@@ -51,10 +67,19 @@ const History = () => {
   const handleDeleteNote = async (ids: number[]) => {
     try {
       const email = getCookie("email");
-      await axios.post(`${BASE_URL}/userHistory/notes/delete`, {
-        email,
-        requestId: ids,
-      });
+      await axios.post(
+        `${BASE_URL}/userHistory/notes/delete`,
+        {
+          email,
+          requestId: ids,
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
+      );
       setSelectedNotes([]);
       handleGetAllNotes();
     } catch (error) {
@@ -122,14 +147,19 @@ const History = () => {
             )}
           </div>
 
-          <div onClick={toggleSelectAll} className="flex items-center justify-end mb-4 gap-2 cursor-pointer">
+          <div
+            onClick={toggleSelectAll}
+            className="flex items-center justify-end mb-4 gap-2 cursor-pointer"
+          >
             <input
               type="checkbox"
               className="h-5 w-5 text-green-600 focus:ring-green-500 cursor-pointer"
               checked={allSelected}
               onChange={toggleSelectAll}
             />
-            <label className="text-gray-800">{ !allSelected ? `Select All` : `Deselect All`}</label>
+            <label className="text-gray-800">
+              {!allSelected ? `Select All` : `Deselect All`}
+            </label>
           </div>
 
           <div className="space-y-4 w-full max-h-[70vh] overflow-y-auto">

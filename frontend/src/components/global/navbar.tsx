@@ -11,6 +11,7 @@ import { useTheme } from 'next-themes'
 import app from '@/firebase/firebaseconfig'
 import { ModeToggle } from './mode-selector'
 import { ChevronDown, ChevronUp } from 'lucide-react'
+import { deleteCookie } from '@/lib/utils'
 
 const funnel_display = Funnel_Display({
   subsets: ['latin'],
@@ -37,6 +38,9 @@ const Navbar = () => {
   const handleSignOut = async () => {
     try {
       await signOut(auth)
+      deleteCookie('jwt-auth')
+      deleteCookie('email')
+      router.push('/auth')
     } catch (error) {
       console.error('Sign out error:', error)
     }

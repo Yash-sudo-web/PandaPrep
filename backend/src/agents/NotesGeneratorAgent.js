@@ -10,7 +10,6 @@ class NotesGeneratorAgent {
       const { 
         note_type = 'detailed',
         include_examples = 'No',
-        example_types = [],
         user_instructions = ''
       } = params;
   
@@ -45,19 +44,6 @@ class NotesGeneratorAgent {
       let examplesConfig = '';
       if (include_examples === 'Yes') {
         examplesConfig = 'Include relevant examples to illustrate concepts';
-        
-        if (example_types && example_types.length > 0) {
-          const exampleStyles = example_types.map(type => {
-            switch(type) {
-              case 'Real-world': return 'practical real-world applications in _italics_';
-              case 'Hypothetical': return 'hypothetical scenarios in _italics_';
-              case 'Historical': return 'historical examples in _italics_';
-              default: return `${type} examples in _italics_`;
-            }
-          }).join(', ');
-          
-          examplesConfig += `, specifically ${exampleStyles}`;
-        }
       } else {
         examplesConfig = 'Focus on theoretical concepts without examples';
       }

@@ -33,38 +33,38 @@ if (!fs.existsSync(OUTPUT_DIR)) {
 /**
  * Validates the request body
  * @param {Object} body - The request body to validate
- * @returns {Object} - { isValid, errors }
+ * @returns {Object} - { isValid, error }
  */
 function validateRequest(body) {
-  const errors = [];
+  const error = [];
 
   if (!body.syllabus) {
-    errors.push('Syllabus is required');
+    error.push('Syllabus is required');
+  }
+
+  if (!body.subject_name) {
+    error.push('Subject name is required');
   }
 
   if (body.subject_name && typeof body.subject_name !== 'string') {
-    errors.push('Subject name must be a string');
+    error.push('Subject name must be a string');
   }
 
   if (body.note_type && !['concise', 'detailed', 'qa'].includes(body.note_type.toLowerCase())) {
-    errors.push('Note type must be one of: concise, detailed, qa');
+    error.push('Note type must be one of: concise, detailed, qa');
   }
 
   if (body.include_examples && !['yes', 'no'].includes(body.include_examples)) {
-    errors.push("include_examples must be 'yes' or 'no'");
-  }
-
-  if (body.example_types && !Array.isArray(body.example_types)) {
-    errors.push('example_types must be an array');
+    error.push("include_examples must be 'yes' or 'no'");
   }
 
   if (body.include_images && !['yes', 'no'].includes(body.include_images)) {
-    errors.push("include_images must be 'yes' or 'no'");
+    error.push("include_images must be 'yes' or 'no'");
   }
 
   return {
-    isValid: errors.length === 0,
-    errors,
+    isValid: error.length === 0,
+    error,
   };
 }
 
@@ -82,11 +82,11 @@ export async function generateNotesController(req, res) {
 
   try {
     // Validate request
-    const { isValid, errors } = validateRequest(req.body);
+    const { isValid, error } = validateRequest(req.body);
     if (!isValid) {
       return res.status(400).json({
         success: false,
-        errors,
+        error,
       });
     }
 
@@ -94,9 +94,8 @@ export async function generateNotesController(req, res) {
       email,
       syllabus,
       subject_name = 'General Subject',
-      note_type = 'detailed',
+      note_type = 'concise',
       include_examples = 'no',
-      example_types = [],
       include_images = 'no',
       user_instructions = '',
     } = req.body;
@@ -110,13 +109,25 @@ export async function generateNotesController(req, res) {
       syllabus,
       note_type,
       include_examples,
-      example_types,
       include_images,
       user_instructions,
       format,
-      status: 'processing',
+      status: 'pending',
       created_at: new Date(),
     });
+
+    if (request.note_type === 'detailed' || request.include_images === 'yes') {
+      if (userDoc.subscription.credits <= 0) {
+        request.updateOne({
+          status: 'failed',
+          error_message: 'Insufficient credits for this request',
+        });
+        return res.status(400).json({
+          success: false,
+          error: 'Insufficient credits for this request',
+        });
+      }
+    }
 
     // Return the requestId to the client for WebSocket connection
     res.status(202).json({
@@ -174,9 +185,8 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
     const {
       syllabus,
       subject_name = 'General Subject',
-      note_type = 'detailed',
+      note_type = 'concise',
       include_examples = 'no',
-      example_types = [],
       include_images = 'no',
       user_instructions = '',
     } = requestBody;
@@ -196,10 +206,16 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
       syllabus,
       note_type: note_type.toLowerCase(),
       include_examples,
-      example_types,
       include_images,
       user_instructions,
     };
+
+    await NotesRequestModel.updateOne(
+      { _id: requestIdDb },
+      {
+        status: 'processing',
+      }
+    );
 
     // Step 1: Generate analysis and prompts
     console.log(`[${requestId}] Analyzing syllabus...`);
@@ -352,7 +368,6 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
             },
             responseType: 'arraybuffer',
           });
-
         } catch (error) {
           console.log(error);
         }
@@ -382,11 +397,7 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
         console.error(`[${requestId}] PDF generation error:`, pdfError);
         broadcastStage(requestId, 'pdf_generation_failed', {
           error: pdfError.message,
-          fallback: 'Creating ZIP package instead',
         });
-
-        // Fallback to creating a zip
-        await createZipArchive(requestId, requestOutputDir, filePrefix, downloadUrl);
       }
     } else {
       // Create a ZIP archive for markdown format
@@ -415,6 +426,12 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
         completed_at: new Date(),
       }
     );
+    if (note_type === 'detailed' || include_images === 'yes') {
+      await UserModel.updateOne(
+        { _id: _userId },
+        { $inc: { "subscription.credits": -1 } }
+      );      
+    }
   } catch (error) {
     console.error(`[${requestId}] Generation process error:`, error);
     broadcastError(requestId, 'Generation process failed', error.message);

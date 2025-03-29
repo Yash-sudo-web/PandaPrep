@@ -15,7 +15,6 @@ import PDFLikeMarkdownDisplay from "@/components/global/PDFdisplay";
 import { getCookie } from "@/lib/utils";
 import Footer from "@/components/global/footer";
 
-
 const funnel_display = Funnel_Display({
   subsets: ["latin"],
   weight: "400",
@@ -39,10 +38,9 @@ const NotesGenerate = () => {
   let email = "";
 
   useEffect(() => {
-    email = getCookie('email') || "";
+    email = getCookie("email") || "";
     setFormData((prev) => ({ ...prev, email: email }));
   }, []);
-  
 
   const [formData, setFormData] = useState({
     email: email,
@@ -87,7 +85,7 @@ const NotesGenerate = () => {
           if (data.stage === "generation_complete") {
             setGenerationComplete(true);
             setIsGenerating(false);
-            setShowGenerateButton(true); 
+            setShowGenerateButton(true);
             console.log(data);
             if (data.data && data.data.downloadId) {
               setDownloadId(data.data.downloadId);
@@ -119,6 +117,14 @@ const NotesGenerate = () => {
 
   const handleSubmit = async () => {
     try {
+      // if (!formData.syllabus || !formData.subject_name) {
+      //   setError("Please fill in all required fields.");
+      //   return;
+      // }
+      // if (formData.syllabus.length < 10) {
+      //   setError("Syllabus should be at least 10 characters long.");
+      //   return;
+      // }
       setIsGenerating(true);
       setShowGenerateButton(false);
       setError("");
@@ -127,18 +133,24 @@ const NotesGenerate = () => {
       setGenerationComplete(false);
       setDownloadId("");
 
-      const response = await axios.post(`${BASE_URL}/pipeline/generate-notes`, formData);
-
-      if (response.data && response.data.requestId) {
-        setRequestId(response.data.requestId);
-        connectWebSocket(response.data.requestId);
-      } else {
-        throw new Error("No request ID returned from server");
+      const response = await axios.post(
+        `${BASE_URL}/pipeline/generate-notes`,
+        formData
+      );
+      if (response.data.success) {
+        if (response.data && response.data.requestId) {
+          setRequestId(response.data.requestId);
+          connectWebSocket(response.data.requestId);
+        }
       }
     } catch (error) {
       console.error("Error generating notes:", error);
-      if (error instanceof Error) {
-        setError(error.message);
+      if (error) {
+        if (axios.isAxiosError(error) && error.response) {
+          setError(error.response.data.error);
+        } else {
+          setError("An unexpected error occurred");
+        }
       } else {
         setError("Error generating notes");
       }
@@ -364,25 +376,27 @@ const NotesGenerate = () => {
 
               {error && (
                 <div className="text-red-500 p-2 bg-red-50 rounded-md">
-                  Error: {error}
+                  {error}
                 </div>
               )}
 
               {renderGenerationStatus()}
 
-
-                <button
-                  onClick={handleSubmit}
-                  disabled={isGenerating}
-                  className={`px-6 py-2 border rounded-lg shadow-md transition duration-300 ${
-                    isGenerating
-                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-white text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
-                  }`}
-                >
-                  {isGenerating ? "Generating..." : generationComplete ? "Generate Again" : "Generate"}
-                </button>
-
+              <button
+                onClick={handleSubmit}
+                disabled={isGenerating}
+                className={`px-6 py-2 border rounded-lg shadow-md transition duration-300 ${
+                  isGenerating
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-white text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
+                }`}
+              >
+                {isGenerating
+                  ? "Generating..."
+                  : generationComplete
+                  ? "Generate Again"
+                  : "Generate"}
+              </button>
             </div>
           </div>
           <div className="w-[1px] h-[3/4] bg-green-400 mx-6"></div>
@@ -395,13 +409,11 @@ const NotesGenerate = () => {
           </div>
         </div>
 
-
-        <section className="w-screen bg-white mt-10"> 
-                <div className="mt-8">
-                    <Footer />
-                </div>
-
-            </section>
+        <section className="w-screen bg-white mt-10">
+          <div className="mt-8">
+            <Footer />
+          </div>
+        </section>
       </main>
     </div>
   );

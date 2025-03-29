@@ -23,7 +23,7 @@ const userSchema = new mongoose.Schema({
     },
     subscription: {
         plan: { type: String, default: "free" },
-        credits: { type: Number, default: 0 },
+        credits: { type: Number, default: 3 },
     }
 });
 
