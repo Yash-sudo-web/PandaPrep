@@ -14,6 +14,7 @@ import { BASE_URL } from "@/lib/constant";
 import PDFLikeMarkdownDisplay from "@/components/global/PDFdisplay";
 import { getCookie } from "@/lib/utils";
 import Footer from "@/components/global/footer";
+import { log } from "console";
 
 const funnel_display = Funnel_Display({
   subsets: ["latin"],
@@ -21,6 +22,16 @@ const funnel_display = Funnel_Display({
 });
 
 const NotesGenerate = () => {
+  let authToken = "";
+  useEffect(() => {
+    const token = getCookie("jwt-auth");
+    if (!token) {
+      window.location.href = "/auth";
+    } else {
+      authToken = token;
+    }
+  }, []);
+
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
   const auth = getAuth(app);
@@ -33,6 +44,7 @@ const NotesGenerate = () => {
   const [error, setError] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [showGenerateButton, setShowGenerateButton] = useState(true);
+  const [userCredits, setUserCredits] = useState(0);
 
   const socketRef = useRef<WebSocket | null>(null);
   let email = "";
@@ -41,6 +53,12 @@ const NotesGenerate = () => {
     email = getCookie("email") || "";
     setFormData((prev) => ({ ...prev, email: email }));
   }, []);
+
+  useEffect(() => {
+    handleGetUser();
+  }, []);
+
+
 
   const [formData, setFormData] = useState({
     email: email,
@@ -113,6 +131,20 @@ const NotesGenerate = () => {
     };
 
     socketRef.current = socket;
+  };
+  
+  const handleGetUser = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/user/get`, {
+        
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      setUserCredits(res.data.subscription.credits);
+    } catch (error: any) {
+      console.error("Internal Server Error:", error);
+    }
   };
 
   const handleSubmit = async () => {
@@ -339,6 +371,7 @@ const NotesGenerate = () => {
                 premium_feature={["detailed"]}
                 handleChange={handleInputChange}
                 field="note_type"
+                userCredits={userCredits}
               />
               <div className="flex gap-2">
                 <MultiTabSwitch
@@ -355,6 +388,7 @@ const NotesGenerate = () => {
                   label="Include Examples?"
                   handleChange={handleInputChange}
                   field="include_examples"
+                  userCredits={userCredits}
                 />
                 <MultiTabSwitch
                   tabs={[
@@ -371,6 +405,7 @@ const NotesGenerate = () => {
                   premium_feature={["yes"]}
                   handleChange={handleInputChange}
                   field="include_images"
+                  userCredits={userCredits}
                 />
               </div>
 

@@ -32,6 +32,7 @@ export const verifyFirebaseToken = async (req, res, next) => {
     // Verify JWT with Firebase Admin SDK
     const decodedToken = await admin.auth().verifyIdToken(token);
     req.user = decodedToken; // Attach user info to request object
+
     next(); // Proceed to the next middleware or route handler
   } catch (error) {
     return res.status(403).json({ error: 'Forbidden: Invalid token' });

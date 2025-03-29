@@ -1,6 +1,7 @@
 import { UserModel } from '../models/user.model.js';
+import { verifyFirebaseToken } from '../middlewares/auth-verify.middleware.js'; 
 
-export const userSignup = async (req, res) => {
+export const userSignupController = async (req, res) => {
   try {
     const {
       uid,
@@ -25,3 +26,21 @@ export const userSignup = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+export const getUserController = async (req, res) => {
+  try {
+    const email = req.user.email; 
+
+    const user = await UserModel.findOne({ email });
+
+    if (!user) {
+        return res.status(404).json({ message: "User not found" });
+    }
+
+      res.json(user);
+  } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Server error" });
+  }
+}
+

@@ -1,9 +1,12 @@
 import express from 'express';
-import { userSignup } from '../controllers/user.controller.js';
+import { userSignupController, getUserController } from '../controllers/user.controller.js';
+import { verifyFirebaseToken } from '../middlewares/auth-verify.middleware.js';
 
 
 const router = express.Router();
 
-router.post('/signin', userSignup);
+router.post('/signin', userSignupController);
+
+router.get('/get', verifyFirebaseToken, getUserController); 
 
 export default router;
