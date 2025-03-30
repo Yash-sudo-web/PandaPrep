@@ -81,7 +81,7 @@ export default function Pricing() {
                                             "text-sm mt-2", 
                                             isDarkMode ? "text-gray-300" : "text-neutral-800"
                                         )}>
-                                            Get a glimpse of what our software is capable of. Just a heads-up, you'll never leave us after this!
+                                            Get a glimpse of what our software is capable of. Just a heads-up, you will never leave us after this!
                                             <ul className="my-4 flex flex-col gap-2">
                                                 {plan.features.map((feature, i) => (
                                                     <li key={i} className="flex items-center gap-2">
