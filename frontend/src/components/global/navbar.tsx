@@ -72,15 +72,15 @@ const Navbar = () => {
 
       <div className="relative">
         <nav
-          className={`fixed md:relative left-0 top-0 w-full md:w-auto h-screen md:h-auto bg-white dark:bg-neutral-950 md:bg-transparent md:dark:bg-transparent transition-transform duration-300 ease-in-out transform ${mounted ? (menuOpen ? 'translate-x-0' : '-translate-x-full') : 'hidden'
-            } md:translate-x-0 md:flex md:items-center md:gap-11 p-6 md:p-0 z-50 shadow-lg md:shadow-none`}
+          className={`fixed md:relative left-0 top-0 w-full md:w-full h-screen md:h-auto bg-white dark:bg-neutral-950 md:bg-transparent md:dark:bg-transparent transition-transform duration-300 ease-in-out transform ${mounted ? (menuOpen ? 'translate-x-0' : '-translate-x-full') : 'hidden'
+            } md:translate-x-0 md:flex md:items-center md:gap-10 p-6 md:p-0 z-50 shadow-lg md:shadow-none`}
         >
           <button onClick={() => setMenuOpen(false)} className="absolute top-4 right-4 md:hidden">
             <X size={24} className="text-gray-800 dark:text-gray-200" />
           </button>
           <ul className="flex flex-col md:flex-row items-center gap-6 md:gap-11 list-none">
             <li>
-              <Link href="/generate" className="text-lg text-green-600 ">
+              <Link href="/generate" className="flex text-lg text-green-600 ml-3.5">
                 Notes Generation
               </Link>
             </li>
@@ -90,7 +90,7 @@ const Navbar = () => {
               </Link>
             </li>
             <li>
-              <Link href="/history" className="text-lg text-green-600 ">
+              <Link href="/history" className="text-lg text-green-600 mr-3.5">
                 History
               </Link>
             </li>
@@ -113,7 +113,7 @@ const Navbar = () => {
                 height={40}
                 className="rounded-full"
               />
-              <span className="font-medium text-green-700 dark:text-green-600">{user.displayName}</span>
+              <span className="font-medium text-green-700 dark:text-green-600 hidden md:inline">{user.displayName}</span>
               {dropdownOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </button>
 

@@ -1,5 +1,6 @@
 import { Lock } from "lucide-react";
-import React, { useState } from "react";
+import { useTheme } from "next-themes";
+import React, { useEffect, useState } from "react";
 
 interface TabProps {
   label: string;
@@ -29,13 +30,21 @@ const MultiTabSwitch: React.FC<MultiTabSwitchProps> = ({
     tabs[0].value
   );
   const [hovered, setHovered] = useState<string | null>(null);
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  const isDarkMode = mounted && resolvedTheme === "dark";
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <div className="w-full flex flex-col items-start gap-2 relative">
       <label
         className={`${
           lgSize ? "text-lg" : "text-base"
-        } font-semibold text-gray-600 ml-2`}
+        } font-semibold text-gray-600 ml-2 ${isDarkMode ? "text-white" : ""}`}
       >
         {label}
       </label>
@@ -47,7 +56,7 @@ const MultiTabSwitch: React.FC<MultiTabSwitchProps> = ({
           return (
             <div key={option.value} className="relative group">
               <button
-                className={`m-1 px-6 py-2 text-green-700 rounded-3xl transition duration-300 ${
+                className={`m-1 px-6 py-2 text-green-700 rounded-3xl cursor-pointer transition duration-300 ${
                   selectedOption === option.value
                     ? "bg-green-500 text-white"
                     : "bg-white text-black"

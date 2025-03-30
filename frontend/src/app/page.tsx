@@ -43,7 +43,7 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="bg-white dark:bg-neutral-950">
+    <main className="overflow-x-hidden bg-white dark:bg-neutral-950">
       <Navbar />
       <section
         className={`h-[155vh] w-screen rounded-md relative flex flex-col items-center antialiased ${

@@ -112,7 +112,7 @@ const AuthPage = () => {
                 className="rounded-full"
               />
               <p className="mt-2 font-medium text-lg">{user.displayName}</p>
-              <p className="text-gray-500">{user.email}</p>
+              <p className={`${isDarkMode ? "text-white" : "text-gray-500"}`}>{user.email}</p>
               <p className="text-green-600 font-medium mt-4">
                 Your Notes are just one step away...
               </p>

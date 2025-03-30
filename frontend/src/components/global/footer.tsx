@@ -97,7 +97,7 @@ const Footer = () => {
       </div>
 
 
-      <hr className="border-neutral-800 my-4" />
+      <hr className="border-neutral-800 my-4 -mx-6" />
 
       <div className="max-w-7xl mx-auto">
         <div className="flex flex-wrap justify-center gap-6 text-sm text-neutral-400">
