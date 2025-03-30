@@ -9,7 +9,7 @@ import { Funnel_Display } from 'next/font/google'
 import { getAuth, onAuthStateChanged, signOut, User } from 'firebase/auth'
 import { useTheme } from 'next-themes'
 import app from '@/firebase/firebaseconfig'
-import { ModeToggle } from './mode-selector'
+import { ThemeToggle } from './mode-selector'
 import { ChevronDown, ChevronUp } from 'lucide-react'
 import { deleteCookie } from '@/lib/utils'
 
@@ -24,7 +24,8 @@ const Navbar = () => {
   const { theme, resolvedTheme } = useTheme()
   const [user, setUser] = useState<User | null>(null)
   const [menuOpen, setMenuOpen] = useState(false)
-  const isDark = resolvedTheme === "dark"
+
+  const isDark = resolvedTheme === "dark";
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -55,15 +56,15 @@ const Navbar = () => {
   return (
     <header
       className={`fixed right-0 left-0 top-0 py-4 px-4 backdrop-blur-lg z-[100] flex items-center border-b-[1px] justify-between ${!mounted
-          ? 'bg-transparent'
-          : isDark
-            ? 'bg-neutral-800 border-neutral-800 text-white'
-            : 'bg-white border-white text-green-700'
+        ? 'bg-transparent'
+        : isDark
+          ? 'bg-neutral-950 border-neutral-950 text-white'
+          : 'bg-white border-white text-green-700'
         } ${funnel_display.className}`}
     >
       <aside className="flex items-center gap-2">
         <Link href="/">
-          <p className="text-3xl md:text-5xl bg-gradient-to-tr from-green-600 to-green-800 bg-clip-text text-transparent dark:from-green-400 dark:to-green-700">
+          <p className="text-3xl md:text-5xl bg-gradient-to-tr from-green-600 to-green-700 bg-clip-text text-transparent dark:from-green-600 dark:to-green-700">
             PandaPrep
           </p>
         </Link>
@@ -71,7 +72,7 @@ const Navbar = () => {
 
       <div className="relative">
         <nav
-          className={`fixed md:relative left-0 top-0 w-full md:w-auto h-screen md:h-auto bg-white dark:bg-neutral-800 md:bg-transparent md:dark:bg-transparent transition-transform duration-300 ease-in-out transform ${mounted ? (menuOpen ? 'translate-x-0' : '-translate-x-full') : 'hidden'
+          className={`fixed md:relative left-0 top-0 w-full md:w-auto h-screen md:h-auto bg-white dark:bg-neutral-950 md:bg-transparent md:dark:bg-transparent transition-transform duration-300 ease-in-out transform ${mounted ? (menuOpen ? 'translate-x-0' : '-translate-x-full') : 'hidden'
             } md:translate-x-0 md:flex md:items-center md:gap-11 p-6 md:p-0 z-50 shadow-lg md:shadow-none`}
         >
           <button onClick={() => setMenuOpen(false)} className="absolute top-4 right-4 md:hidden">
@@ -79,17 +80,17 @@ const Navbar = () => {
           </button>
           <ul className="flex flex-col md:flex-row items-center gap-6 md:gap-11 list-none">
             <li>
-              <Link href="/generate" className="text-lg text-green-600 dark:text-gray-200">
+              <Link href="/generate" className="text-lg text-green-600 ">
                 Notes Generation
               </Link>
             </li>
             <li>
-              <Link href="/pricing" className="text-lg text-green-600 dark:text-gray-200">
+              <Link href="/pricing" className="text-lg text-green-600 ">
                 Subscription
               </Link>
             </li>
             <li>
-              <Link href="/history" className="text-lg text-green-600 dark:text-gray-200">
+              <Link href="/history" className="text-lg text-green-600 ">
                 History
               </Link>
             </li>
@@ -98,7 +99,7 @@ const Navbar = () => {
       </div>
 
       <aside className="flex items-center gap-4 relative">
-        <ModeToggle />
+        <ThemeToggle />
         {user ? (
           <div className="relative">
             <button
@@ -112,15 +113,15 @@ const Navbar = () => {
                 height={40}
                 className="rounded-full"
               />
-              <span className="font-medium text-green-700 dark:text-green-00">{user.displayName}</span>
+              <span className="font-medium text-green-700 dark:text-green-600">{user.displayName}</span>
               {dropdownOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </button>
 
             {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48  dark:bg-neutral-800 shadow-lg rounded-lg p-2 border border-gray-300 dark:border-neutral-700">
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-neutral-950 shadow-lg rounded-lg p-2 border border-gray-300 dark:border-neutral-700">
                 <button
                   onClick={handleSignOut}
-                  className="block w-full text-left px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-neutral-800 rounded-lg"
+                  className="block w-full text-left px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-neutral-950 rounded-lg"
                 >
                   Sign Out
                 </button>
@@ -137,7 +138,7 @@ const Navbar = () => {
               <span
                 className={`inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full 
         px-3 py-1 text-sm font-medium backdrop-blur-3xl transition-colors
-        ${isDark ? 'bg-neutral-800 text-green-500' : 'bg-white text-green-700'}`}
+        ${isDark ? 'bg-neutral-950 text-green-500' : 'bg-white text-green-700'}`}
               >
                 Login / Sign In
               </span>

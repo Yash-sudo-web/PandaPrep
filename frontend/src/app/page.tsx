@@ -18,6 +18,7 @@ import { Featuregrid } from "@/components/global/feature-grid";
 import { ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
 import Footer from "@/components/global/footer";
+import { Faq } from "@/components/global/faq";
 
 const words = `Stressed about exams? Relax. Drop a topic, and let AI do its magic. `;
 
@@ -36,60 +37,46 @@ export default function Home() {
   const { theme, resolvedTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
+  const isDarkMode = mounted && resolvedTheme === "dark";
   useEffect(() => {
     setMounted(true)
   }, [])
 
   return (
-    <main className="bg-white">
+    <main className="bg-white dark:bg-neutral-950">
       <Navbar />
-      <section
-        className={`top-0 left-0 right-0 h-screen w-full !overflow-visible relative flex flex-col items-center antialiased transition-colors duration-300 ${mounted
-            ? resolvedTheme === 'dark'
-              ? 'bg-neutral-800 text-white'
-              : 'bg-white text-black'
-            : 'bg-transparent'
-          }`}
-      >
-        <div
-          className={`absolute inset-0 h-full w-full items-center px-5 py-24 transition-all duration-300 ${mounted
-              ? resolvedTheme === 'dark'
-                ? '[background:radial-gradient(125%_125%_at_50%_10%,#222222_35%,#14532D_100%)]'
-                : '[background:radial-gradient(125%_125%_at_50%_10%,#FFFFFF_35%,#B8E6C8_100%)]'
-              : ''
-            }`}
-        ></div>
+      <section className={`h-[155vh] w-screen rounded-md relative flex flex-col items-center antialiased ${isDarkMode ? "bg-neutral-950" : "bg-white"}`}>
+    <div className={`absolute inset-0 h-full w-full items-center px-5 py-24 ${
+ 
+  isDarkMode
+  ? "bg-[radial-gradient(circle,rgba(19,78,43,1)_0%,rgba(10,10,10,1)_100%)]"
+  : "bg-[radial-gradient(circle,rgba(184,230,200,1)_0%,rgba(255,255,255,1)_100%)]"
+}`}
+    ></div>
 
-        <div className="flex flex-col mt-[-100px] md:mt-[-50px] w-full max-w-7xl px-6 md:px-16 lg:px-24">
-          <div className="flex flex-col mt-[-100px] md:mt-[-50px] w-full">
-            <ContainerScroll
-              titleComponent={
-                <div className="flex flex-col items-center justify-center text-center mt-10 w-full max-w-[90%] md:max-w-[80%] lg:max-w-[1200px]">
-                  <Button
-                    onClick={() => router.push('/auth')}
-                    size={'lg'}
-                    className="p-8 mb-8 md:mb-0 text-2xl w-full sm:w-fit border-t-2 rounded-full border-green-600 bg-green-200 hover:bg-white dark:bg-green-800 dark:hover:bg-white group transition-all flex items-center justify-center gap-4 hover:shadow-xl hover:shadow-green-500 duration-500"
-                  >
-                    <span
-                      className={`bg-clip-text text-transparent bg-gradient-to-r from-green-700 to-green-600 dark:from-green-400 dark:to-green-300 md:text-center group-hover:bg-gradient-to-r group-hover:from-black group-hover:to-black dark:group-hover:from-white dark:group-hover:to-white ${funnel_display.className}`}
-                    >
-                      Start For Free Today
-                    </span>
-                  </Button>
+    <div className="relative z-10 flex flex-col w-full max-w-6xl mx-auto px-4 mt-8 md:mt-[-50px]">
+      <ContainerScroll
+        titleComponent={
+          <div className="flex items-center flex-col mt-4 md:mt-[-50px]">
+            <Button
+              onClick={() => router.push('/auth')}
+              size={"lg"}
+              className="cursor-pointer p-6 sm:p-8 mb-6 text-xl sm:text-2xl w-3/4 sm:w-fit border-t-2 rounded-full border-green-600 bg-green-200 hover:bg-white dark:hover:bg-neutral-800 group transition-all flex items-center justify-center gap-4 hover:shadow-xl hover:shadow-green-500 duration-500 z-20 relative"
+            >
+              <span className={`bg-clip-text text-transparent bg-gradient-to-r from-green-700 to-green-600 text-center ${funnel_display.className}`}>
+                Start For Free Today
+              </span>
+            </Button>
 
-                  <h1
-                    className={`text-4xl md:text-7xl lg:text-7xl leading-tight bg-clip-text text-transparent bg-gradient-to-b from-neutral-800 to-green-500 dark:from-neutral-200 dark:to-green-400 font-bold ${funnel_display.className}`}
-                  >
-                    From Chaos to Clarity
-                  </h1>
-                </div>
-
-
-              }
-            />
+            <h1 className={`text-4xl sm:text-5xl md:text-[5.2rem] bg-clip-text text-transparent bg-gradient-to-b ${isDarkMode ? "from-neutral-300 to-green-400" : "from-neutral-500 to-green-600"} font-sans font-semibold ${funnel_display.className} text-center`}>
+              From Chaos to Clarity
+            </h1>
           </div>
-        </div>
-      </section>
+        }
+      />
+    </div>
+  </section>
+
 
 
       {/* <InfiniteMovingCards
@@ -98,53 +85,34 @@ export default function Home() {
         direction="right"
         speed="slow"
       /> */}
-      
-      <div className="ml-32 mt-56 pt-20"></div>
-      <section>
-        <TextGenerateEffect className="mb-10 ml-3 pl-72" words={words} />
-      </section>
-      <section className="w-2/3 ml-64 mb-24">
-        <Featuregrid />
-      </section>
+<div>
+  
+</div>
+      <div
+        className={`border-none w-full flex justify-center pt-10 px-4 sm:px-8 md:px-16 lg:px-32 ${isDarkMode ? "bg-neutral-950 text-white" : "bg-white text-black"
+          }`}
+      >
+        <section className="w-full flex justify-center text-center max-w-screen-xl">
+          <TextGenerateEffect
+            className={`mb-10 text-center ${isDarkMode ? "text-white bg-neutral-950" : "text-black bg-white"
+              }`}
+            words={words}
+          />
+        </section>
+      </div>
 
-      <section className="relative bg-white min-h-screen flex items-center justify-center">
-        <div className="absolute inset-0 bg-gradient-radial from-green-200 to-transparent">
-          <h2
-            className={`text-4xl text-green-600 font-bold text-center mt-5  ${funnel_display.className}`}
-          >
-            FAQs
-          </h2>
-        </div>
-        <div className="relative z-0 max-w-2xl  ">
-          <div className="text-black space-y-2">
-            {faqs.map((faq, index) => (
-              <div key={index} className="border rounded-lg">
-                <button
-                  onClick={() => toggleFAQ(index)}
-                  className={`w-full flex justify-between items-center p-4 text-left font-medium transition-all ${funnel_display.className}`}
-                >
-                  {faq.question}
-                  <ChevronDown
-                    className={`transition-transform ${
-                      openIndex === index ? "rotate-180" : ""
-                    }`}
-                  />
-                </button>
-                <div
-                  className={`overflow-hidden transition-max-height duration-300 ${
-                    openIndex === index ? "max-h-40" : "max-h-0"
-                  }`}
-                >
-                  <div
-                    className={`p-4 border-t bg-gray-50 ${funnel_display.className}`}
-                  >
-                    {faq.answer}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
+
+      <div
+        className={`w-full flex justify-center pt-5 px-4 sm:px-8 md:px-16 lg:px-32 ${isDarkMode ? "bg-neutral-950 text-white" : "bg-white text-black"
+          }`}
+      >
+        <section className="w-full max-w-screen-xl mb-10 ">
+          <Featuregrid />
+        </section>
+      </div>
+
+      <section>
+        <Faq />
       </section>
 
       <Footer/>
