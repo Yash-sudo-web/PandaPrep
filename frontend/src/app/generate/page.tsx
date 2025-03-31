@@ -14,7 +14,8 @@ import { BASE_URL } from "@/lib/constant";
 import PDFLikeMarkdownDisplay from "@/components/global/PDFdisplay";
 import { getCookie } from "@/lib/utils";
 import Footer from "@/components/global/footer";
-
+import { log } from "console";
+import { useTheme } from "next-themes";
 
 const funnel_display = Funnel_Display({
   subsets: ["latin"],
@@ -22,6 +23,16 @@ const funnel_display = Funnel_Display({
 });
 
 const NotesGenerate = () => {
+  let authToken = "";
+  useEffect(() => {
+    const token = getCookie("jwt-auth");
+    if (!token) {
+      window.location.href = "/auth";
+    } else {
+      authToken = token;
+    }
+  }, []);
+
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
   const auth = getAuth(app);
@@ -34,15 +45,33 @@ const NotesGenerate = () => {
   const [error, setError] = useState("");
   const [isConnected, setIsConnected] = useState(false);
   const [showGenerateButton, setShowGenerateButton] = useState(true);
+  const [userCredits, setUserCredits] = useState(0);
+  const [showPreview, setShowPreview] = useState(false);
+
+  const toggleView = () => {
+    setShowPreview((prev) => !prev);
+  };
+
+  const { theme, setTheme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  const isDarkMode = mounted && resolvedTheme === "dark";
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const socketRef = useRef<WebSocket | null>(null);
   let email = "";
 
   useEffect(() => {
-    email = getCookie('email') || "";
+    email = getCookie("email") || "";
     setFormData((prev) => ({ ...prev, email: email }));
   }, []);
-  
+
+  useEffect(() => {
+    handleGetUser();
+  }, []);
 
   const [formData, setFormData] = useState({
     email: email,
@@ -87,7 +116,7 @@ const NotesGenerate = () => {
           if (data.stage === "generation_complete") {
             setGenerationComplete(true);
             setIsGenerating(false);
-            setShowGenerateButton(true); 
+            setShowGenerateButton(true);
             console.log(data);
             if (data.data && data.data.downloadId) {
               setDownloadId(data.data.downloadId);
@@ -117,8 +146,29 @@ const NotesGenerate = () => {
     socketRef.current = socket;
   };
 
+  const handleGetUser = async () => {
+    try {
+      const res = await axios.get(`${BASE_URL}/user/get`, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+        },
+      });
+      setUserCredits(res.data.subscription.credits);
+    } catch (error: any) {
+      console.error("Internal Server Error:", error);
+    }
+  };
+
   const handleSubmit = async () => {
     try {
+      if (!formData.syllabus || !formData.subject_name) {
+        setError("Please fill in all required fields.");
+        return;
+      }
+      if (formData.syllabus.length < 10) {
+        setError("Syllabus should be at least 10 characters long.");
+        return;
+      }
       setIsGenerating(true);
       setShowGenerateButton(false);
       setError("");
@@ -127,18 +177,24 @@ const NotesGenerate = () => {
       setGenerationComplete(false);
       setDownloadId("");
 
-      const response = await axios.post(`${BASE_URL}/pipeline/generate-notes`, formData);
-
-      if (response.data && response.data.requestId) {
-        setRequestId(response.data.requestId);
-        connectWebSocket(response.data.requestId);
-      } else {
-        throw new Error("No request ID returned from server");
+      const response = await axios.post(
+        `${BASE_URL}/pipeline/generate-notes`,
+        formData
+      );
+      if (response.data.success) {
+        if (response.data && response.data.requestId) {
+          setRequestId(response.data.requestId);
+          connectWebSocket(response.data.requestId);
+        }
       }
     } catch (error) {
       console.error("Error generating notes:", error);
-      if (error instanceof Error) {
-        setError(error.message);
+      if (error) {
+        if (axios.isAxiosError(error) && error.response) {
+          setError(error.response.data.error);
+        } else {
+          setError("An unexpected error occurred");
+        }
       } else {
         setError("Error generating notes");
       }
@@ -195,14 +251,12 @@ const NotesGenerate = () => {
 
     return () => {
       unsubscribe();
-      // Clean up WebSocket connection
       if (socketRef.current) {
         socketRef.current.close();
       }
     };
   }, [auth, router]);
 
-  // Helper function to render current generation status
   const renderGenerationStatus = () => {
     if (!isGenerating && !generationComplete) return null;
 
@@ -244,12 +298,12 @@ const NotesGenerate = () => {
     }
 
     return (
-      <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-md">
-        <p className="text-green-700">{statusMessage}</p>
+      <div className={`mb-4 p-3 ${isDarkMode ? "border-green-900" : "bg-green-50 border-green-200" } border rounded-md`}>
+        <p className={`${isDarkMode ? "text-white" : "text-green-700"}`}>{statusMessage}</p>
         {generationComplete && (
           <button
             onClick={downloadGeneratedNotes}
-            className="mt-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-300"
+            className={`mt-2 px-4 py-2 cursor-pointer rounded-md ${isDarkMode ? "bg-green-700 text-white hover:bg-green-900 border-green-900" : "bg-white text-green-700 border-green-700 hover:bg-green-700 hover:text-white"} transition duration-300`}
           >
             Download Notes
           </button>
@@ -261,115 +315,134 @@ const NotesGenerate = () => {
   return (
     <div
       className={cn(
-        "min-h-screen bg-white text-green-700 pt-24",
+        "min-h-screen bg-white text-green-700 pt-20",
         funnel_display.className
       )}
     >
       <Navbar />
-      <main className="flex flex-col justify-center items-center min-h-screen bg-[radial-gradient(circle_at_center,_#d1fae5,_white)] p-6">
-        <h1 className="text-4xl font-extrabold text-green-700 mb-4">
+      <main
+        className={`flex flex-col justify-center items-center min-h-screen ${
+          isDarkMode
+            ? "bg-[radial-gradient(circle_at_center,_#134e2b,_#0a0a0a)]"
+            : "bg-[radial-gradient(circle_at_center,_#d1fae5,_white)]"
+        } p-4 md:p-6`}
+      >
+        <h1
+          className={`text-3xl md:text-4xl font-extrabold ${
+            isDarkMode ? "text-white" : "text-green-700"
+          }  mb-2 md:mb-4 text-center`}
+        >
           Generate Notes
         </h1>
-        <p className="text-lg text-gray-600 mb-6">
+        <p
+          className={`text-base md:text-lg mb-4 md:mb-6 text-center px-4 ${
+            isDarkMode ? "text-white" : "text-gray-600"
+          }`}
+        >
           Enter a topic and select the depth of notes you want.
         </p>
-        <div className="w-full max-w-6xl bg-white shadow-xl rounded-2xl p-8 text-center flex">
-          <div className="w-[35%] flex">
-            <div className="flex flex-col gap-8">
-              <PlaceholdersAndVanishInput
-                label="Enter Subject Name"
-                placeholders={[
-                  "Enter subject...",
-                  "E.g., Machine Learning",
-                  "E.g., Web Development",
-                ]}
-                handleChange={handleInputChange}
-                field="subject_name"
-              />
-              <PlaceholdersAndVanishInput
-                label="Enter your Syllabus"
-                placeholders={[
-                  "Enter your syllabus...",
-                  "E.g., Basic concepts: database & database users, characteristics of the database systems, concepts and architecture, data models, schemas & instances, DBMS architecture & data independence........",
-                  "E.g., The basic human aspirations and their fulfillment through Right understanding and Resolution, Right understanding and Resolution as the activities of the Self, Self being central to Human Existence.......",
-                ]}
-                handleChange={handleInputChange}
-                field="syllabus"
-              />
+        <div className="md:hidden w-full max-w-md mb-4">
+          <button
+            onClick={toggleView}
+            className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-300"
+          >
+            {showPreview ? "Show Form" : "Show Preview"}
+          </button>
+        </div>
 
-              <PlaceholdersAndVanishInput
-                label="User Instructions"
-                placeholders={[
-                  "Enter your instructions...",
-                  "E.g., Elaborate more on ER diagrams",
-                  "E.g., Go in depth on the topic of Normalization",
-                ]}
-                handleChange={handleInputChange}
-                field="user_instructions"
-              />
-              <MultiTabSwitch
-                tabs={[
-                  {
-                    label: "Concise",
-                    value: "concise",
-                  },
-                  {
-                    label: "QnA",
-                    value: "qa",
-                  },
-                  {
-                    label: "Detailed",
-                    value: "detailed",
-                  },
-                ]}
-                label="Choose the type of Notes generated"
-                lgSize
-                premium_feature={["detailed"]}
-                handleChange={handleInputChange}
-                field="note_type"
-              />
-              <div className="flex gap-2">
-                <MultiTabSwitch
-                  tabs={[
-                    {
-                      label: "Yes",
-                      value: "yes",
-                    },
-                    {
-                      label: "No",
-                      value: "no",
-                    },
+        <div
+          className={`${
+            isDarkMode
+              ? "bg-neutral-900 border-neutral-800 text-white"
+              : "bg-white border-neutral-800 text-black"
+          } w-full max-w-6xl shadow-xl rounded-2xl p-4 md:p-8 text-center`}
+        >
+          <div className="flex flex-col lg:flex-row w-full">
+            <div
+              className={`w-full lg:w-[35%] ${
+                showPreview ? "hidden md:block" : "block"
+              }`}
+            >
+              <div className="flex flex-col gap-4 md:gap-8">
+                <PlaceholdersAndVanishInput
+                  label="Enter Subject Name"
+                  placeholders={[
+                    "Enter subject...",
+                    "E.g., Machine Learning",
+                    "E.g., Web Development",
                   ]}
-                  label="Include Examples?"
                   handleChange={handleInputChange}
-                  field="include_examples"
+                  field="subject_name"
                 />
-                <MultiTabSwitch
-                  tabs={[
-                    {
-                      label: "No",
-                      value: "no",
-                    },
-                    {
-                      label: "Yes",
-                      value: "yes",
-                    },
+                <PlaceholdersAndVanishInput
+                  label="Enter your Syllabus"
+                  placeholders={[
+                    "Enter your syllabus...",
+                    "E.g., Basic concepts: database & database users, characteristics of the database systems, concepts and architecture, data models, schemas & instances, DBMS architecture & data independence........",
+                    "E.g., The basic human aspirations and their fulfillment through Right understanding and Resolution, Right understanding and Resolution as the activities of the Self, Self being central to Human Existence.......",
                   ]}
-                  label="Include Visuals?"
-                  premium_feature={["yes"]}
                   handleChange={handleInputChange}
-                  field="include_images"
+                  field="syllabus"
                 />
-              </div>
 
-              {error && (
-                <div className="text-red-500 p-2 bg-red-50 rounded-md">
-                  Error: {error}
+                <PlaceholdersAndVanishInput
+                  label="User Instructions"
+                  placeholders={[
+                    "Enter your instructions...",
+                    "E.g., Elaborate more on ER diagrams",
+                    "E.g., Go in depth on the topic of Normalization",
+                  ]}
+                  handleChange={handleInputChange}
+                  field="user_instructions"
+                />
+                <div className="flex flex-col gap-4 md:flex-row md:items-center lg:flex-col">
+                  <div className="w-full md:w-auto">
+                    <MultiTabSwitch
+                      tabs={[
+                        { label: "Concise", value: "concise" },
+                        { label: "QnA", value: "qa" },
+                        { label: "Detailed", value: "detailed" },
+                      ]}
+                      label="Choose the type of Notes generated"
+                      lgSize
+                      premium_feature={["detailed"]}
+                      handleChange={handleInputChange}
+                      field="note_type"
+                      userCredits={userCredits}
+                    />
+                  </div>
+                  <div className="flex flex-row gap-2 md:w-auto">
+                    <MultiTabSwitch
+                      tabs={[
+                        { label: "Yes", value: "yes" },
+                        { label: "No", value: "no" },
+                      ]}
+                      label="Include Examples?"
+                      handleChange={handleInputChange}
+                      field="include_examples"
+                      userCredits={userCredits}
+                    />
+                    <MultiTabSwitch
+                      tabs={[
+                        { label: "No", value: "no" },
+                        { label: "Yes", value: "yes" },
+                      ]}
+                      label="Include Visuals?"
+                      premium_feature={["yes"]}
+                      handleChange={handleInputChange}
+                      field="include_images"
+                      userCredits={userCredits}
+                    />
+                  </div>
                 </div>
-              )}
 
-              {renderGenerationStatus()}
+                {error && (
+                  <div className="text-red-500 p-2 bg-red-50 rounded-md">
+                    {error}
+                  </div>
+                )}
 
+                {renderGenerationStatus()}
 
                 <button
                   onClick={handleSubmit}
@@ -377,32 +450,38 @@ const NotesGenerate = () => {
                   className={`px-6 py-2 border rounded-lg shadow-md transition duration-300 ${
                     isGenerating
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : "bg-white text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
+                      : `cursor-pointer ${isDarkMode ? "bg-green-700 text-white hover:bg-green-900 border-green-900" : "bg-white text-green-700 border-green-700 hover:bg-green-700 hover:text-white"}`
                   }`}
                 >
-                  {isGenerating ? "Generating..." : generationComplete ? "Generate Again" : "Generate"}
+                  {isGenerating
+                    ? "Generating..."
+                    : generationComplete
+                    ? "Generate Again"
+                    : "Generate"}
                 </button>
+              </div>
+            </div>
 
+            <div className="hidden lg:block w-[1px] h-auto bg-green-400 mx-6"></div>
+            <div
+              className={`w-full lg:w-[65%] mt-6 lg:mt-0 ${
+                !showPreview ? "hidden md:block" : "block"
+              }`}
+            >
+              <PDFLikeMarkdownDisplay
+                markdownContent={markdownContent}
+                isGenerating={isGenerating}
+                downloadId={downloadId}
+              />
             </div>
           </div>
-          <div className="w-[1px] h-[3/4] bg-green-400 mx-6"></div>
-          <div className="w-[65%]">
-            <PDFLikeMarkdownDisplay
-              markdownContent={markdownContent}
-              isGenerating={isGenerating}
-              downloadId={downloadId}
-            />
-          </div>
         </div>
-
-
-        <section className="w-screen bg-white mt-10"> 
-                <div className="mt-8">
-                    <Footer />
-                </div>
-
-            </section>
       </main>
+      <section
+        className={cn("w-full", isDarkMode ? "bg-neutral-900" : "bg-white")}
+      >
+        <Footer />
+      </section>
     </div>
   );
 };

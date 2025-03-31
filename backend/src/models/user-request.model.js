@@ -44,21 +44,6 @@ const UserRequestSchema = new mongoose.Schema({
     default: 'no'
   },
   
-  example_types: {
-    type: [String],
-    validate: {
-      validator: function(types) {
-        // Only validate if include_examples is "Yes"
-        if (this.include_examples === 'no') return true;
-        
-        const validTypes = ['Real-world', 'Hypothetical', 'Historical'];
-        return types.every(type => validTypes.includes(type));
-      },
-      message: 'Example types must be one of: Real-world, Hypothetical, Historical'
-    },
-    default: []
-  },
-  
   // Additional instructions
   user_instructions: {
     type: String,

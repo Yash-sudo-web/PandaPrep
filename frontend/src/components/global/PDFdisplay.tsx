@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import { motion } from "framer-motion";
+import { useTheme } from "next-themes";
 
 const PAGE_WIDTH = "100%";
 const PAGE_HEIGHT = "auto";
@@ -17,6 +18,15 @@ const PDFLikeMarkdownDisplay = ({
 }) => {
   const [pages, setPages] = useState<string[]>([]);
   const containerRef = useRef<HTMLDivElement | null>(null);
+
+  const { theme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const isDarkMode = mounted && resolvedTheme === "dark";
 
   useEffect(() => {
     if (!markdownContent || markdownContent.trim() === "") {
@@ -60,10 +70,16 @@ const PDFLikeMarkdownDisplay = ({
       ) : (
         <div
           ref={containerRef}
-          className="pdf-container flex flex-col items-center gap-6 py-8 overflow-y-auto h-full bg-gray-100 rounded-xl w-full px-4"
+          className={`pdf-container flex flex-col items-center gap-6 py-8 overflow-y-auto h-full w-full px-4 rounded-xl ${
+            isDarkMode ? "bg-[#121212]" : "bg-gray-100"
+          }`}
         >
           {pages.length === 0 && (
-            <p className="text-gray-500 text-lg mt-64 italic text-center">
+            <p
+              className={`text-lg mt-64 italic text-center ${
+                isDarkMode ? "text-gray-400" : "text-gray-500"
+              }`}
+            >
               {isGenerating
                 ? "Notes content will appear here as it's generated..."
                 : "Generated notes will appear here"}
@@ -78,13 +94,21 @@ const PDFLikeMarkdownDisplay = ({
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5 }}
-                  className="pdf-page bg-white shadow-lg rounded-lg overflow-hidden p-10 border border-gray-300 text-lg leading-relaxed font-serif text-black text-justify w-full"
+                  className={`pdf-page shadow-lg rounded-lg overflow-hidden p-10 border text-lg leading-relaxed font-serif text-justify w-full ${
+                    isDarkMode
+                      ? "bg-[#1E1E1E] text-gray-300 border-gray-700"
+                      : "bg-white text-gray-900 border-gray-300"
+                  }`}
                   style={{ maxWidth: "8.5in", minHeight: "auto" }}
                 >
                   <ReactMarkdown rehypePlugins={[rehypeRaw]}>
                     {page}
                   </ReactMarkdown>
-                  <div className="text-right text-gray-400 text-sm mt-4">
+                  <div
+                    className={`text-right text-sm mt-4 ${
+                      isDarkMode ? "text-gray-500" : "text-gray-400"
+                    }`}
+                  >
                     Page {index + 1} of {pages.length}
                   </div>
                 </motion.div>

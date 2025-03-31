@@ -1,7 +1,11 @@
-import { Linkedin, Github } from "lucide-react";
+"use client";
+
+import { Facebook, Twitter, Send, Instagram } from "lucide-react";
 import { Funnel_Display } from "next/font/google";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
 
 const funnel_display = Funnel_Display({
   subsets: ["latin"],
@@ -9,68 +13,107 @@ const funnel_display = Funnel_Display({
 });
 
 const Footer = () => {
+  const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+  const isDarkMode = mounted && resolvedTheme === "dark";
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   return (
-    <div className={cn("max-w-8xl mx-auto ml-40 px-5 grid grid-cols-1 md:grid-cols-4 gap-12 bg-white", funnel_display.className)}>
-      <div>
-        <h2 className="text-2xl font-bold text-green-700">PandaPrep</h2>
-        <p className="mt-2 text-sm text-neutral-600">PandaPrep is the ultimate AI-powered notes generator that turns your syllabus into structured, concise, and exam-ready notes in seconds.</p>
-      </div>
+    <footer
+      className={cn(
+        "w-full px-6 py-8 backdrop-blur-lg border-t transition-colors duration-300",
+        isDarkMode
+          ? "bg-neutral-950 border-neutral-800 text-white"
+          : "bg-white border-neutral-800 text-black",
+        funnel_display.className
+      )}
+    >
 
-      <div>
-        <h3 className="text-2xl font-semibold text-black">Quick Links</h3>
-        <ul className="mt-3 space-y-2">
-          <li>
-            <Link href="/" className="text-black hover:text-green-700">
-              Home
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-8">
+          <div className="mb-4 md:mb-0">
+            <Link href="/">
+              <div className="flex items-center space-x-2">
+                <div className="flex space-x-1">
+                  {/* <div className="w-3 h-8 bg-pink-500 rounded-sm"></div>
+                  <div className="w-3 h-8 bg-yellow-500 rounded-sm"></div>
+                  <div className="w-3 h-8 bg-blue-400 rounded-sm"></div> */}
+                </div>
+              </div>
             </Link>
-          </li>
-          <li>
-            <a href="/pricing" className="text-black hover:text-green-700">
+          </div>
+
+
+          <nav className="flex flex-wrap ml-2.5 justify-center text-green-700 text-lg gap-6 mb-4 md:mb-0">
+            <Link href="/" className="hover:text-green-600 transition-colors">
+              About
+            </Link>
+            {/* <Link href="/features" className="hover:text-green-400 transition-colors">
+              Features
+            </Link> */}
+            <Link href="/pricing" className="hover:text-green-600 transition-colors">
               Pricing
-            </a>
-          </li>
-          <li>
-            <a href="#" className="text-black hover:text-green-700">
-              Documentation
-            </a>
-          </li>
-        </ul>
-      </div>
+            </Link>
+            
+            <Link href="/team" className="hover:text-green-600 transition-colors">
+              Team
+            </Link>
+          </nav>
 
-      <div>
-        <h3 className="text-2xl font-semibold text-black">Support</h3>
-        <ul className="mt-3 space-y-2">
-          <li>
-            <a href="/contact" className="text-black hover:text-green-700">
-              Contact Us
-            </a>
-          </li>
-        </ul>
-      </div>
 
-      <div>
-        <h3 className="text-2xl font-semibold text-black">Follow Us</h3>
-        <div className="mt-3 flex space-x-6">
-          <a href="#" className="group transition duration-300 hover:scale-110">
-            <Linkedin
-              size={40}
-              className="text-gray-600 transition-all duration-300 group-hover:text-green-700"
-            />
-          </a>
-          <a href="#" className="group transition duration-300 hover:scale-110">
-            <Github
-              size={40}
-              className="text-gray-600 transition-all duration-300 group-hover:text-green-700"
-            />
-          </a>
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              {/* <input
+                type="text"
+                placeholder="search..."
+                className="px-4 py-1 pr-8 rounded-full bg-neutral-800 border border-neutral-700 text-sm"
+              /> */}
+              {/* <button className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </button> */}
+            </div>
+            <div className="flex space-x-3">
+              {/* <Link href="#" className="hover:text-green-400 transition-colors">
+                <Facebook size={20} />
+              </Link> */}
+              {/* <Link href="#" className="hover:text-green-400 transition-colors">
+                <Twitter size={20} />
+              </Link> */}
+              {/* <Link href="#" className="hover:text-green-600 transition-colors">
+                <Send size={20} />
+              </Link> */}
+              {/* <Link href="#" className="hover:text-green-400 transition-colors">
+                <Instagram size={20} />
+              </Link> */}
+            </div>
+          </div>
         </div>
       </div>
-    <div className="w-screen">
-      <div className="w-3/4 flex justify-center border-t border-gray-300 py-4">
-        <p className="text-center text-black text-sm">© {new Date().getFullYear()} PandaPrep. All rights reserved.</p>
+
+
+      <hr className="border-neutral-800 my-4 -mx-6" />
+
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-wrap justify-center gap-6 text-sm text-neutral-400">
+          <Link href="/privacy-policy" className="hover:text-green-600 transition-colors">
+            Privacy Policy
+          </Link>
+          <Link href="/terms-of-use" className="hover:text-green-600 transition-colors">
+            Terms of Use
+          </Link>
+          <Link href="/contact" className="hover:text-green-600 transition-colors">
+            Contact Us
+          </Link>
+          
+        </div>
       </div>
-      </div>
-    </div>
+    </footer>
   );
 };
 
