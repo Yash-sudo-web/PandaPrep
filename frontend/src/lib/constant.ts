@@ -31,12 +31,13 @@ export const faqs = [
 export const PLANS = [
   {
     title: "Starter",
-    price: "$11.99",
+    price: "₹800",
+    cost: 800,
     credits: 100,
     features: [
       "Credits - 100",
       "Access to all features",
-      
+      "₹8/credit",
     ],
     limitations: [
       
@@ -44,12 +45,13 @@ export const PLANS = [
   },
   {
     title: "Growth",
-    price: "$24.99",
+    price: "₹2000",
+    cost: 2000,
     credits: 500,
     features: [
       "Credits - 500",
       "Access to all features",
-      
+      "₹4/credit",
     ],
     limitations: [
       
@@ -57,12 +59,13 @@ export const PLANS = [
   },
   {
     title: "Scale",
-    price: "$44.99",
+    price: "₹3500",
+    cost: 3500,
     credits: 1000,
     features: [
       "Credits - 1000",
       "Access to all features",
-      
+      "₹3.5/credit",
     ],
     limitations: [],
   },

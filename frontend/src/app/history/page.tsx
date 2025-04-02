@@ -16,14 +16,14 @@ const funnel_display = Funnel_Display({
 });
 
 const History = () => {
+  const [authToken, setAuthToken] = useState<string>("");
 
-  let authToken = "";
   useEffect(() => {
     const token = getCookie("jwt-auth");
     if (!token) {
       window.location.href = "/auth";
     } else {
-      authToken = token;
+      setAuthToken(token);
     }
   }, []);
 
@@ -102,8 +102,10 @@ const History = () => {
   };
 
   useEffect(() => {
-    handleGetAllNotes();
-  }, []);
+    if(authToken){
+      handleGetAllNotes();
+    }
+  }, [authToken]);
 
   useEffect(() => {
     setAllSelected(selectedNotes.length === notes.length && notes.length > 0);
