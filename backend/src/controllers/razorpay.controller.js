@@ -72,9 +72,9 @@ export const verifyPaymentController = async (req, res) => {
         if (!user) return res.status(404).json({ success: false, error: "User not found" });
 
         const creditsMap = {
-            800: 100,
-            2000: 500,
-            3500: 1000,
+            99: 15,
+            499: 100,
+            1500: 450,
         };
 
         user.subscription.credits += creditsMap[paymentLog.amount] || 0;

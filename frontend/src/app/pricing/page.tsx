@@ -18,8 +18,9 @@ import { cn, getCookie } from "@/lib/utils";
 import { BASE_URL, PLANS } from "@/lib/constant";
 import Footer from "@/components/global/footer";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import axios from "axios";
+import CustomerDetailsDialog, { CustomerDetailsDialogRef, Plan } from "@/components/global/user-detail-razorpay";
 
 const funnel_display = Funnel_Display({
   subsets: ["latin"],
@@ -31,6 +32,9 @@ export default function Pricing() {
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  
+
+  const customerDialogRef = useRef<CustomerDetailsDialogRef>(null);
 
   useEffect(() => {
     setMounted(true);
@@ -66,120 +70,9 @@ export default function Pricing() {
     }
   };
 
-  const handlePayment = async (plan: any) => {
-    if (!authToken || !userId) {
-      console.error("Auth token or user ID not available");
-      return;
-    }
-
-    try {
-      const { data } = await axios.post(
-        `${BASE_URL}/payment/create-order`,
-        {
-          userId: userId,
-          amount: plan.cost,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-          },
-        }
-      );
-
-      const { order } = data;
-      if (!order) throw new Error("Order creation failed");
-
-      const options = {
-        key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-        amount: order.amount * 100,
-        currency: "INR",
-        name: "PandaPrep",
-        description: `${plan.title} Plan - ${plan.credits} Credits`,
-        order_id: order.id,
-        method: {
-          netbanking: true,
-          card: true,
-          wallet: true,
-          upi: true,
-          paylater: true,
-          emi: true,
-        },
-        config: {
-          display: {
-            blocks: {
-              upi: {
-                name: "Pay using UPI",
-                instruments: [
-                  {
-                    method: "upi",
-                  },
-                ],
-              },
-              cards: {
-                name: "Pay using Card",
-                instruments: [
-                  {
-                    method: "card",
-                  },
-                ],
-              },
-              wallets: {
-                name: "Pay using Wallets",
-                instruments: [
-                  {
-                    method: "wallet",
-                  },
-                ],
-              },
-            },
-            sequence: ["upi", "cards", "wallets"],
-            preferences: {
-              show_default_blocks: true,
-            },
-          },
-          recommended: {
-            method: ["upi", "card"],
-            description: "Recommended payment options"
-          }
-        },
-        handler: async (response: any) => {
-          try {
-            const verifyRes = await axios.post(
-              `${BASE_URL}/payment/verify-order`,
-              {
-                userId: userId,
-                order_id: order.id,
-                payment_id: response.razorpay_payment_id,
-                signature: response.razorpay_signature,
-              },
-              {
-                headers: {
-                  Authorization: `Bearer ${authToken}`,
-                },
-              }
-            );
-      
-            if (verifyRes.data.success) {
-              alert("Payment Successful! Credits Updated.");
-            } else {
-              alert("Payment verification failed.");
-            }
-          } catch (error) {
-            console.error("Payment verification error:", error);
-          }
-        },
-        prefill: {
-          name: "Customer Name",
-          email: "customer@example.com",
-          contact: "9999999999",
-        },
-        theme: { color: "#2E7D32" },
-      };
-
-      const rzp = new window.Razorpay(options);
-      rzp.open();
-    } catch (error) {
-      console.error("Payment error:", error);
+  const handlePaymentClick = (plan: Plan) => {
+    if (customerDialogRef.current) {
+      customerDialogRef.current.openDialog(plan);
     }
   };
 
@@ -260,8 +153,7 @@ export default function Pricing() {
                         isDarkMode ? "text-gray-300" : "text-neutral-800"
                       )}
                     >
-                      Get a glimpse of what our software is capable of. Just a
-                      heads-up, you will never leave us after this!
+                      {plan.description}
                       <ul className="my-4 flex flex-col gap-2">
                         {plan.features.map((feature, i) => (
                           <li key={i} className="flex items-center gap-2">
@@ -295,7 +187,7 @@ export default function Pricing() {
                       <CardItem
                         translateZ={20}
                         as="button"
-                        onClick={() => handlePayment(plan)}
+                        onClick={() => handlePaymentClick(plan as Plan)}
                         className={cn(
                           "w-full px-6 py-3 rounded-xl text-sm font-bold transition-colors",
                           isDarkMode
@@ -313,6 +205,15 @@ export default function Pricing() {
           </div>
         </section>
       </div>
+
+      {authToken && userId && (
+        <CustomerDetailsDialog
+          ref={customerDialogRef}
+          authToken={authToken}
+          userId={userId}
+          BASE_URL={BASE_URL}
+        />
+      )}
 
       <section
         className={cn(
