@@ -6,6 +6,7 @@ import { mdToPdf } from 'md-to-pdf';
 import NotesGeneratorAgent from '../agents/NotesGeneratorAgent.js';
 import SyllabusAnalyzerAgent from '../agents/SyllabusAnalyzerAgent.js';
 import ImageSuggestionAgent from '../agents/ImageSuggestionAgent.js';
+import ImageGeneratorAgent from '../agents/ImageGeneratorAgent.js';
 import { NotesRequestModel } from '../models/user-request.model.js';
 import { UserModel } from '../models/user.model.js';
 import { uploadPDFToCloudinary } from '../utils/cloudinary-file-upload.util.js';
@@ -250,17 +251,18 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
       broadcastStage(requestId, 'generating_image_suggestions');
       const imageSuggestions = await ImageSuggestionAgent.generateImageSuggestions(notesResults);
 
-      console.log(`[${requestId}] Finding and downloading images...`);
-      broadcastStage(requestId, 'downloading_images', {
+      console.log(`[${requestId}] Generating images using Gemini...`);
+      broadcastStage(requestId, 'generating_images', {
         count: imageSuggestions.length,
       });
 
-      imageResults = await ImageSuggestionAgent.findAndDownloadImages(imageSuggestions);
+      // Use the ImageGeneratorAgent to generate images with Base64 encoding
+      imageResults = await ImageGeneratorAgent.generateImagesBase64(imageSuggestions);
 
       // Combine notes first
       combinedMarkdown = NotesGeneratorAgent.combineNotes(notesResults, requestId);
 
-      // Then integrate images
+      // Then integrate images with Base64 encoding
       console.log(
         `[${requestId}] Integrating ${imageResults.filter((img) => img.success).length} images into notes...`
       );
@@ -298,32 +300,6 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
       path: markdownPath,
     });
 
-    // Handle images if needed
-    if (include_images === 'yes' && imageResults.some((img) => img.success)) {
-      const imagesDir = path.join(requestOutputDir, 'images');
-      if (!fs.existsSync(imagesDir)) {
-        fs.mkdirSync(imagesDir, { recursive: true });
-      }
-
-      // Update image paths in markdown and copy images
-      broadcastStage(requestId, 'processing_images');
-      for (const imageResult of imageResults) {
-        if (imageResult.success && imageResult.localPath) {
-          const imageName = path.basename(imageResult.localPath);
-          const newImagePath = path.join(imagesDir, imageName);
-          fs.copyFileSync(imageResult.localPath, newImagePath);
-
-          // Update the path in the markdown
-          const oldPath = imageResult.localPath.replace(/\\/g, '/');
-          const newPath = `./images/${imageName}`;
-          combinedMarkdown = combinedMarkdown.replace(oldPath, newPath);
-        }
-      }
-
-      // Write updated markdown
-      fs.writeFileSync(markdownPath, combinedMarkdown);
-    }
-
     // Step 5: Generate PDF if requested
     if (format.toLowerCase() === 'pdf') {
       broadcastStage(requestId, 'generating_pdf');
@@ -339,20 +315,6 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
             broadcastStage(requestId, 'pdf_generation_progress', { progress: pdfProgress });
           }
         }, 500);
-
-        // Setup PDF generation with relative path support for images
-        // const { content } = await mdToPdf({
-        //   path: markdownPath,
-        //   pdf_options: {
-        //     format: 'A4',
-        //     margin: '20mm',
-        //     printBackground: true,
-        //   },
-        //   launch_options: {
-        //     executablePath: require('puppeteer').executablePath(),
-        //     args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        //   },
-        // });
 
         try {
           const markdownContent = await fs.promises.readFile(markdownPath, 'utf8');
@@ -521,72 +483,6 @@ function calculateEstimatedTime(syllabusLength, noteType, includeImages) {
   if (includeImages === 'yes') baseTime += 45;
 
   return Math.floor(baseTime); // Return whole seconds
-}
-
-/**
- * Controller for downloading generated files
- * @param {Request} req - Express request object
- * @param {Response} res - Express response object
- */
-export async function downloadGeneratedNotesController(req, res) {
-  const { requestId } = req.body;
-  console.log(`Downloading file for request ${requestId}`);
-  try {
-    // Verify the request exists and is completed
-    const request = await NotesRequestModel.findOne({ _id: requestId });
-
-    if (!request) {
-      return res.status(404).json({
-        success: false,
-        error: 'Request not found',
-      });
-    }
-
-    if (request.status !== 'completed') {
-      return res.status(400).json({
-        success: false,
-        error: 'Notes generation is not yet complete',
-        status: request.status,
-      });
-    }
-
-    // Construct the directory path
-    const dirPath = path.join(OUTPUT_DIR, requestId);
-
-    // Check if directory exists
-    if (!fs.existsSync(dirPath)) {
-      return res.status(404).json({
-        success: false,
-        error: 'Output directory not found',
-      });
-    }
-
-    // Find PDF files in the directory
-    const files = fs.readdirSync(dirPath).filter((file) => file.endsWith('.pdf'));
-
-    console.log(files);
-
-    if (files.length === 0) {
-      return res.status(404).json({
-        success: false,
-        error: 'No PDF file found in the output directory',
-      });
-    }
-
-    // Use the first PDF file found
-    const pdfFilename = files[0];
-    const filePath = path.join(dirPath, pdfFilename);
-
-    // Send the file
-    res.download(filePath, pdfFilename);
-  } catch (error) {
-    console.error(`Error downloading file for request ${requestId}:`, error);
-    res.status(500).json({
-      success: false,
-      error: 'Failed to download file',
-      details: process.env.NODE_ENV !== 'production' ? error.stack : undefined,
-    });
-  }
 }
 
 /**

@@ -23,13 +23,14 @@ const funnel_display = Funnel_Display({
 });
 
 const NotesGenerate = () => {
-  let authToken = "";
+  const [authToken, setAuthToken] = useState<string>("");
+
   useEffect(() => {
     const token = getCookie("jwt-auth");
     if (!token) {
       window.location.href = "/auth";
     } else {
-      authToken = token;
+      setAuthToken(token);
     }
   }, []);
 
@@ -70,8 +71,10 @@ const NotesGenerate = () => {
   }, []);
 
   useEffect(() => {
-    handleGetUser();
-  }, []);
+    if (authToken) {
+      handleGetUser();
+    }
+  }, [authToken]);
 
   const [formData, setFormData] = useState({
     email: email,
@@ -179,8 +182,14 @@ const NotesGenerate = () => {
 
       const response = await axios.post(
         `${BASE_URL}/pipeline/generate-notes`,
-        formData
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${authToken}`,
+          },
+        }
       );
+
       if (response.data.success) {
         if (response.data && response.data.requestId) {
           setRequestId(response.data.requestId);
@@ -298,12 +307,22 @@ const NotesGenerate = () => {
     }
 
     return (
-      <div className={`mb-4 p-3 ${isDarkMode ? "border-green-900" : "bg-green-50 border-green-200" } border rounded-md`}>
-        <p className={`${isDarkMode ? "text-white" : "text-green-700"}`}>{statusMessage}</p>
+      <div
+        className={`mb-4 p-3 ${
+          isDarkMode ? "border-green-900" : "bg-green-50 border-green-200"
+        } border rounded-md`}
+      >
+        <p className={`${isDarkMode ? "text-white" : "text-green-700"}`}>
+          {statusMessage}
+        </p>
         {generationComplete && (
           <button
             onClick={downloadGeneratedNotes}
-            className={`mt-2 px-4 py-2 cursor-pointer rounded-md ${isDarkMode ? "bg-green-700 text-white hover:bg-green-900 border-green-900" : "bg-white text-green-700 border-green-700 hover:bg-green-700 hover:text-white"} transition duration-300`}
+            className={`mt-2 px-4 py-2 cursor-pointer rounded-md ${
+              isDarkMode
+                ? "bg-green-700 text-white hover:bg-green-900 border-green-900"
+                : "bg-white text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
+            } transition duration-300`}
           >
             Download Notes
           </button>
@@ -450,7 +469,11 @@ const NotesGenerate = () => {
                   className={`px-6 py-2 border rounded-lg shadow-md transition duration-300 ${
                     isGenerating
                       ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                      : `cursor-pointer ${isDarkMode ? "bg-green-700 text-white hover:bg-green-900 border-green-900" : "bg-white text-green-700 border-green-700 hover:bg-green-700 hover:text-white"}`
+                      : `cursor-pointer ${
+                          isDarkMode
+                            ? "bg-green-700 text-white hover:bg-green-900 border-green-900"
+                            : "bg-white text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
+                        }`
                   }`}
                 >
                   {isGenerating

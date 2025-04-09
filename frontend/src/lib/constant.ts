@@ -31,38 +31,45 @@ export const faqs = [
 export const PLANS = [
   {
     title: "Starter",
-    price: "$11.99",
+    description: "Perfect for those just getting started with our product. Try it out and explore all the features risk-free!",
+    price: "₹99",
+    cost: 99,
+    credits: 15,
+    features: [
+      "Credits - 15",
+      "Access to all features",
+      "₹6.67/credit",
+      "1 credit per detailed pdf"
+    ],
+    limitations: [],
+  },
+  {
+    title: "Growth",
+    description: "If you've gotten the hang of our notes and want to stock up on cheat sheets for your exams, this is for you!",
+    price: "₹499",
+    cost: 499,
     credits: 100,
     features: [
       "Credits - 100",
       "Access to all features",
-      
+      "₹4.99/credit",
+      "1 credit per detailed pdf",
+      "25% cheaper per credit than Starter plan"
     ],
-    limitations: [
-      
-    ],
-  },
-  {
-    title: "Growth",
-    price: "$24.99",
-    credits: 500,
-    features: [
-      "Credits - 500",
-      "Access to all features",
-      
-    ],
-    limitations: [
-      
-    ],
+    limitations: [],
   },
   {
     title: "Scale",
-    price: "$44.99",
-    credits: 1000,
+    description: "Ideal for universities, schools, and institutions that need bulk access to our resources at the best value.",
+    price: "₹1500",
+    cost: 1500,
+    credits: 450,
     features: [
-      "Credits - 1000",
+      "Credits - 450",
       "Access to all features",
-      
+      "₹3.34/credit",
+      "1 credit per detailed pdf",
+      "50% cheaper per credit than Starter plan"
     ],
     limitations: [],
   },

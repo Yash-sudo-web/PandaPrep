@@ -1,12 +1,11 @@
 import express from 'express';
 import {
   generateNotesController,
-  downloadGeneratedNotesController,
 } from '../controllers/pipeline.controller.js';
+import { verifyFirebaseToken } from '../middlewares/auth-verify.middleware.js';
 
 const router = express.Router();
 
-router.post('/generate-notes', generateNotesController);
-router.post('/download-notes', downloadGeneratedNotesController);
+router.post('/generate-notes', verifyFirebaseToken, generateNotesController);
 
 export default router;
