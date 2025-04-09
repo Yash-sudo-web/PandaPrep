@@ -44,3 +44,24 @@ export const getUserController = async (req, res) => {
   }
 }
 
+export const updateUserController = async (req, res) => {
+  try {
+    const { email, gender, country, address } = req.body;
+
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+    const userDoc = await UserModel.findOne({ email });
+    if (!userDoc) return res.status(404).json({ error: 'User not found' });
+    
+    const updated = await UserModel.findOneAndUpdate(
+      { email },
+      { gender, country, address },
+      { new: true, upsert: true }
+    );
+
+    res.status(200).json({ message: 'Profile updated successfully', data: updated });
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    res.status(500).json({ error: 'Failed to update profile' });
+  }
+};
+

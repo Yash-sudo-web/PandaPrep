@@ -9,6 +9,9 @@ const userSchema = new mongoose.Schema({
     providerId: { type: String, required: true },
     createdAt: { type: Date, default: Date.now },
     lastLoginAt: { type: Date, default: Date.now },
+    gender:{ type: String },
+    country: { type: String },
+    address: { type: String },
     providerData: {
         providerId: { type: String },
         uid: { type: String },
@@ -25,6 +28,8 @@ const userSchema = new mongoose.Schema({
         plan: { type: String, default: "free" },
         credits: { type: Number, default: 3 },
     }
+
+
 });
 
 export const UserModel = mongoose.model("User", userSchema);
