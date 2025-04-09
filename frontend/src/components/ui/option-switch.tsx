@@ -1,4 +1,4 @@
-import { Lock } from "lucide-react";
+import { Lock, Info } from "lucide-react";
 import { useTheme } from "next-themes";
 import React, { useEffect, useState } from "react";
 
@@ -41,13 +41,27 @@ const MultiTabSwitch: React.FC<MultiTabSwitchProps> = ({
 
   return (
     <div className="w-full flex flex-col items-start gap-2 relative">
-      <label
-        className={`${
-          lgSize ? "text-lg" : "text-base"
-        } font-semibold text-gray-600 ml-2 ${isDarkMode ? "text-white" : ""}`}
-      >
-        {label}
-      </label>
+      <div className="flex items-center ml-2 gap-1">
+        <label
+          className={`${
+            lgSize ? "text-lg" : "text-base"
+          } font-semibold text-gray-600 ${isDarkMode ? "text-white" : ""}`}
+        >
+          {label}
+        </label>
+
+        {field === "include_images" && (
+          <div className="relative group">
+            <Info style={{
+              marginTop: "2.5px",
+            }} size={16} className={`${isDarkMode ? "text-white" : "text-gray-500"} cursor-pointer`} />
+            <div className="absolute invisible group-hover:visible bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-[#ECFDF4] text-[#4A5565] text-xs px-3 py-1 rounded-md shadow-md z-50 w-max">
+              This is an Experimental Feature.
+            </div>
+          </div>
+        )}
+      </div>
+
       <div className="flex border-2 rounded-3xl border-green-100 relative">
         {tabs.map((option) => {
           const isPremium = premium_feature?.includes(option.value);

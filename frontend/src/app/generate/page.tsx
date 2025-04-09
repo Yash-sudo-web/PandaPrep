@@ -23,16 +23,6 @@ const funnel_display = Funnel_Display({
 });
 
 const NotesGenerate = () => {
-  const [authToken, setAuthToken] = useState<string>("");
-
-  useEffect(() => {
-    const token = getCookie("jwt-auth");
-    if (!token) {
-      window.location.href = "/auth";
-    } else {
-      setAuthToken(token);
-    }
-  }, []);
 
   const [user, setUser] = useState<User | null>(null);
   const router = useRouter();
@@ -48,6 +38,21 @@ const NotesGenerate = () => {
   const [showGenerateButton, setShowGenerateButton] = useState(true);
   const [userCredits, setUserCredits] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
+  const [idToken, setIdToken] = useState<string | null>(null);
+
+    // Check auth state and redirect if not logged in
+    useEffect(() => {
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+          router.push("/auth");
+        } else {
+          setUser(user);
+          const token = await user.getIdToken();
+          setIdToken(token);
+        }
+      });
+      return () => unsubscribe();
+    }, [auth, router]);
 
   const toggleView = () => {
     setShowPreview((prev) => !prev);
@@ -71,10 +76,10 @@ const NotesGenerate = () => {
   }, []);
 
   useEffect(() => {
-    if (authToken) {
+    if (idToken) {
       handleGetUser();
     }
-  }, [authToken]);
+  }, [idToken]);
 
   const [formData, setFormData] = useState({
     email: email,
@@ -153,7 +158,7 @@ const NotesGenerate = () => {
     try {
       const res = await axios.get(`${BASE_URL}/user/get`, {
         headers: {
-          Authorization: `Bearer ${authToken}`,
+          Authorization: `Bearer ${idToken}`,
         },
       });
       setUserCredits(res.data.subscription.credits);
@@ -185,7 +190,7 @@ const NotesGenerate = () => {
         formData,
         {
           headers: {
-            Authorization: `Bearer ${authToken}`,
+            Authorization: `Bearer ${idToken}`,
           },
         }
       );

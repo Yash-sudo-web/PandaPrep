@@ -25,7 +25,7 @@ const funnel_display = Funnel_Display({
 });
 
 export interface CustomerDetailsDialogProps {
-    authToken: string;
+    idToken: string;
     userId: string;
     BASE_URL: string;
 }
@@ -44,7 +44,7 @@ export interface CustomerDetailsDialogRef {
 }
 
 const CustomerDetailsDialog = React.forwardRef<CustomerDetailsDialogRef, CustomerDetailsDialogProps>(
-    ({ authToken, userId, BASE_URL }, ref) => {
+    ({ idToken, userId, BASE_URL }, ref) => {
         const [open, setOpen] = React.useState(false);
         const [currentPlan, setCurrentPlan] = React.useState<Plan | null>(null);
         const [customerDetails, setCustomerDetails] = React.useState({
@@ -180,7 +180,7 @@ const CustomerDetailsDialog = React.forwardRef<CustomerDetailsDialogRef, Custome
 
             setOpen(false);
 
-            if (!authToken || !userId) {
+            if (!idToken || !userId) {
                 console.error("Auth token or user ID not available");
                 return;
             }
@@ -194,7 +194,7 @@ const CustomerDetailsDialog = React.forwardRef<CustomerDetailsDialogRef, Custome
                     },
                     {
                         headers: {
-                            Authorization: `Bearer ${authToken}`,
+                            Authorization: `Bearer ${idToken}`,
                         },
                     }
                 );
@@ -255,7 +255,7 @@ const CustomerDetailsDialog = React.forwardRef<CustomerDetailsDialogRef, Custome
                                 },
                                 {
                                     headers: {
-                                        Authorization: `Bearer ${authToken}`,
+                                        Authorization: `Bearer ${idToken}`,
                                     },
                                 }
                             );
