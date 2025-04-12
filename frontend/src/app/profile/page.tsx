@@ -236,8 +236,12 @@ const Profile = () => {
   return (
     <div
       className={`min-h-screen ${
-        isDarkMode ? "bg-neutral-950 text-green-600" : "bg-white text-gray-900"
-      } ${funnel_display.className}`}
+        isDarkMode ? "text-green-600" : "text-gray-900"
+      } ${funnel_display.className} ${
+        isDarkMode
+          ? "bg-[radial-gradient(circle,rgba(19,78,43,1)_0%,rgba(10,10,10,1)_100%)]"
+          : "bg-[radial-gradient(circle,rgba(184,230,200,1)_0%,rgba(255,255,255,1)_100%)]"
+      } pb-20`}
     >
       <Navbar />
 
@@ -245,7 +249,11 @@ const Profile = () => {
         <div className="relative">
           <div className={`h-40 sm:h-56 rounded-lg overflow-hidden`}></div>
 
-          <div className="flex flex-col sm:flex-row items-start sm:items-end absolute bottom-0 left-0 transform translate-y-1/2 sm:translate-y-1/3 px-4 sm:px-8 w-full">
+          <div className={`rounded-lg ${
+            isDarkMode ? "bg-neutral-900" : "bg-gray-50"
+          } border ${
+            isDarkMode ? "border-neutral-800" : "border-gray-200"
+          } p-4 flex flex-col sm:flex-row items-start sm:items-end absolute bottom-0 left-0 transform translate-y-1/2 sm:translate-y-1/3 px-4 sm:px-8 w-full`}>
             <div className="relative">
               <div
                 className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-4 ${
@@ -338,7 +346,7 @@ const Profile = () => {
                 <p className={`text-3xl font-bold ${
                   isDarkMode ? "text-green-500" : "text-green-600"
                 }`}>
-                  {user?.subscription?.credits || 0}
+                  {user?.subscription?.credits || 0} <span>{user?.subscription?.plan === "free" && "(Trial Credits)"}</span>
                 </p>
               </div>
               <button

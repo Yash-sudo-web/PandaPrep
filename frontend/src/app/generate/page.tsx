@@ -13,8 +13,6 @@ import axios from "axios";
 import { BASE_URL } from "@/lib/constant";
 import PDFLikeMarkdownDisplay from "@/components/global/PDFdisplay";
 import { getCookie } from "@/lib/utils";
-import Footer from "@/components/global/footer";
-import { log } from "console";
 import { useTheme } from "next-themes";
 
 const funnel_display = Funnel_Display({
@@ -505,11 +503,6 @@ const NotesGenerate = () => {
           </div>
         </div>
       </main>
-      <section
-        className={cn("w-full", isDarkMode ? "bg-neutral-900" : "bg-white")}
-      >
-        <Footer />
-      </section>
     </div>
   );
 };

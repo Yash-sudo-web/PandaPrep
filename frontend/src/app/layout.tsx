@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "@/providers/theme-provider"
 import { DM_Sans } from 'next/font/google'
+import Footer from "@/components/global/footer";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -34,7 +35,9 @@ export default function RootLayout({
             defaultTheme="light"
             // enableSystem
             disableTransitionOnChange>
-        {children}</ThemeProvider>
+        {children}
+        <Footer />
+        </ThemeProvider>
       </body>
     </html>
   );

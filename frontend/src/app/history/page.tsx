@@ -144,8 +144,7 @@ const History = () => {
       <Navbar />
 
       <section className="w-full max-w-3xl px-4 sm:px-6 flex flex-col items-center pt-16 sm:pt-20 md:pt-24">
-        {/* Header Section - Changed from fixed to sticky */}
-        <div className="sticky top-16 sm:top-16 md:top-16 w-full z-10 pt-6 pb-4 bg-inherit">
+        <div className="top-16 sm:top-16 md:top-16 w-full z-10 pt-6 pb-4 bg-inherit">
           <div className="flex items-center justify-center w-full">
             <h1
               className={cn(

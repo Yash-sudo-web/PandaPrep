@@ -223,15 +223,6 @@ export default function Pricing() {
           BASE_URL={BASE_URL}
         />
       )}
-
-      <section
-        className={cn(
-          "w-full mt-auto",
-          isDarkMode ? "bg-neutral-900" : "bg-white"
-        )}
-      >
-        <Footer />
-      </section>
     </main>
   );
 }
