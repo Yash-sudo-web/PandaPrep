@@ -3,9 +3,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { useTheme } from "next-themes";
 import { Funnel_Display } from "next/font/google";
-import { Country }  from 'country-state-city';
+import { Country } from "country-state-city";
 import Navbar from "@/components/global/navbar";
-import { ChevronDown, Save, Loader2 } from "lucide-react";
+import { ChevronDown, Save, Loader2, CreditCard } from "lucide-react";
 import {
   getAuth,
   onAuthStateChanged,
@@ -77,8 +77,13 @@ const genders: string[] = ["Male", "Female", "Non-binary", "Prefer not to say"];
 const Profile = () => {
   const auth = getAuth(app);
   const router = useRouter();
-  const { theme, resolvedTheme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const countries: CountryOption[] = useMemo(() => {
     return Country.getAllCountries().map((country) => ({
@@ -167,6 +172,8 @@ const Profile = () => {
   };
 
   const toggleDropdown = (dropdown: string) => {
+    if (!editMode) return; // Prevent dropdown toggle if not in edit mode
+    
     setShowDropdown((prev) => ({
       ...prev,
       [dropdown]: !prev[dropdown as keyof typeof prev],
@@ -198,12 +205,17 @@ const Profile = () => {
       );
 
       toast.success("Profile updated successfully");
+      setEditMode(false); // Exit edit mode after successful save
     } catch (error) {
       console.error("Error saving profile:", error);
       toast.error("Failed to update profile");
     } finally {
       setSaving(false);
     }
+  };
+
+  const navigateToSubscription = () => {
+    router.push('/pricing');
   };
 
   if (loading) {
@@ -220,7 +232,7 @@ const Profile = () => {
       </div>
     );
   }
-  console.log(user);
+
   return (
     <div
       className={`min-h-screen ${
@@ -230,13 +242,13 @@ const Profile = () => {
       <Navbar />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="relative ">
-          <div className={`h-40 sm:h-56 rounded-lg overflow-hidden `}></div>
+        <div className="relative">
+          <div className={`h-40 sm:h-56 rounded-lg overflow-hidden`}></div>
 
           <div className="flex flex-col sm:flex-row items-start sm:items-end absolute bottom-0 left-0 transform translate-y-1/2 sm:translate-y-1/3 px-4 sm:px-8 w-full">
-            <div className="relative ">
+            <div className="relative">
               <div
-                className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-4  ${
+                className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden border-4 ${
                   isDarkMode ? "border-neutral-950" : "border-white"
                 }`}
               >
@@ -273,7 +285,13 @@ const Profile = () => {
                   </p>
                 </div>
                 <button
-                  onClick={saveProfile}
+                  onClick={() => {
+                    if (editMode) {
+                      saveProfile();
+                    } else {
+                      setEditMode(true);
+                    }
+                  }}
                   disabled={saving}
                   className={`mt-2 sm:mt-0 px-6 py-2 rounded-md flex items-center ${
                     isDarkMode
@@ -288,8 +306,14 @@ const Profile = () => {
                     </>
                   ) : (
                     <>
-                      <Save size={18} className="mr-2" />
-                      <span>Save Changes</span>
+                      {editMode ? (
+                        <>
+                          <Save size={18} className="mr-2" />
+                          <span>Save Changes</span>
+                        </>
+                      ) : (
+                        <span>Edit</span>
+                      )}
                     </>
                   )}
                 </button>
@@ -298,7 +322,40 @@ const Profile = () => {
           </div>
         </div>
 
-        <div className="mt-16 sm:mt-20">
+        {/* Credits Section */}
+        <div className="mt-24 sm:mt-28 mb-8">
+          <div className={`p-6 rounded-lg ${
+            isDarkMode ? "bg-neutral-900" : "bg-gray-50"
+          } border ${
+            isDarkMode ? "border-neutral-800" : "border-gray-200"
+          }`}>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+              <div>
+                <h2 className="text-lg font-medium mb-2 flex items-center">
+                  <CreditCard className="mr-2" size={20} />
+                  Available Credits
+                </h2>
+                <p className={`text-3xl font-bold ${
+                  isDarkMode ? "text-green-500" : "text-green-600"
+                }`}>
+                  {user?.subscription?.credits || 0}
+                </p>
+              </div>
+              <button
+                onClick={navigateToSubscription}
+                className={`mt-4 sm:mt-0 px-6 py-2 rounded-md flex items-center ${
+                  isDarkMode
+                    ? "bg-green-700 hover:bg-green-800"
+                    : "bg-green-600 hover:bg-green-700"
+                } text-white transition-colors`}
+              >
+                Top Up Credits
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-sm font-medium mb-2">
@@ -310,7 +367,7 @@ const Profile = () => {
                 value={formData.fullName || user?.displayName || ""}
                 readOnly
                 placeholder="Your Full Name"
-                className={`w-full p-3 rounded-md cursor-not-allowed ${
+                className={`w-full p-3 rounded-md cursor-not-allowed ${!editMode ? "opacity-70" : ""} ${
                   isDarkMode
                     ? "bg-neutral-900 border border-neutral-800 text-green-600"
                     : "bg-gray-100 border border-gray-300 text-gray-500"
@@ -322,19 +379,24 @@ const Profile = () => {
               <label className="block text-sm font-medium mb-2">Gender</label>
               <div
                 onClick={() => toggleDropdown("gender")}
-                className={`w-full p-3 rounded-md flex justify-between items-center cursor-pointer ${
+                className={`w-full p-3 rounded-md flex justify-between items-center ${
+                  editMode ? "cursor-pointer" : "cursor-not-allowed"
+                } ${
                   isDarkMode
-                    ? "bg-neutral-900 border border-neutral-800"
-                    : "bg-white border border-gray-300"
+                    ? `bg-neutral-900 border border-neutral-800 ${!editMode ? "opacity-70" : ""}`
+                    : `${editMode ? "bg-white" : "bg-gray-100"} border border-gray-300`
                 }`}
               >
                 <span className={formData.gender ? "" : "text-gray-500"}>
                   {formData.gender || "Select Gender"}
                 </span>
-                <ChevronDown size={18} className="text-gray-500" />
+                <ChevronDown 
+                  size={18} 
+                  className={`text-gray-500 ${!editMode ? "opacity-50" : ""}`} 
+                />
               </div>
 
-              {showDropdown.gender && (
+              {showDropdown.gender && editMode && (
                 <div
                   className={`absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-md shadow-lg ${
                     isDarkMode
@@ -372,19 +434,24 @@ const Profile = () => {
                 </label>
                 <div
                   onClick={() => toggleDropdown("country")}
-                  className={`w-full p-3 rounded-md flex justify-between items-center cursor-pointer ${
+                  className={`w-full p-3 rounded-md flex justify-between items-center ${
+                    editMode ? "cursor-pointer" : "cursor-not-allowed"
+                  } ${
                     isDarkMode
-                      ? "bg-neutral-900 border border-neutral-800"
-                      : "bg-white border border-gray-300"
+                      ? `bg-neutral-900 border border-neutral-800 ${!editMode ? "opacity-70" : ""}`
+                      : `${editMode ? "bg-white" : "bg-gray-100"} border border-gray-300`
                   }`}
                 >
                   <span className={formData.country ? "" : "text-gray-500"}>
                     {formData.country || "Select Country"}
                   </span>
-                  <ChevronDown size={18} className="text-gray-500" />
+                  <ChevronDown 
+                    size={18} 
+                    className={`text-gray-500 ${!editMode ? "opacity-50" : ""}`} 
+                  />
                 </div>
 
-                {showDropdown.country && (
+                {showDropdown.country && editMode && (
                   <div
                     className={`absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-md shadow-lg ${
                       isDarkMode
@@ -427,10 +494,11 @@ const Profile = () => {
                   value={formData.address || ""}
                   onChange={handleInputChange}
                   placeholder="Enter your billing address"
+                  disabled={!editMode}
                   className={`w-full p-3 rounded-md ${
                     isDarkMode
-                      ? "bg-neutral-900 border border-neutral-800 text-green-600"
-                      : "bg-white border border-gray-300 text-gray-900"
+                      ? `bg-neutral-900 border border-neutral-800 text-green-600 ${!editMode ? "opacity-70 cursor-not-allowed" : ""}`
+                      : `${editMode ? "bg-white" : "bg-gray-100"} border border-gray-300 ${editMode ? "text-gray-900" : "text-gray-500"} ${!editMode ? "cursor-not-allowed" : ""}`
                   } focus:outline-none transition-colors`}
                 />
               </div>
