@@ -18,7 +18,7 @@ const geistMono = localFont({
 
 export const metadata: Metadata = {
   title: "PandaPrep",
-  description: "PandaPrep - The ultimate notes generation platform built for speed, clarity, and domination. Instantly turn any topic into structured, high-quality study notes. No fluff. No stress. Just pure productivity.",
+  description: "PandaPrep - The ultimate notes generation platform built for speed, clarity, and domination. Instantly turn any topic into structured, high quality study notes. No fluff. No stress. Just pure productivity.",
 };
 
 export default function RootLayout({
