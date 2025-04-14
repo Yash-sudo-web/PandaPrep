@@ -1,5 +1,5 @@
 import express from 'express';
-import { userSignupController, getUserController } from '../controllers/user.controller.js';
+import { userSignupController, getUserController, updateUserController } from '../controllers/user.controller.js';
 import { verifyFirebaseToken } from '../middlewares/auth-verify.middleware.js';
 
 
@@ -8,5 +8,7 @@ const router = express.Router();
 router.post('/signin', userSignupController);
 
 router.get('/get', verifyFirebaseToken, getUserController); 
+
+router.post('/update', verifyFirebaseToken, updateUserController);
 
 export default router;

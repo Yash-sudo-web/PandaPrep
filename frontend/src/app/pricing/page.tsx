@@ -21,6 +21,8 @@ import { useTheme } from "next-themes";
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
 import CustomerDetailsDialog, { CustomerDetailsDialogRef, Plan } from "@/components/global/user-detail-razorpay";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { useRouter } from "next/navigation";
 
 const funnel_display = Funnel_Display({
   subsets: ["latin"],
@@ -28,40 +30,47 @@ const funnel_display = Funnel_Display({
 });
 
 export default function Pricing() {
-  const [authToken, setAuthToken] = useState<string>("");
+  const router = useRouter();
+  const auth = getAuth();
+
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [idToken, setIdToken] = useState<string | null>(null);
+  const [user, setUser] = useState<any>(null);
   
-
   const customerDialogRef = useRef<CustomerDetailsDialogRef>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  useEffect(() => {
-    const token = getCookie("jwt-auth");
-    if (!token) {
-      window.location.href = "/auth";
-    } else {
-      setAuthToken(token);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (authToken) {
-      handleGetUser();
-    }
-  }, [authToken]);
+    // Check auth state and redirect if not logged in
+    useEffect(() => {
+      const unsubscribe = onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+          router.push("/auth");
+        } else {
+          setUser(user);
+          const token = await user.getIdToken();
+          setIdToken(token);
+        }
+      });
+      return () => unsubscribe();
+    }, [auth, router]);
 
   const isDarkMode = mounted && resolvedTheme === "dark";
+
+  useEffect(() => {
+    if (idToken) {
+      handleGetUser();
+    }}, [idToken]);
 
   const handleGetUser = async () => {
     try {
       const res = await axios.get(`${BASE_URL}/user/get`, {
         headers: {
-          Authorization: `Bearer ${authToken}`,
+          Authorization: `Bearer ${idToken}`,
         },
       });
       setUserId(res.data._id);
@@ -206,23 +215,14 @@ export default function Pricing() {
         </section>
       </div>
 
-      {authToken && userId && (
+      {idToken && userId && (
         <CustomerDetailsDialog
           ref={customerDialogRef}
-          authToken={authToken}
+          idToken={idToken}
           userId={userId}
           BASE_URL={BASE_URL}
         />
       )}
-
-      <section
-        className={cn(
-          "w-full mt-auto",
-          isDarkMode ? "bg-neutral-900" : "bg-white"
-        )}
-      >
-        <Footer />
-      </section>
     </main>
   );
 }

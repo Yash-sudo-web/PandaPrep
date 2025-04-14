@@ -1,14 +1,16 @@
 "use client";
 
+import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/global/navbar";
 import { cn, getCookie } from "@/lib/utils";
 import { Funnel_Display } from "next/font/google";
 import { Eye, Moon, Search, Sun, Trash2 } from "lucide-react";
-import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { BASE_URL } from "@/lib/constant";
 import { useTheme } from "next-themes";
 import { ThemeToggle } from "@/components/global/mode-selector";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
 
 const funnel_display = Funnel_Display({
   subsets: ["latin"],
@@ -16,24 +18,22 @@ const funnel_display = Funnel_Display({
 });
 
 const History = () => {
-  const [authToken, setAuthToken] = useState<string>("");
+  const router = useRouter();
+  const auth = getAuth();
 
-  useEffect(() => {
-    const token = getCookie("jwt-auth");
-    if (!token) {
-      window.location.href = "/auth";
-    } else {
-      setAuthToken(token);
-    }
-  }, []);
-
-
-  const [notes, setNotes] = useState<{ id: number; subject_name: string; createdAt: string; secure_url: string }[]>([]);
-
+  const [user, setUser] = useState<any>(null);
+  const [idToken, setIdToken] = useState<string | null>(null);
+  const [notes, setNotes] = useState<
+    {
+      id: number;
+      subject_name: string;
+      createdAt: string;
+      secure_url: string;
+    }[]
+  >([]);
   const [selectedNotes, setSelectedNotes] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [allSelected, setAllSelected] = useState(false);
-
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -43,6 +43,19 @@ const History = () => {
     setMounted(true);
   }, []);
 
+  // Check auth state and redirect if not logged in
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        router.push("/auth");
+      } else {
+        setUser(user);
+        const token = await user.getIdToken();
+        setIdToken(token);
+      }
+    });
+    return () => unsubscribe();
+  }, [auth, router]);
 
   const toggleSelection = (id: number) => {
     setSelectedNotes((prev) =>
@@ -62,13 +75,14 @@ const History = () => {
   const handleGetAllNotes = async () => {
     try {
       const email = getCookie("email");
+      if (!idToken || !email) return;
       const response = await axios.post(
         `${BASE_URL}/userHistory/notes`,
         { email },
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
+            Authorization: `Bearer ${idToken}`,
           },
         }
       );
@@ -81,6 +95,7 @@ const History = () => {
   const handleDeleteNote = async (ids: number[]) => {
     try {
       const email = getCookie("email");
+      if (!idToken || !email) return;
       await axios.post(
         `${BASE_URL}/userHistory/notes/delete`,
         {
@@ -90,7 +105,7 @@ const History = () => {
         {
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${authToken}`,
+            Authorization: `Bearer ${idToken}`,
           },
         }
       );
@@ -102,10 +117,10 @@ const History = () => {
   };
 
   useEffect(() => {
-    if(authToken){
+    if (idToken) {
       handleGetAllNotes();
     }
-  }, [authToken]);
+  }, [idToken]);
 
   useEffect(() => {
     setAllSelected(selectedNotes.length === notes.length && notes.length > 0);
@@ -115,9 +130,7 @@ const History = () => {
     note.subject_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-
-  if (!mounted) return <div className="min-h-screen"></div>;
-
+  if (!mounted) return <div className="min-h-screen" />;
   return (
     <main
       className={cn(
@@ -131,19 +144,25 @@ const History = () => {
       <Navbar />
 
       <section className="w-full max-w-3xl px-4 sm:px-6 flex flex-col items-center pt-16 sm:pt-20 md:pt-24">
-        {/* Header Section - Changed from fixed to sticky */}
-        <div className="sticky top-16 sm:top-16 md:top-16 w-full z-10 pt-6 pb-4 bg-inherit">
+        <div className="top-16 sm:top-16 md:top-16 w-full z-10 pt-6 pb-4 bg-inherit">
           <div className="flex items-center justify-center w-full">
-            <h1 className={cn(
-              "text-2xl sm:text-3xl md:text-5xl text-center",
-              isDarkMode ? "text-green-600" : "text-green-600"
-            )}>
+            <h1
+              className={cn(
+                "text-2xl sm:text-3xl md:text-5xl text-center",
+                isDarkMode ? "text-green-600" : "text-green-600"
+              )}
+            >
               History
             </h1>
           </div>
           <div className="relative mt-4 w-full">
             <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none">
-              <Search className={cn("h-5 w-5", isDarkMode ? "text-gray-300" : "text-gray-600")} />
+              <Search
+                className={cn(
+                  "h-5 w-5",
+                  isDarkMode ? "text-gray-300" : "text-gray-600"
+                )}
+              />
             </div>
             <input
               type="text"
@@ -161,10 +180,12 @@ const History = () => {
         </div>
 
         <div className="w-full ">
-          <div className={cn(
-            "text-sm mb-4 flex items-center gap-2 w-full",
-            isDarkMode ? "text-gray-300" : "text-gray-600"
-          )}>
+          <div
+            className={cn(
+              "text-sm mb-4 flex items-center gap-2 w-full",
+              isDarkMode ? "text-gray-300" : "text-gray-600"
+            )}
+          >
             {selectedNotes.length > 0 ? (
               <>
                 <p>{selectedNotes.length} selected</p>
@@ -184,22 +205,19 @@ const History = () => {
             )}
           </div>
 
-
-
-
           <div className="flex items-center justify-end mb-4 gap-2">
-
             <input
               type="checkbox"
               id="select-all-checkbox"
               className={cn(
                 "h-5 w-5 focus:ring-2 cursor-pointer",
-                isDarkMode ? "text-green-400 focus:ring-green-400" : "text-green-600 focus:ring-green-500"
+                isDarkMode
+                  ? "text-green-400 focus:ring-green-400"
+                  : "text-green-600 focus:ring-green-500"
               )}
               checked={allSelected}
               onChange={toggleSelectAll}
             />
-
 
             <label
               htmlFor="select-all-checkbox"
@@ -208,7 +226,6 @@ const History = () => {
                 isDarkMode ? "text-gray-300" : "text-gray-800"
               )}
             >
-
               {!allSelected ? `Select All` : `Deselect All`}
             </label>
           </div>
@@ -226,16 +243,20 @@ const History = () => {
                   )}
                 >
                   <div className="mb-2 sm:mb-0">
-                    <h2 className={cn(
-                      "text-base sm:text-lg font-semibold",
-                      isDarkMode ? "text-white" : "text-gray-800"
-                    )}>
+                    <h2
+                      className={cn(
+                        "text-base sm:text-lg font-semibold",
+                        isDarkMode ? "text-white" : "text-gray-800"
+                      )}
+                    >
                       {note.subject_name}
                     </h2>
-                    <p className={cn(
-                      "text-xs sm:text-sm mt-1",
-                      isDarkMode ? "text-gray-400" : "text-gray-600"
-                    )}>
+                    <p
+                      className={cn(
+                        "text-xs sm:text-sm mt-1",
+                        isDarkMode ? "text-gray-400" : "text-gray-600"
+                      )}
+                    >
                       {new Date(note.createdAt).toLocaleString()}
                     </p>
                   </div>
@@ -254,7 +275,9 @@ const History = () => {
                       type="checkbox"
                       className={cn(
                         "h-5 w-5 focus:ring-2 cursor-pointer",
-                        isDarkMode ? "text-green-400 focus:ring-green-400" : "text-green-600 focus:ring-green-500"
+                        isDarkMode
+                          ? "text-green-400 focus:ring-green-400"
+                          : "text-green-600 focus:ring-green-500"
                       )}
                       checked={selectedNotes.includes(note.id)}
                       onChange={() => toggleSelection(note.id)}
@@ -263,10 +286,12 @@ const History = () => {
                 </div>
               ))
             ) : (
-              <div className={cn(
-                "text-center py-8",
-                isDarkMode ? "text-gray-400" : "text-gray-600"
-              )}>
+              <div
+                className={cn(
+                  "text-center py-8",
+                  isDarkMode ? "text-gray-400" : "text-gray-600"
+                )}
+              >
                 No notes found matching your search.
               </div>
             )}

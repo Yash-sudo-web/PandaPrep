@@ -1,23 +1,15 @@
 "use client";
 
 import Navbar from "@/components/global/navbar";
-import Image from "next/image";
 import { ContainerScroll } from "@/components/global/container-scroll-animation";
 import { Button } from "@/components/ui/button";
 import { Funnel_Display } from "next/font/google";
-import { InfiniteMovingCards } from "@/components/global/infinite-moving-cards";
-import { clients, faqs } from "@/lib/constant";
 import { TextGenerateEffect } from "@/components/global/text-effect";
-import { Linkedin, Github } from "lucide-react";
-import { GlowingEffect } from "@/components/ui/glowing";
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 
-import { Box, Lock, Search, Settings, Sparkles } from "lucide-react";
 import { Featuregrid } from "@/components/global/feature-grid";
-import { ChevronDown } from "lucide-react";
 import { useRouter } from "next/navigation";
-import Footer from "@/components/global/footer";
 import { Faq } from "@/components/global/faq";
 
 const words = `Stressed about exams? Relax. Drop a topic, and let AI do its magic. `;
@@ -126,8 +118,6 @@ export default function Home() {
       <section>
         <Faq />
       </section>
-
-      <Footer />
     </main>
   );
 }
