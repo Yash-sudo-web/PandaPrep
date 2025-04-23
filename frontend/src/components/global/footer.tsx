@@ -58,9 +58,9 @@ const Footer = () => {
               Pricing
             </Link>
             
-            <Link href="/team" className="hover:text-green-600 transition-colors">
+           {/* <Link href="/team" className="hover:text-green-600 transition-colors">
               Team
-            </Link>
+            </Link> */}
           </nav>
 
 
@@ -104,8 +104,8 @@ const Footer = () => {
           <Link href="/privacy-policy" className="hover:text-green-600 transition-colors">
             Privacy Policy
           </Link>
-          <Link href="/terms-of-use" className="hover:text-green-600 transition-colors">
-            Terms of Use
+          <Link href="/terms-and-conditions" className="hover:text-green-600 transition-colors">
+            Terms And Conditions
           </Link>
           <Link href="/contact" className="hover:text-green-600 transition-colors">
             Contact Us
