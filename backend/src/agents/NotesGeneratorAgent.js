@@ -27,12 +27,13 @@ class NotesGeneratorAgent {
           length: 'Provide substantial content (400-600 words per major topic)',
           structure: '- Use ## for main topics\n- Use ### for subtopics\n- Use bullet points for lists of features/characteristics\n- Use paragraphs for explanations'
         },
-        'q&a': {
-          format: 'Structure content as questions followed by comprehensive answers',
-          depth: 'Focus on likely exam questions and detailed responses',
-          length: 'Cover key concepts (300-500 words per major topic)',
-          structure: '- Use ## for topic areas\n- Format as Q: [Question]\n- Follow with A: [Comprehensive answer]\n- Group related questions together'
-        }
+        // In the getSystemPrompt method, modify the noteTypeConfig for 'q&a':
+        'qa': {
+          format: 'Structure ALL content as clear questions followed by comprehensive answers',
+          depth: 'Create questions that test understanding and provide detailed, explanatory answers',
+          length: 'Include 3-5 questions per topic with substantial answers (50-150 words per answer)',
+          structure: '- Use ## for topic areas\n- Format EVERY concept as "**Q:** [Specific question about the concept]"\n- Follow IMMEDIATELY with "**A:** [Comprehensive answer with explanations]"\n- Ensure NO content appears outside this Q&A structure\n- Group related questions under appropriate headings'
+        },  
       }[note_type] || {
         format: 'Use a balanced approach with bullet points and explanations',
         depth: 'Cover main concepts with sufficient detail',
@@ -50,7 +51,7 @@ class NotesGeneratorAgent {
   
       return `
   You are an expert educational content generator creating high-quality study notes. Your task is to generate ${note_type} notes following these specifications:
-  
+
   CONTENT GUIDELINES:
   1. ${noteTypeConfig.format}
   2. ${noteTypeConfig.depth}
@@ -60,6 +61,7 @@ class NotesGeneratorAgent {
   6. ${noteTypeConfig.length}
   7. Use clear, academic language accessible to students
   8. Address user-specific instructions: "${user_instructions}"
+  9. If note type is a QnA format, ensure ALL content is presented as questions and answers with theoretical explanations included within the answers
   
   FORMATTING INSTRUCTIONS:
   1. Use proper markdown formatting throughout
@@ -90,7 +92,7 @@ class NotesGeneratorAgent {
       
       const llm = new ChatGroq({
         groqApiKey: process.env.GROQ_API_KEY,
-        model:"mistral-saba-24b", //llama-3.3-70b-versatile
+        model:"llama3-70b-8192", 
         streaming: true, // Enable streaming
       });
       
