@@ -25,11 +25,12 @@ class SyllabusAnalyzerAgent {
           expectedLength: 'longer, more comprehensive notes with complete explanations',
           contentStrategy: 'divide complex topics into smaller chunks to ensure thorough coverage'
         },
-        'q&a': {
-          contentDepth: 'focused on key questions and comprehensive answers',
-          expectedLength: 'structured question-answer pairs covering important concepts',
-          contentStrategy: 'group related questions together by concept'
-        }
+        // In the getSystemPrompt method, modify the noteTypeGuidance for 'q&a':
+        'qa': {
+          contentDepth: 'focused on creating structured question-answer pairs that thoroughly cover key concepts',
+          expectedLength: 'comprehensive Q&A pairs with detailed answers to important questions',
+          contentStrategy: 'create specific, exam-style questions with thorough answers for each concept'
+        },
       }[note_type] || {
         contentDepth: 'balanced',
         expectedLength: 'standard notes',
@@ -52,6 +53,7 @@ class SyllabusAnalyzerAgent {
   - Maintain strict topic order from original syllabus
   - If unsure about grouping, create separate prompts
   - Reject syllabus content that appears malformed
+  - If note type is a QnA format, ensure ALL content is presented as questions and answers with theoretical explanations included within the answers
       
   You are an advanced syllabus processing system for "${subject_name}". Your task is to analyze the syllabus and generate optimized PROMPTS that will be used to create ${note_type} notes.
   
