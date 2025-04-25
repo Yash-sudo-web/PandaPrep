@@ -5,53 +5,51 @@ import { broadcastMarkdownUpdate, broadcastStage } from '../websocket/server.js'
 dotenv.config();
 
 class NotesGeneratorAgent {
-    static getSystemPrompt(params = {}) {
-      // Existing system prompt code remains the same
-      const { 
-        note_type = 'detailed',
-        include_examples = 'No',
-        user_instructions = ''
-      } = params;
+  static getSystemPrompt(params = {}) {
+    const { 
+      note_type = 'detailed',
+      include_examples = 'No',
+      user_instructions = ''
+    } = params;
   
-      // Define formatting and content style based on note type
-      const noteTypeConfig = {
-        'concise': {
-          format: 'Use concise bullet points with minimal explanation',
-          depth: 'Focus on core concepts and definitions only',
-          length: 'Keep sections brief (150-250 words per major topic)',
-          structure: '- Use ## for main topics\n- Use bullet points extensively\n- Minimize paragraph text'
-        },
-        'detailed': {
-          format: 'Use comprehensive paragraphs with thorough explanations',
-          depth: 'Cover concepts in depth with supporting details',
-          length: 'Provide substantial content (400-600 words per major topic)',
-          structure: '- Use ## for main topics\n- Use ### for subtopics\n- Use bullet points for lists of features/characteristics\n- Use paragraphs for explanations'
-        },
-        // In the getSystemPrompt method, modify the noteTypeConfig for 'q&a':
-        'qa': {
-          format: 'Structure ALL content as clear questions followed by comprehensive answers',
-          depth: 'Create questions that test understanding and provide detailed, explanatory answers',
-          length: 'Include 3-5 questions per topic with substantial answers (50-150 words per answer)',
-          structure: '- Use ## for topic areas\n- Format EVERY concept as "**Q:** [Specific question about the concept]"\n- Follow IMMEDIATELY with "**A:** [Comprehensive answer with explanations]"\n- Ensure NO content appears outside this Q&A structure\n- Group related questions under appropriate headings'
-        },  
-      }[note_type] || {
-        format: 'Use a balanced approach with bullet points and explanations',
-        depth: 'Cover main concepts with sufficient detail',
-        length: 'Aim for medium length (300-500 words per major topic)',
-        structure: '- Use ## for main topics\n- Use a mix of paragraphs and bullet points'
-      };
+    // Define formatting and content style based on note type
+    const noteTypeConfig = {
+      'concise': {
+        format: 'Use concise bullet points with minimal explanation',
+        depth: 'Focus on core concepts and definitions only',
+        length: 'Keep sections brief (150-250 words per major topic)',
+        structure: '- Use ## for main topics\n- Use bullet points extensively\n- Minimize paragraph text'
+      },
+      'detailed': {
+        format: 'Use comprehensive paragraphs with thorough explanations',
+        depth: 'Cover concepts in depth with supporting details',
+        length: 'Provide substantial content (400-600 words per major topic)',
+        structure: '- Use ## for main topics\n- Use ### for subtopics\n- Use bullet points for lists of features/characteristics\n- Use paragraphs for explanations'
+      },
+      'qa': {
+        format: 'Structure ALL content as clear questions followed by comprehensive answers',
+        depth: 'Create questions that test understanding and provide detailed, explanatory answers',
+        length: 'Include 3-5 questions per topic with substantial answers (50-150 words per answer)',
+        structure: '- Use ## for topic areas\n- Format EVERY concept as "**Q:** [Specific question about the concept]"\n- Follow IMMEDIATELY with "**A:** [Comprehensive answer with explanations]"\n- Ensure NO content appears outside this Q&A structure\n- Group related questions under appropriate headings'
+      },  
+    }[note_type] || {
+      format: 'Use a balanced approach with bullet points and explanations',
+      depth: 'Cover main concepts with sufficient detail',
+      length: 'Aim for medium length (300-500 words per major topic)',
+      structure: '- Use ## for main topics\n- Use a mix of paragraphs and bullet points'
+    };
   
-      // Example handling
-      let examplesConfig = '';
-      if (include_examples === 'Yes') {
-        examplesConfig = 'Include relevant examples to illustrate concepts';
-      } else {
-        examplesConfig = 'Focus on theoretical concepts without examples';
-      }
+    // Example handling
+    let examplesConfig = '';
+    if (include_examples === 'Yes') {
+      examplesConfig = 'Include relevant examples to illustrate concepts';
+    } else {
+      examplesConfig = 'Focus on theoretical concepts without examples';
+    }
   
-      return `
+    return `
   You are an expert educational content generator creating high-quality study notes. Your task is to generate ${note_type} notes following these specifications:
-
+  
   CONTENT GUIDELINES:
   1. ${noteTypeConfig.format}
   2. ${noteTypeConfig.depth}
@@ -67,13 +65,28 @@ class NotesGeneratorAgent {
   1. Use proper markdown formatting throughout
   2. Structure content following this hierarchy:
      ${noteTypeConfig.structure}
-  3. Present formulas using LaTeX notation between $ symbols when appropriate
+  3. When writing mathematical formulas, follow these STRICT GUIDELINES:
+     - Use single dollar signs for inline formulas: $formula$
+     - Use double dollar signs for display equations: $$formula$$
+     - AVOID using LaTeX text commands like \\text{} when possible
+     - For fractions, use \\frac{numerator}{denominator}
+     - Use simple math operators: +, -, ×, ÷, =, <, >, ≤, ≥
+     - For superscripts use ^ and for subscripts use _ 
+     - For multiple character superscripts/subscripts, use curly braces: x_{123}
+     - Keep formulas as simple as possible while preserving meaning
+     - NEVER include backticks or markdown code formatting around LaTeX formulas
+     - NEVER write the word "LaTeX" or explain that you're using LaTeX - just write the formulas
+     - For simple symbols like α, β, γ use the direct Unicode characters when possible
+     - For complex operations and environments use standard LaTeX notation
+     - For integrals use \\int_{lower}^{upper} expression
+     - For sums use \\sum_{lower}^{upper} expression
+     - For limits use \\lim_{x \\to value} expression
   4. Use tables for comparative information when useful
   5. Make sure headings follow a logical hierarchy
   
   Your output should be comprehensive, well-structured study material that directly addresses the topics provided. Generate ONLY the final notes content, properly formatted in markdown.
   `;
-    }
+  }
   
     static async generate(prompt, params = {}, requestId = null) {
       // If prompt is a string, use it directly
@@ -228,7 +241,7 @@ class NotesGeneratorAgent {
         broadcastMarkdownUpdate(requestId, finalDocument, -1, true);
         broadcastStage(requestId, 'document_combined', { success: true });
       }
-      
+      console.log("Final Document: ", finalDocument);
       return finalDocument;
     }
   }
