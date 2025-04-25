@@ -64,7 +64,7 @@ const PDFLikeMarkdownDisplay = ({
         <iframe
           src={`${downloadId}#zoom=80&toolbar=0&navpanes=0`}
           className="w-full h-full border-0 rounded-lg"
-          style={{ maxWidth: "8.5in", height: "90vh" }}
+          style={{ maxWidth: "8.5in", height: "50rem" }}
           title="PDF Viewer"
         />
       ) : (
