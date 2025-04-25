@@ -54,7 +54,7 @@ const AuthPage = () => {
         : new GithubAuthProvider();
     try {
       const response: any = await signInWithPopup(auth, provider);
-      console.log(response.user);
+
       const email = response.user.email || " ";
       setCookie("email", email, 7);
       try {

@@ -11,6 +11,8 @@ import { NotesRequestModel } from '../models/user-request.model.js';
 import { UserModel } from '../models/user.model.js';
 import { uploadPDFToCloudinary } from '../utils/cloudinary-file-upload.util.js';
 import { addWatermarkToPdf } from '../utils/pdf-watermark-addition.util.js';
+import { convertLatexToMathJax } from '../utils/latex-to-image.util.js';
+
 import {
   createRequestId,
   broadcastStage,
@@ -293,14 +295,75 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
       fs.mkdirSync(requestOutputDir, { recursive: true });
     }
 
-    // Step 4: Save markdown
+    console.log(`[${requestId}] Processing LaTeX formulas with MathJax...`);
+    broadcastStage(requestId, 'processing_latex_formulas', {
+      message: 'Converting mathematical formulas with MathJax'
+    });
+    
+    try {
+      // First check if there are any formulas to process
+      const hasFormulas = combinedMarkdown.includes('$');
+    
+      if (hasFormulas) {
+        console.log(`[${requestId}] Found LaTeX formulas, converting with MathJax...`);
+    
+        // Process in chunks for very large documents
+        if (combinedMarkdown.length > 50000) {
+          console.log(`[${requestId}] Large document detected, processing in chunks...`);
+    
+          // Split by section headers
+          const sections = combinedMarkdown.split(/(?=#{1,3}\s)/);
+          let processedMarkdown = '';
+    
+          for (let i = 0; i < sections.length; i++) {
+            const section = sections[i];
+            const hasLatex = section.includes('$');
+    
+            broadcastStage(requestId, 'processing_latex_section', {
+              current: i + 1,
+              total: sections.length,
+              progress: Math.round(((i + 1) / sections.length) * 100)
+            });
+    
+            if (hasLatex) {
+              const processedSection = await convertLatexToMathJax(section);
+              processedMarkdown += processedSection;
+            } else {
+              processedMarkdown += section;
+            }
+          }
+    
+          combinedMarkdown = processedMarkdown;
+        } else {
+          // Process the entire document at once
+          combinedMarkdown = await convertLatexToMathJax(combinedMarkdown);
+        }
+    
+        broadcastStage(requestId, 'latex_formulas_processed', {
+          success: true
+        });
+      } else {
+        console.log(`[${requestId}] No LaTeX formulas found, skipping conversion.`);
+        broadcastStage(requestId, 'latex_formulas_skipped', {
+          message: 'No mathematical formulas detected'
+        });
+      }
+    } catch (latexError) {
+      console.error(`[${requestId}] LaTeX processing error:`, latexError);
+      broadcastStage(requestId, 'latex_processing_warning', {
+        error: latexError.message,
+        message: 'Some formulas may not display correctly in the PDF'
+      });
+    }
+
+    // Step 5: Save markdown
     markdownPath = path.join(requestOutputDir, `${filePrefix}.md`);
     fs.writeFileSync(markdownPath, combinedMarkdown);
     broadcastStage(requestId, 'markdown_saved', {
       path: markdownPath,
     });
 
-    // Step 5: Generate PDF if requested
+    // Step 6: Generate PDF if requested
     if (format.toLowerCase() === 'pdf') {
       broadcastStage(requestId, 'generating_pdf');
       pdfPath = path.join(requestOutputDir, `${filePrefix}.pdf`);
@@ -389,10 +452,7 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
       }
     );
     if (note_type === 'detailed' || include_images === 'yes') {
-      await UserModel.updateOne(
-        { _id: _userId },
-        { $inc: { "subscription.credits": -1 } }
-      );      
+      await UserModel.updateOne({ _id: _userId }, { $inc: { 'subscription.credits': -1 } });
     }
   } catch (error) {
     console.error(`[${requestId}] Generation process error:`, error);

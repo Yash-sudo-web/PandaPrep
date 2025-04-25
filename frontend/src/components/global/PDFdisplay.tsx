@@ -64,13 +64,13 @@ const PDFLikeMarkdownDisplay = ({
         <iframe
           src={`${downloadId}#zoom=80&toolbar=0&navpanes=0`}
           className="w-full h-full border-0 rounded-lg"
-          style={{ maxWidth: "8.5in", height: "90vh" }}
+          style={{ maxWidth: "8.5in", height: "50rem" }}
           title="PDF Viewer"
         />
       ) : (
         <div
           ref={containerRef}
-          className={`pdf-container flex flex-col items-center gap-6 py-8 overflow-y-auto h-full w-full px-4 rounded-xl ${
+          className={`pdf-container flex flex-col items-center gap-6 py-8 overflow-y-auto h-[45rem] w-full px-4 rounded-xl ${
             isDarkMode ? "bg-[#121212]" : "bg-gray-100"
           }`}
         >
