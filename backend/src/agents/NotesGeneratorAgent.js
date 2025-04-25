@@ -30,7 +30,7 @@ class NotesGeneratorAgent {
         format: 'Structure ALL content as clear questions followed by comprehensive answers',
         depth: 'Create questions that test understanding and provide detailed, explanatory answers',
         length: 'Include 3-5 questions per topic with substantial answers (50-150 words per answer)',
-        structure: '- Use ## for topic areas\n- Format EVERY concept as "**Q:** [Specific question about the concept]"\n- Follow IMMEDIATELY with "**A:** [Comprehensive answer with explanations]"\n- Ensure NO content appears outside this Q&A structure\n- Group related questions under appropriate headings'
+        structure: '- Use ## for topic areas\n- Format EVERY concept as "**Q:** [Specific question about the concept]"\n- Follow IMMEDIATELY with a new line then "**A:** [Comprehensive answer with explanations]"\n- Ensure NO content appears outside this Q&A structure\n- Group related questions under appropriate headings'
       },  
     }[note_type] || {
       format: 'Use a balanced approach with bullet points and explanations',
@@ -241,7 +241,6 @@ class NotesGeneratorAgent {
         broadcastMarkdownUpdate(requestId, finalDocument, -1, true);
         broadcastStage(requestId, 'document_combined', { success: true });
       }
-      console.log("Final Document: ", finalDocument);
       return finalDocument;
     }
   }

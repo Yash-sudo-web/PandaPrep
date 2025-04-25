@@ -377,7 +377,7 @@ const NotesGenerate = () => {
             isDarkMode
               ? "bg-neutral-900 border-neutral-800 text-white"
               : "bg-white border-neutral-800 text-black"
-          } w-full max-w-6xl shadow-xl rounded-2xl p-4 md:p-8 text-center`}
+          } w-full max-w-6xl  shadow-xl rounded-2xl p-4 md:p-8 text-center`}
         >
           <div className="flex flex-col lg:flex-row w-full">
             <div
@@ -488,7 +488,7 @@ const NotesGenerate = () => {
               </div>
             </div>
 
-            <div className="hidden lg:block w-[1px] h-auto bg-green-400 mx-6"></div>
+          <div className="hidden lg:block w-[1px] h-auto bg-green-400 mx-6"></div>  
             <div
               className={`w-full lg:w-[65%] mt-6 lg:mt-0 ${
                 !showPreview ? "hidden md:block" : "block"

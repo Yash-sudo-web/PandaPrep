@@ -70,7 +70,7 @@ const PDFLikeMarkdownDisplay = ({
       ) : (
         <div
           ref={containerRef}
-          className={`pdf-container flex flex-col items-center gap-6 py-8 overflow-y-auto h-full w-full px-4 rounded-xl ${
+          className={`pdf-container flex flex-col items-center gap-6 py-8 overflow-y-auto h-[45rem] w-full px-4 rounded-xl ${
             isDarkMode ? "bg-[#121212]" : "bg-gray-100"
           }`}
         >
