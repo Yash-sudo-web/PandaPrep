@@ -1,23 +1,15 @@
 "use client";
 
 import Navbar from "@/components/global/navbar";
-import { ContainerScroll } from "@/components/global/container-scroll-animation";
-import { Button } from "@/components/ui/button";
-import { Funnel_Display } from "next/font/google";
-import { TextGenerateEffect } from "@/components/global/text-effect";
+
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 
-import { Featuregrid } from "@/components/global/feature-grid";
 import { useRouter } from "next/navigation";
-import { Faq } from "@/components/global/faq";
-
-const words = `Stressed about exams? Relax. Drop a topic, and let AI do its magic. `;
-
-const funnel_display = Funnel_Display({
-  subsets: ["latin"],
-  weight: "400",
-});
+import { montserrat600, montserrat700, montserrat800 } from "@/lib/font-utils";
+import { ArrowUpRight } from "lucide-react";
+import heroBulb from "../../public/assets/hero-bulb.png";
+import Image from "next/image";
 
 export default function Home() {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -35,89 +27,32 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="overflow-x-hidden bg-white dark:bg-neutral-950">
+    <main className="overflow-x-hidden bg-[#FAF7F0]">
       <Navbar />
-      <section
-        className={`h-[155vh] w-screen rounded-md relative flex flex-col items-center antialiased ${
-          isDarkMode ? "bg-neutral-950" : "bg-white"
-        }`}
-      >
-        <div
-          className={`absolute inset-0 h-full w-full items-center px-5 py-24 ${
-            isDarkMode
-              ? "bg-[radial-gradient(circle,rgba(19,78,43,1)_0%,rgba(10,10,10,1)_100%)]"
-              : "bg-[radial-gradient(circle,rgba(184,230,200,1)_0%,rgba(255,255,255,1)_100%)]"
-          }`}
-        ></div>
+      <div className="flex flex-col items-center justify-center pt-36">
+        <p
+          className={`${montserrat800.className} text-[3.125rem] text-[#4A4947]`}
+        >
+          From Chaos to Clarity
+        </p>
+        <p
+          className={`${montserrat600.className} text-[1.25rem] text-[#B17457] text-center`}
+        >
+          Stop stressing over messy notes — Our AI helps you focus, learn
+          faster, <br/> and retain more with every study session.
+        </p>
+        <Image src={heroBulb} alt="hero-bulb" className="h-[7rem] w-[45rem]" />
 
-        <div className="relative z-10 flex flex-col w-full max-w-6xl mx-auto px-4 mt-8 md:mt-[-50px]">
-          <ContainerScroll
-            titleComponent={
-              <div className="flex items-center flex-col mt-4 md:mt-[-50px]">
-                <Button
-                  onClick={() => router.push("/auth")}
-                  size={"lg"}
-                  className="cursor-pointer p-6 sm:p-8 mb-6 text-xl sm:text-2xl w-3/4 sm:w-fit border-t-2 rounded-full border-green-600 bg-green-200 hover:bg-white dark:hover:bg-neutral-800 group transition-all flex items-center justify-center gap-4 hover:shadow-xl hover:shadow-green-500 duration-500 z-20 relative"
-                >
-                  <span
-                    className={`bg-clip-text text-transparent bg-gradient-to-r from-green-700 to-green-600 text-center ${funnel_display.className}`}
-                  >
-                    Start For Free Today
-                  </span>
-                </Button>
-
-                <h1
-                  className={`text-4xl sm:text-5xl md:text-[5.2rem] bg-clip-text text-transparent bg-gradient-to-b ${
-                    isDarkMode
-                      ? "from-neutral-300 to-green-400"
-                      : "from-neutral-500 to-green-600"
-                  } font-sans font-semibold ${
-                    funnel_display.className
-                  } text-center`}
-                >
-                  From Chaos to Clarity
-                </h1>
-              </div>
-            }
-          />
+        <div className="flex flex-col items-center justify-center mt-10">
+          <button
+            onClick={() => router.push("/auth")}
+            className={`bg-[#B17457] text-white font-bold text-[1.25rem] rounded-[15px] w-[215px] h-[55px] shrink-0 transition duration-300 ease-in-out hover:bg-[#4A4947] ${montserrat700.className} flex items-center justify-center gap-1 cursor-pointer`}
+          >
+            <p>Get Started</p>
+            <ArrowUpRight strokeWidth={3}/>
+          </button>
         </div>
-      </section>
-
-      {/* <InfiniteMovingCards
-        className="ml-32 mt-96 pt-20"
-        items={clients}
-        direction="right"
-        speed="slow"
-      /> */}
-      <div></div>
-      <div
-        className={`border-none w-full flex justify-center pt-10 px-4 sm:px-8 md:px-16 lg:px-32 ${
-          isDarkMode ? "bg-neutral-950 text-white" : "bg-white text-black"
-        }`}
-      >
-        <section className="w-full flex justify-center text-center max-w-screen-xl">
-          <TextGenerateEffect
-            className={`mb-10 text-center ${
-              isDarkMode ? "text-white bg-neutral-950" : "text-black bg-white"
-            }`}
-            words={words}
-          />
-        </section>
       </div>
-
-      <div
-        className={`w-full flex justify-center pt-5 px-4 sm:px-8 md:px-16 lg:px-32 ${
-          isDarkMode ? "bg-neutral-950 text-white" : "bg-white text-black"
-        }`}
-      >
-        <section className="w-full max-w-screen-xl mb-10 ">
-          <Featuregrid />
-        </section>
-      </div>
-
-      <section>
-        <Faq />
-      </section>
     </main>
   );
 }

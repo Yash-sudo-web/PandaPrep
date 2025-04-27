@@ -4,14 +4,14 @@ import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MenuIcon, X } from "lucide-react";
+import { Moon, Sun, ChevronDown, ChevronUp } from "lucide-react";
 import { Funnel_Display } from "next/font/google";
 import { getAuth, onAuthStateChanged, signOut, User } from "firebase/auth";
 import { useTheme } from "next-themes";
+import { motion, AnimatePresence } from "framer-motion"; // <<< NEW
 import app from "@/firebase/firebaseconfig";
-import { ThemeToggle } from "./mode-selector";
-import { ChevronDown, ChevronUp } from "lucide-react";
 import { deleteCookie } from "@/lib/utils";
+import { montserrat500, montserrat700 } from "@/lib/font-utils";
 
 const funnel_display = Funnel_Display({
   subsets: ["latin"],
@@ -21,13 +21,15 @@ const funnel_display = Funnel_Display({
 const Navbar = () => {
   const auth = getAuth(app);
   const router = useRouter();
-  const { theme, resolvedTheme } = useTheme();
+
+  const { setTheme, resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const [mounted, setMounted] = useState(false);
+
   const [user, setUser] = useState<User | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-
-  const isDark = resolvedTheme === "dark";
-
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [servicesDropdown, setServicesDropdown] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -47,136 +49,147 @@ const Navbar = () => {
     }
   };
 
-  const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
     setMounted(true);
   }, []);
 
   return (
-    <header
-      className={`fixed right-0 left-0 top-0 py-4 px-4 backdrop-blur-lg z-[100] flex items-center border-b-[1px] justify-between ${
-        !mounted
-          ? "bg-transparent"
-          : isDark
-          ? "bg-neutral-950 border-neutral-950 text-white"
-          : "bg-white border-white text-green-700"
-      } ${funnel_display.className}`}
-    >
-      <aside className="flex items-center gap-2">
-        <Link href="/">
-          <p className="text-3xl md:text-5xl bg-gradient-to-tr from-green-600 to-green-700 bg-clip-text text-transparent dark:from-green-600 dark:to-green-700">
-            PandaPrep
-          </p>
-        </Link>
-      </aside>
-
-      <div className="relative">
-        <nav
-          className={`fixed md:relative left-0 top-0 w-full md:w-full h-screen md:h-auto bg-white dark:bg-neutral-950 md:bg-transparent md:dark:bg-transparent transition-transform duration-300 ease-in-out transform ${
-            mounted
-              ? menuOpen
-                ? "translate-x-0"
-                : "-translate-x-full"
-              : "hidden"
-          } md:translate-x-0 md:flex md:items-center md:gap-10 p-6 md:p-0 z-50 shadow-lg md:shadow-none`}
-        >
-          <button
-            onClick={() => setMenuOpen(false)}
-            className="absolute top-4 right-4 md:hidden"
-          >
-            <X size={24} className="text-gray-800 dark:text-gray-200" />
-          </button>
-          <ul className="flex flex-col md:flex-row items-center gap-6 md:gap-11 list-none">
-            <li>
-              <Link
-                href="/generate"
-                className="flex text-lg text-green-600 ml-3.5"
-              >
-                Notes Generation
-              </Link>
-            </li>
-            <li>
-              <Link href="/pricing" className="text-lg text-green-600 ">
-                Subscription
-              </Link>
-            </li>
-            <li>
-              <Link href="/history" className="text-lg text-green-600 mr-3.5">
-                History
-              </Link>
-            </li>
-          </ul>
-        </nav>
+    <div className="bg-[#D8D2C2] py-[0.5rem] px-6 my-6 mx-10 rounded-[1.5rem] border border-[#C9C3B3] flex justify-between items-center relative">
+      <div
+        onClick={() => router.push("/")}
+        className={`${montserrat700.className} text-[#4A4947] text-[2rem] cursor-pointer`}
+      >
+        PandaPrepAI
       </div>
 
-      <aside className="flex items-center gap-4 relative">
-        <ThemeToggle />
-        {user ? (
-          <div className="relative">
-            <button
-              onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2"
-            >
-              <Image
-                src={user.photoURL || "/default-avatar.png"}
-                alt="User Avatar"
-                width={40}
-                height={40}
-                className="rounded-full"
-              />
-              <span className="font-medium text-green-700 dark:text-green-600 hidden md:inline">
-                {user.displayName}
-              </span>
-              {dropdownOpen ? (
-                <ChevronUp size={16} />
-              ) : (
-                <ChevronDown size={16} />
-              )}
-            </button>
-
-            {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-neutral-950 shadow-lg rounded-lg p-2 border border-gray-300 dark:border-neutral-700">
-                <Link
-                  href="/profile"
-                  className="block w-full text-left px-4 py-2 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-neutral-900 rounded-lg"
-                >
-                  Profile
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="block w-full text-left px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-neutral-950 rounded-lg"
-                >
-                  Sign Out
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
+      <div className="flex gap-12 items-center relative mr-6">
+        <div className="relative">
           <button
-            onClick={() => router.push("/auth")}
-            className="relative inline-flex h-10 overflow-hidden rounded-full p-[2px] focus:outline-none focus:ring-2 focus:ring-slate-400 dark:focus:ring-gray-600 focus:ring-offset-2 focus:ring-offset-slate-50 dark:focus:ring-offset-gray-900"
+            onClick={() => setServicesDropdown(!servicesDropdown)}
+            className={`${montserrat500.className} text-[#4A4947] text-[1.5rem] flex items-center gap-2 cursor-pointer`}
           >
-            <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#C8F7C5_0%,#2E7D32_50%,#C8F7C5_100%)]" />
-            {mounted && (
-              <span
-                className={`inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full 
-        px-3 py-1 text-sm font-medium backdrop-blur-3xl transition-colors
-        ${
-          isDark ? "bg-neutral-950 text-green-500" : "bg-white text-green-700"
-        }`}
-              >
-                Login / Sign In
-              </span>
+            <span>Services</span>
+            {servicesDropdown ? (
+              <ChevronUp size={24} strokeWidth={2} />
+            ) : (
+              <ChevronDown size={24} strokeWidth={2} />
             )}
           </button>
-        )}
 
-        <button onClick={() => setMenuOpen(true)} className="md:hidden">
-          <MenuIcon className="text-green-600 dark:text-green-400" />
-        </button>
-      </aside>
-    </header>
+          {servicesDropdown && (
+            <div className="absolute top-[3rem] right-1 bg-white border border-[#C9C3B3] rounded-xl shadow-lg py-2 w-52 z-50">
+              <Link
+                href="/generate"
+                className="block px-4 py-2 text-[#4A4947] hover:bg-[#f0eee9] text-[1.25rem]"
+              >
+                Notes Generator
+              </Link>
+              <Link
+                href="/summarizer"
+                className="block px-4 py-2 text-[#4A4947] hover:bg-[#f0eee9] text-[1.25rem]"
+              >
+                Notes Summarizer
+              </Link>
+              <Link
+                href="/chat-pdf"
+                className="block px-4 py-2 text-[#4A4947] hover:bg-[#f0eee9] text-[1.25rem]"
+              >
+                Chat with PDFs
+              </Link>
+            </div>
+          )}
+        </div>
+
+        <div
+          onClick={() => router.push("/pricing")}
+          className={`${montserrat500.className} text-[#4A4947] text-[1.5rem] cursor-pointer`}
+        >
+          Pricing
+        </div>
+
+        <div
+          className={`${montserrat500.className} text-[#4A4947] text-[1.5rem] cursor-pointer`}
+        >
+          About
+        </div>
+
+        <div className="flex items-center gap-6">
+          {mounted && (
+            <button
+              onClick={() => (isDark ? setTheme("light") : setTheme("dark"))}
+              className="flex items-center justify-center w-10 h-9 rounded-[0.625rem] border-2 border-[#4A4947] relative overflow-hidden cursor-pointer"
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={isDark ? "moon" : "sun"}
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: 90, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute"
+                >
+                  {isDark ? (
+                    <Moon size={20} color="#4A4947" strokeWidth={3} />
+                  ) : (
+                    <Sun size={20} color="#4A4947" strokeWidth={3} />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </button>
+          )}
+          <div className="flex items-center gap-6">
+            {user ? (
+              <div className="relative">
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-1 cursor-pointer"
+                >
+                  <Image
+                    src={user.photoURL || "/default-avatar.png"}
+                    alt="User Avatar"
+                    width={40}
+                    height={40}
+                    className="rounded-full"
+                  />
+                  <span className="font-medium text-[#4A4947] hidden md:inline text-[1.2rem]">
+                    {user.displayName}
+                  </span>
+                  {dropdownOpen ? (
+                    <ChevronUp size={16} color="#4A4947" />
+                  ) : (
+                    <ChevronDown size={16} color="#4A4947" />
+                  )}
+                </button>
+
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white border border-[#C9C3B3] rounded-lg shadow-lg p-2 z-50">
+                    <Link
+                      href="/profile"
+                      className="block w-full text-left px-4 py-2 text-[#4A4947] hover:bg-[#f0eee9] rounded-lg text-[1.1rem]"
+                    >
+                      Profile
+                    </Link>
+                    <button
+                      onClick={handleSignOut}
+                      className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg text-[1.1rem] cursor-pointer"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button
+                onClick={() => router.push("/auth")}
+                className="text-[#4A4947] border border-[#4A4947] rounded-xl px-4 py-2 text-[1.1rem]"
+              >
+                Login / Sign In
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
   );
 };
 
