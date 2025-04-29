@@ -55,7 +55,7 @@ export default function Home() {
       </div>
 
       <div
-        className={`mt-20 flex justify-center pt-10 px-4 sm:px-8 md:px-16 lg:px-32 ${
+        className={`flex justify-center px-4 sm:px-8 md:px-16 lg:px-32 ${
           isDarkMode ? "bg-neutral-950 text-white" : "bg-[#FAF7F0] text-[#4A4947]"
         }`}
       >

@@ -1,190 +1,118 @@
 "use client";
 
 import { useTheme } from 'next-themes';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Image from 'next/image'; 
-import { montserrat600, montserrat700, montserrat800 } from "@/lib/font-utils";
-
-gsap.registerPlugin(ScrollTrigger);
-
+import { montserrat600, montserrat700 } from "@/lib/font-utils";
+import heroPanda1 from "../../../public/assets/hero-panda-1.png";
+import heroPanda2 from "../../../public/assets/hero-panda-2.png";
+import heroPanda3 from "../../../public/assets/hero-panda-3.png";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export function FeatureSection() {
   const { theme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
+  const [currentSlide, setCurrentSlide] = useState(0);
 
-  const firstSectionRef = useRef<HTMLDivElement>(null);
-  const secondSectionRef = useRef<HTMLDivElement>(null);
-  const thirdSectionRef = useRef<HTMLDivElement>(null);
+  // Cards content
+  const cards = [
+    {
+      image: heroPanda1,
+      title: "Dynamic notes generation",
+      description: "Transform lengthy lectures into concise, organized study materials in seconds. Our AI-powered notes generator creates structured summaries, key concept breakdowns, and practice questions from your course content."
+    },
+    {
+      image: heroPanda2,
+      title: "Chat with your notes",
+      description: "Interact with your PDFs in a whole new way! Our PDF chat feature allows you to extract key information, ask questions, and get summaries directly from your PDF files with AI-powered chat support."
+    },
+    {
+      image: heroPanda3,
+      title: "Notes summarizer",
+      description: "Summarize your lengthy notes into concise and easy-to-digest versions. The Notes Summarizer uses AI to highlight key points, concepts, and sections, making it easier for you to study."
+    }
+  ];
 
   useEffect(() => {
     setMounted(true);
-
-    if (firstSectionRef.current) {
-      gsap.fromTo(
-        firstSectionRef.current,
-        { opacity: 0, y: 50 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 1,
-          scrollTrigger: {
-            trigger: firstSectionRef.current,
-            start: "top 80%", 
-            end: "bottom 60%",
-            toggleActions: "play reverse play reverse", 
-            scrub: true,
-          },
-        }
-      );
-    }
-
-    if (secondSectionRef.current) {
-      gsap.fromTo(
-        secondSectionRef.current,
-        { opacity: 0, y: 50 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 1,
-          scrollTrigger: {
-            trigger: secondSectionRef.current,
-            start: "top 80%",
-            end: "bottom 60%",
-            toggleActions: "play reverse play reverse",
-            scrub: true,
-          },
-        }
-      );
-    }
-
-    if (thirdSectionRef.current) {
-      gsap.fromTo(
-        thirdSectionRef.current,
-        { opacity: 0, y: 50 },
-        {
-          opacity: 1,
-          y: 0,
-          duration: 1,
-          scrollTrigger: {
-            trigger: thirdSectionRef.current,
-            start: "top 80%",
-            end: "bottom 60%",
-            toggleActions: "play reverse play reverse",
-            scrub: true,
-          },
-        }
-      );
-    }
   }, []);
 
+  const goToNextSlide = () => {
+    setCurrentSlide((prev) => (prev === cards.length - 1 ? 0 : prev + 1));
+  };
+
+  const goToPrevSlide = () => {
+    setCurrentSlide((prev) => (prev === 0 ? cards.length - 1 : prev - 1));
+  };
+
   return (
-    <div className={`w-full py-16 bg-[#FAF7F0] ${montserrat600.className}`}>
-      <div className="container mx-auto px-4">
-        <h2 className="text-5xl md:text-4xl font-bold text-[#4A4947] mb-12 text-center">
-          The all-in-one AI education platform for student success
+    <div className={`w-full pb-16 bg-[#FAF7F0] ${montserrat600.className}`}>
+      <div className="container mx-auto px-4 flex flex-col items-center justify-center">
+        <h2 className={`${montserrat700.className} text-5xl text-[#4A4947] mb-12 text-center`}>
+          Your Ultimate Learning Toolkit
         </h2>
 
-        <div  ref={firstSectionRef}>
-          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
-            <div className="w-full md:w-1/2">
-              <Image
-                src="/notesgenerate.jpg"
-                alt="Smart Notes Generator"
-                width={800} 
-                height={480} 
-                layout="responsive"
-                className="object-cover"
-              />
-            </div>
-            <div className="w-full md:w-1/2">
-              <h3 className="text-4xl md:text-5xl font-semibold text-[#4A4947] mb-4">
-                Smart Notes Generator
-              </h3>
-              <p className="text-[#4A4947]/80 md:text-xl mb-6">
-                Transform lengthy lectures into concise, organized study materials in seconds. Our AI-powered notes generator creates structured summaries, key concept breakdowns, and practice questions from your course content.
-              </p>
-              <button
-                onClick={() => router.push('/generate')}
-                className="inline-flex items-center text-xl text-[#B17457] font-medium hover:underline"
-              >
-                Generate Notes
-                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
-                </svg>
-              </button>
+        <div className="relative w-full max-w-4xl">
+          <button 
+            onClick={goToPrevSlide}
+            className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 shadow-lg rounded-full p-3 hover:bg-gray-50 transition-all z-10"
+            aria-label="Previous slide"
+          >
+            <ChevronLeft size={24} className="text-[#B17457]" />
+          </button>
+
+          <div className="overflow-hidden relative">
+            <div 
+              className="flex transition-transform duration-500 ease-in-out"
+              style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+            >
+              {cards.map((card, index) => (
+                <div key={index} className="min-w-full" style={{ flex: '0 0 100%' }}>
+                  <div className="border border-[#B17457] p-12 rounded-xl flex w-full shadow-md mx-auto">
+                    <div className="w-2/5 flex items-center justify-center">
+                      <Image 
+                        src={card.image} 
+                        alt={`Feature illustration for ${card.title}`} 
+                        className="h-64 w-64 object-contain" 
+                      />
+                    </div>
+                    <div className="w-3/5 text-center flex flex-col items-center justify-center pl-8">
+                      <div className={`${montserrat600.className} text-[#4A4947] text-2xl font-semibold`}>
+                        {card.title}
+                      </div>
+                      <div className={`${montserrat600.className} text-[#B17457] text-sm pt-2`}>
+                        {card.description}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        </div>
 
+          <button 
+            onClick={goToNextSlide}
+            className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 shadow-lg rounded-full p-3 hover:bg-gray-50 transition-all z-10"
+            aria-label="Next slide"
+          >
+            <ChevronRight size={24} className="text-[#B17457]" />
+          </button>
 
-        <div  ref={secondSectionRef}>
-          <div className="flex flex-col md:flex-row-reverse items-center gap-8 md:gap-12">
-            <div className="w-full md:w-1/2">
-              <Image
-                src="/chatwithpdf.jpg"
-                alt="Chat with PDF"
-                width={800} 
-                height={480} 
-                layout="responsive" 
-                className="object-cover"
-              />
-            </div>
-            <div className="w-full md:w-1/2">
-              <h3 className="text-4xl md:text-5xl font-semibold text-[#4A4947] mb-4">
-                Chat with PDF
-              </h3>
-              <p className="text-[#4A4947]/80 md:text-xl mb-6">
-                Interact with your PDFs in a whole new way! Our PDF chat feature allows you to extract key information, ask questions, and get summaries directly from your PDF files with AI-powered chat support.
-              </p>
+          <div className="flex justify-center mt-8 space-x-2">
+            {cards.map((_, index) => (
               <button
-                onClick={() => router.push('/chatwithpdf')}
-                className="inline-flex items-center text-xl text-[#B17457] font-medium hover:underline"
-              >
-                Start Chatting
-                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
-                </svg>
-              </button>
-            </div>
+                key={index}
+                onClick={() => setCurrentSlide(index)}
+                className={`w-3 h-3 rounded-full transition-all ${
+                  currentSlide === index ? 'bg-[#B17457] w-6' : 'bg-gray-300'
+                }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
           </div>
         </div>
-
-        <div  ref={thirdSectionRef}>
-          <div className="flex flex-col md:flex-row items-center gap-8 md:gap-12">
-            <div className="w-full md:w-1/2">
-              <Image
-                src="/notessummarizer.jpg"
-                alt="Notes Summarizer"
-                width={600} 
-                height={300} 
-                layout="responsive" 
-                className="object-cover"
-              />
-            </div>
-            <div className="w-full md:w-1/2">
-              <h3 className="text-4xl md:text-5xl font-semibold text-[#4A4947] mb-4">
-                Notes Summarizer
-              </h3>
-              <p className="text-[#4A4947]/80 md:text-xl mb-6">
-                Summarize your lengthy notes into concise and easy-to-digest versions. The Notes Summarizer uses AI to highlight key points, concepts, and sections, making it easier for you to study.
-              </p>
-              <button
-                onClick={() => router.push('/summarize')}
-                className="inline-flex items-center text-xl text-[#B17457] font-medium hover:underline"
-              >
-                Summarize Notes
-                <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7"></path>
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-
       </div>
     </div>
   );
