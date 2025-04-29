@@ -11,58 +11,49 @@
   display: none !important;
 }
 
-/* Radial Gradient Background */
-.bg-radial-gradient {
-  background-image: radial-gradient(
-    circle at 10% 20%,
-    rgba(4, 159, 108, 1) 0%,
-    rgba(194, 254, 113, 1) 90.1%
-  );
-}
-
 @layer base {
   :root {
-    --background: 255 255 255; /* Light mode background */
-    --foreground: 10 10 10; /* Light text */
-    --card: 255 255 255;
-    --card-foreground: 10 10 10;
-    --popover: 255 255 255;
-    --popover-foreground: 10 10 10;
-    --primary: 0 128 0; /* Green Primary */
-    --primary-foreground: 255 255 255; /* White text */
+    --background: 250 247 240; /* FAF7F0 Light mode background */
+    --foreground: 74 73 71; /* 4A4947 Light text */
+    --card: 250 247 240;
+    --card-foreground: 74 73 71;
+    --popover: 250 247 240;
+    --popover-foreground: 74 73 71;
+    --primary: 177 116 87; /* B17457 Primary */
+    --primary-foreground: 250 247 240; /* FAF7F0 text on primary */
     --secondary: 240 240 240;
-    --secondary-foreground: 10 10 10;
+    --secondary-foreground: 74 73 71; /* 4A4947 */
     --muted: 230 230 230;
-    --muted-foreground: 60 60 60;
-    --accent: 230 230 230;
-    --accent-foreground: 10 10 10;
+    --muted-foreground: 74 73 71; /* 4A4947 with opacity */
+    --accent: 177 116 87; /* B17457 */
+    --accent-foreground: 250 247 240; /* FAF7F0 */
     --destructive: 200 0 0;
-    --destructive-foreground: 255 255 255;
-    --border: 200 200 200;
-    --input: 200 200 200;
-    --ring: 10 10 10;
+    --destructive-foreground: 250 247 240;
+    --border: 177 116 87; /* B17457 */
+    --input: 177 116 87; /* B17457 */
+    --ring: 74 73 71; /* 4A4947 */
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 15 15 15; /* Dark mode background */
-    --foreground: 230 230 230; /* Light text */
-    --card: 25 25 25; 
-    --card-foreground: 230 230 230;
-    --popover: 25 25 25;
-    --popover-foreground: 230 230 230;
-    --primary: 50 205 50; /* Light Green */
-    --primary-foreground: 10 10 10;
-    --secondary: 40 40 40;
-    --secondary-foreground: 230 230 230;
-    --muted: 50 50 50;
-    --muted-foreground: 170 170 170;
-    --accent: 50 50 50;
-    --accent-foreground: 230 230 230;
+    --background: 74 73 71; /* 4A4947 Dark mode background */
+    --foreground: 250 247 240; /* FAF7F0 Light text */
+    --card: 84 83 81; /* Slightly lighter than background */
+    --card-foreground: 250 247 240; /* FAF7F0 */
+    --popover: 84 83 81;
+    --popover-foreground: 250 247 240; /* FAF7F0 */
+    --primary: 177 116 87; /* B17457 Primary */
+    --primary-foreground: 250 247 240; /* FAF7F0 */
+    --secondary: 94 93 91; /* Slightly lighter than background */
+    --secondary-foreground: 250 247 240; /* FAF7F0 */
+    --muted: 64 63 61; /* Slightly darker than background */
+    --muted-foreground: 220 217 210; /* FAF7F0 with opacity */
+    --accent: 177 116 87; /* B17457 */
+    --accent-foreground: 250 247 240; /* FAF7F0 */
     --destructive: 150 0 0;
-    --destructive-foreground: 230 230 230;
-    --border: 50 50 50;
-    --input: 50 50 50;
-    --ring: 230 230 230;
+    --destructive-foreground: 250 247 240; /* FAF7F0 */
+    --border: 177 116 87; /* B17457 */
+    --input: 177 116 87; /* B17457 */
+    --ring: 250 247 240; /* FAF7F0 */
   }
 }

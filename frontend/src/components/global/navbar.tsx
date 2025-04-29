@@ -5,18 +5,14 @@ import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Moon, Sun, ChevronDown, ChevronUp } from "lucide-react";
-import { Funnel_Display } from "next/font/google";
 import { getAuth, onAuthStateChanged, signOut, User } from "firebase/auth";
 import { useTheme } from "next-themes";
-import { motion, AnimatePresence } from "framer-motion"; // <<< NEW
+import { motion, AnimatePresence } from "framer-motion";
 import app from "@/firebase/firebaseconfig";
 import { deleteCookie } from "@/lib/utils";
+import { useRef } from "react";
 import { montserrat500, montserrat700 } from "@/lib/font-utils";
 
-const funnel_display = Funnel_Display({
-  subsets: ["latin"],
-  weight: "400",
-});
 
 const Navbar = () => {
   const auth = getAuth(app);
@@ -29,6 +25,7 @@ const Navbar = () => {
   const [user, setUser] = useState<User | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dropdownRef, setDropdownRef] = useState<HTMLElement | null>(null);
   const [servicesDropdown, setServicesDropdown] = useState(false);
 
   useEffect(() => {
@@ -37,6 +34,21 @@ const Navbar = () => {
     });
     return () => unsubscribe();
   }, [auth]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef && dropdownRef.contains(event.target as Node)) {
+        return;
+      }
+      setServicesDropdown(false);
+      setDropdownOpen(false);
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [dropdownRef]);
 
   const handleSignOut = async () => {
     try {
@@ -54,7 +66,7 @@ const Navbar = () => {
   }, []);
 
   return (
-    <div className="bg-[#D8D2C2] py-[0.5rem] px-6 my-6 mx-10 rounded-[1.5rem] border border-[#C9C3B3] flex justify-between items-center relative">
+    <div className="bg-[#D8D2C2] py-[0.5rem] px-6 my-6 mx-10 rounded-[1.5rem] border border-[#C9C3B3] flex justify-between items-center fixed top-0 left-0 right-0 z-50">
       <div
         onClick={() => router.push("/")}
         className={`${montserrat700.className} text-[#4A4947] text-[2rem] cursor-pointer`}
@@ -76,28 +88,41 @@ const Navbar = () => {
             )}
           </button>
 
-          {servicesDropdown && (
-            <div className="absolute top-[3rem] right-1 bg-white border border-[#C9C3B3] rounded-xl shadow-lg py-2 w-52 z-50">
-              <Link
-                href="/generate"
-                className="block px-4 py-2 text-[#4A4947] hover:bg-[#f0eee9] text-[1.25rem]"
+          <AnimatePresence>
+            {servicesDropdown && (
+              <motion.div
+                ref={setDropdownRef}
+                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="absolute top-[3rem] right-0 bg-white/70 backdrop-blur-md border border-[#C9C3B3] rounded-2xl shadow-2xl py-3 w-60 z-50 flex flex-col overflow-hidden"
               >
-                Notes Generator
-              </Link>
-              <Link
-                href="/summarizer"
-                className="block px-4 py-2 text-[#4A4947] hover:bg-[#f0eee9] text-[1.25rem]"
-              >
-                Notes Summarizer
-              </Link>
-              <Link
-                href="/chat-pdf"
-                className="block px-4 py-2 text-[#4A4947] hover:bg-[#f0eee9] text-[1.25rem]"
-              >
-                Chat with PDFs
-              </Link>
-            </div>
-          )}
+                <Link
+                  href="/generate"
+                  className="px-5 py-3 text-[#4A4947] hover:bg-[#f0eee9] text-[1.25rem] transition-all duration-200 hover:pl-6"
+                >
+                  Notes Generator
+                </Link>
+                <div className="border-t border-[#C9C3B3] mx-4" />
+                <Link
+                  href="/summarizer"
+                  className="px-5 py-3 text-[#4A4947] hover:bg-[#f0eee9] text-[1.25rem] transition-all duration-200 hover:pl-6"
+                >
+                  Notes Summarizer
+                </Link>
+                <div className="border-t border-[#C9C3B3] mx-4" />
+                <Link
+                  href="/chat-pdf"
+                  className="px-5 py-3 text-[#4A4947] hover:bg-[#f0eee9] text-[1.25rem] transition-all duration-200 hover:pl-6"
+                >
+                  Chat with PDFs
+                </Link>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+
         </div>
 
         <div
@@ -117,7 +142,7 @@ const Navbar = () => {
           {mounted && (
             <button
               onClick={() => (isDark ? setTheme("light") : setTheme("dark"))}
-              className="flex items-center justify-center w-10 h-9 rounded-[0.625rem] border-2 border-[#4A4947] relative overflow-hidden cursor-pointer"
+              className="flex items-center justify-center w-10 h-10 rounded-[0.625rem] border-2 border-[#4A4947] relative overflow-hidden cursor-pointer"
             >
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
@@ -151,9 +176,6 @@ const Navbar = () => {
                     height={40}
                     className="rounded-full"
                   />
-                  <span className="font-medium text-[#4A4947] hidden md:inline text-[1.2rem]">
-                    {user.displayName}
-                  </span>
                   {dropdownOpen ? (
                     <ChevronUp size={16} color="#4A4947" />
                   ) : (
@@ -161,22 +183,32 @@ const Navbar = () => {
                   )}
                 </button>
 
-                {dropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white border border-[#C9C3B3] rounded-lg shadow-lg p-2 z-50">
-                    <Link
-                      href="/profile"
-                      className="block w-full text-left px-4 py-2 text-[#4A4947] hover:bg-[#f0eee9] rounded-lg text-[1.1rem]"
+                <AnimatePresence>
+                  {dropdownOpen && (
+                    <motion.div
+                      ref={setDropdownRef}
+                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className="absolute top-[3.5rem] right-0 bg-white/70 backdrop-blur-md border border-[#C9C3B3] rounded-2xl shadow-2xl py-3 w-60 z-50 flex flex-col overflow-hidden"
                     >
-                      Profile
-                    </Link>
-                    <button
-                      onClick={handleSignOut}
-                      className="block w-full text-left px-4 py-2 text-red-600 hover:bg-red-50 rounded-lg text-[1.1rem] cursor-pointer"
-                    >
-                      Sign Out
-                    </button>
-                  </div>
-                )}
+                      <Link
+                        href="/profile"
+                        className="px-5 py-3 text-[#4A4947] hover:bg-[#f0eee9] text-[1.25rem] transition-all duration-200 hover:pl-6"
+                      >
+                        Profile
+                      </Link>
+                      <div className="border-t border-[#C9C3B3] mx-4" />
+                      <button
+                        onClick={handleSignOut}
+                        className="text-left w-full px-5 py-3 text-red-600 hover:bg-red-50 text-[1.25rem] cursor-pointer transition-all duration-200 hover:pl-6"
+                      >
+                        Sign Out
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             ) : (
               <button

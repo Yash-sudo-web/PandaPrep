@@ -4,9 +4,9 @@ import Navbar from "@/components/global/navbar";
 
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
-
+import { FeatureSection } from "@/components/global/features";
 import { useRouter } from "next/navigation";
-import { montserrat600, montserrat700, montserrat800 } from "@/lib/font-utils";
+import { montserrat600, montserrat700, montserrat800,indieFlower } from "@/lib/font-utils";
 import { ArrowUpRight } from "lucide-react";
 import heroBulb from "../../public/assets/hero-bulb.png";
 import Image from "next/image";
@@ -28,10 +28,10 @@ export default function Home() {
 
   return (
     <main className="overflow-x-hidden bg-[#FAF7F0]">
-      <Navbar />
-      <div className="flex flex-col items-center justify-center pt-36">
+      <Navbar/>
+      <div className="flex flex-col items-center justify-center h-screen">
         <p
-          className={`${montserrat800.className} text-[3.125rem] text-[#4A4947]`}
+          className={`${indieFlower.className} text-[3.125rem]  text-[#4A4947]`}
         >
           From Chaos to Clarity
         </p>
@@ -46,12 +46,22 @@ export default function Home() {
         <div className="flex flex-col items-center justify-center mt-10">
           <button
             onClick={() => router.push("/auth")}
-            className={`bg-[#B17457] text-white font-bold text-[1.25rem] rounded-[15px] w-[215px] h-[55px] shrink-0 transition duration-300 ease-in-out hover:bg-[#4A4947] ${montserrat700.className} flex items-center justify-center gap-1 cursor-pointer`}
+            className={`bg-[#FAF7F0] border-2 border-[#B17457] text-[#B17457] font-bold text-[1.25rem] rounded-[15px] w-[215px] h-[55px] shrink-0 transition duration-300 ease-in-out hover:bg-[#B17457] hover:border-[#B17457] hover:text-[#FAF7F0] ${montserrat700.className} flex items-center justify-center gap-1 cursor-pointer`}
           >
             <p>Get Started</p>
             <ArrowUpRight strokeWidth={3}/>
           </button>
         </div>
+      </div>
+
+      <div
+        className={`mt-20 flex justify-center pt-10 px-4 sm:px-8 md:px-16 lg:px-32 ${
+          isDarkMode ? "bg-neutral-950 text-white" : "bg-[#FAF7F0] text-[#4A4947]"
+        }`}
+      >
+        <section className="w-full ">
+          <FeatureSection />
+        </section>
       </div>
     </main>
   );

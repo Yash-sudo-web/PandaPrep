@@ -1,4 +1,10 @@
 import { Montserrat } from "next/font/google";
+import { Indie_Flower } from "next/font/google";
+
+export const indieFlower = Indie_Flower({
+  subsets: ["latin"],
+  weight: "400",
+});
 
 export const montserrat500 = Montserrat({
   subsets: ["latin"],
