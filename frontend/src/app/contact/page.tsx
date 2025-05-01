@@ -138,7 +138,7 @@ export default function Contact() {
 
                     <div className={`${isDarkMode ? 'bg-green-900' : 'bg-white'} text-[#4A4947] p-6 md:p-8 w-full md:w-2/5 relative order-2 md:order-1`}>
                         <h2 className="text-xl md:text-2xl font-semibold mb-1">Contact Information</h2>
-                        <p className="text-gray-300 mb-6 md:mb-8">Say something to start a live chat!</p>
+                        <p className="mb-6 md:mb-8">Say something to start a live chat!</p>
 
                         <div className="space-y-6 mt-6 md:mt-10">
                             <div className="space-y-4 md:space-y-6">
@@ -181,7 +181,7 @@ export default function Contact() {
                                     </a>
                                 </div>
 
-                                <div className="flex items-center">
+                                {/* <div className="flex items-center">
                                     <div className="mr-4">
                                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
@@ -192,7 +192,7 @@ export default function Contact() {
                                     <a href="https://www.linkedin.com/in/sankalp-mathur-985a171b0/" target="_blank" rel="noopener noreferrer" className="hover:underline text-sm md:text-base">
                                         Sankalp Mathur
                                     </a>
-                                </div>
+                                </div> */}
                             </div>
 
                             <div className="flex items-center">

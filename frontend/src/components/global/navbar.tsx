@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Moon, Sun, ChevronDown, ChevronUp } from "lucide-react";
+import { Moon, Sun, ChevronDown, ChevronUp, Lock } from "lucide-react";
 import { getAuth, onAuthStateChanged, signOut, User } from "firebase/auth";
 import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
@@ -12,7 +12,6 @@ import app from "@/firebase/firebaseconfig";
 import { deleteCookie } from "@/lib/utils";
 import { useRef } from "react";
 import { montserrat500, montserrat700 } from "@/lib/font-utils";
-
 
 const Navbar = () => {
   const auth = getAuth(app);
@@ -96,7 +95,7 @@ const Navbar = () => {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="absolute top-[3rem] right-0 bg-white/70 backdrop-blur-md border border-[#C9C3B3] rounded-2xl shadow-2xl py-3 w-60 z-50 flex flex-col overflow-hidden"
+                className="absolute top-[3rem] right-0 bg-white/70 backdrop-blur-md border border-[#C9C3B3] rounded-2xl shadow-2xl py-3 w-72 z-50 flex flex-col overflow-hidden"
               >
                 <Link
                   href="/generate"
@@ -105,24 +104,33 @@ const Navbar = () => {
                   Notes Generator
                 </Link>
                 <div className="border-t border-[#C9C3B3] mx-4" />
-                <Link
-                  href="/summarizer"
-                  className="px-5 py-3 text-[#4A4947] hover:bg-[#f0eee9] text-[1.25rem] transition-all duration-200 hover:pl-6"
+                <div
+                  className="group relative flex justify-between px-5 py-3 text-[#4A4947] hover:bg-[#f0eee9] text-[1.25rem] transition-all duration-200 hover:pl-6 cursor-not-allowed"
                 >
-                  Notes Summarizer
-                </Link>
+                  <div className="flex items-center gap-2 blur-[0.5px]">
+                    Notes Summarizer
+                  </div>
+
+                  <div className="absolute invisible group-hover:visible bg-black/80 text-white text-sm rounded-md py-1 px-2 bottom-full mb-1 right-0 whitespace-nowrap">
+                    Coming soon
+                  </div>
+                </div>
+
                 <div className="border-t border-[#C9C3B3] mx-4" />
-                <Link
-                  href="/chat-pdf"
-                  className="px-5 py-3 text-[#4A4947] hover:bg-[#f0eee9] text-[1.25rem] transition-all duration-200 hover:pl-6"
+                <div
+                  className="group relative flex justify-between px-5 py-3 text-[#4A4947] hover:bg-[#f0eee9] text-[1.25rem] transition-all duration-200 hover:pl-6 cursor-not-allowed"
                 >
-                  Chat with PDFs
-                </Link>
+                  <div className="flex items-center gap-2 blur-[0.5px] ">
+                    Chat with PDFs
+                  </div>
+ 
+                  <div className="absolute invisible group-hover:visible bg-black/80 text-white text-sm rounded-md py-1 px-2 bottom-full mb-1 right-0 whitespace-nowrap">
+                    Coming soon
+                  </div>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
-
-
         </div>
 
         <div
@@ -133,6 +141,7 @@ const Navbar = () => {
         </div>
 
         <div
+          onClick={() => router.push("/")}
           className={`${montserrat500.className} text-[#4A4947] text-[1.5rem] cursor-pointer`}
         >
           About

@@ -14,9 +14,8 @@ import {
 } from "@/components/ui/pricing-card";
 import { CheckIcon, XIcon } from "lucide-react";
 import { Funnel_Display } from "next/font/google";
-import { cn, getCookie } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { BASE_URL, PLANS } from "@/lib/constant";
-import Footer from "@/components/global/footer";
 import { useTheme } from "next-themes";
 import { useEffect, useState, useRef } from "react";
 import axios from "axios";
@@ -196,15 +195,15 @@ export default function Pricing() {
                       <CardItem
                         translateZ={20}
                         as="button"
-                        onClick={() => handlePaymentClick(plan as Plan)}
+                        onClick={() => plan.title === "Scale" ? router.push("/contact") : handlePaymentClick(plan as Plan)}
                         className={cn(
-                          "w-full px-6 py-3 rounded-xl text-sm border-2 font-bold transition-colors",
+                          "w-full px-6 py-3 rounded-xl text-sm border-2 font-bold transition-colors cursor-pointer",
                           isDarkMode
                             ? "bg-green-600 hover:bg-green-700 text-white"
                             : "bg-white border-[#B17457] text-[#B17457] hover:bg-[#B17457] hover:text-[#FAF7F0]"
                         )}
                       >
-                        Get Started Now
+                        {plan.title === "Scale" ? "Contact Us" : "Get Started Now"}
                       </CardItem>
                     </div>
                   </CardBody>
