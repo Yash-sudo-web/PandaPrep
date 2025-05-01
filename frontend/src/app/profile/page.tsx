@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useTheme } from "next-themes";
-import { Funnel_Display } from "next/font/google";
 import { Country } from "country-state-city";
 import Navbar from "@/components/global/navbar";
+import { montserrat500 } from "@/lib/font-utils";
 import { ChevronDown, Save, Loader2, CreditCard } from "lucide-react";
 import {
   getAuth,
@@ -19,10 +19,6 @@ import { BASE_URL } from "@/lib/constant";
 import Image from "next/image";
 import { toast } from "sonner";
 
-const funnel_display = Funnel_Display({
-  subsets: ["latin"],
-  weight: "400",
-});
 
 interface CountryOption {
   label: string;
@@ -224,7 +220,7 @@ const Profile = () => {
         className={`min-h-screen flex items-center justify-center ${isDarkMode
           ? "bg-neutral-950 text-green-600"
           : "bg-white text-gray-900"
-          } ${funnel_display.className}`}
+          } ${montserrat500.className}`}
       >
         <Loader2 className="w-8 h-8 animate-spin" />
         <span className="ml-2">Loading profile...</span>
@@ -235,9 +231,9 @@ const Profile = () => {
   return (
     <div
       className={`min-h-screen ${isDarkMode ? "text-green-600" : "text-gray-900"
-        } ${funnel_display.className} ${isDarkMode
+        } ${montserrat500.className} ${isDarkMode
           ? "bg-gradient-to-r from-neutral-950 to-green-950 text-white"
-          : "bg-[radial-gradient(circle_at_center,_#d1fae5,_white)] text-gray-800"
+          : "bg-[#FAF7F0] text-gray-800"
         } pb-20`}
     >
       <Navbar />
@@ -246,8 +242,8 @@ const Profile = () => {
         <div className="relative">
           <div className={`h-40 sm:h-56 rounded-lg overflow-hidden`}></div>
 
-          <div className={`rounded-lg ${isDarkMode ? "bg-neutral-900" : "bg-gray-50"
-            } border ${isDarkMode ? "border-neutral-800" : "border-gray-200"
+          <div className={`rounded-lg ${isDarkMode ? "bg-neutral-900" : "bg-[#FAF7F0]"
+            } border ${isDarkMode ? "border-neutral-800" : "border-[#B17457]"
             } p-4 flex flex-col sm:flex-row items-center justify-between absolute bottom-0 left-0 transform translate-y-1/2 sm:translate-y-1/3 px-4 sm:px-8 w-full`}>
             <div className="relative">
               <div
@@ -277,7 +273,7 @@ const Profile = () => {
             <div className="mt-4 sm:mt-0 sm:ml-4 flex-grow">
               <div className="flex flex-col sm:flex-row justify-between items-center w-full">
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-bold">
+                  <h1 className="text-xl text-[#4A4947] sm:text-2xl font-bold">
                     {formData.fullName || user?.displayName || "User"}
                   </h1>
                   <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -293,10 +289,10 @@ const Profile = () => {
                     }
                   }}
                   disabled={saving}
-                  className={`mt-2 sm:mt-0 px-6 py-2 rounded-md flex items-center ${isDarkMode
+                  className={`mt-2 sm:mt-0 px-6 py-2 border-2 rounded-md flex items-center ${isDarkMode
                     ? "bg-green-700 hover:bg-green-800"
-                    : "bg-green-600 hover:bg-green-700"
-                    } text-white transition-colors`}
+                    : "bg-[#FAF7F0] border-[#B17457] text-[#B17457] hover:bg-[#B17457] hover:text-[#FAF7F0]"
+                    } transition-colors`}
                 >
                   {saving ? (
                     <>
@@ -323,8 +319,8 @@ const Profile = () => {
 
         {/* Credits Section */}
         <div className="mt-24 sm:mt-28 mb-8">
-          <div className={`p-6 rounded-lg ${isDarkMode ? "bg-neutral-900" : "bg-gray-50"
-            } border ${isDarkMode ? "border-neutral-800" : "border-gray-200"
+          <div className={`p-6 rounded-lg ${isDarkMode ? "bg-neutral-900" : "bg-[#FAF7F0]"
+            } border ${isDarkMode ? "border-neutral-800" : "border-[#B17457]"
             }`}>
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
               <div>
@@ -332,17 +328,17 @@ const Profile = () => {
                   <CreditCard className="mr-2" size={20} />
                   Available Credits
                 </h2>
-                <p className={`text-3xl font-bold ${isDarkMode ? "text-green-500" : "text-green-600"
+                <p className={`text-3xl font-bold ${isDarkMode ? "text-green-500" : "text-[#4A4947]"
                   }`}>
                   {user?.subscription?.credits || 0} <span>{user?.subscription?.plan === "free" && "(Trial Credits)"}</span>
                 </p>
               </div>
               <button
                 onClick={navigateToSubscription}
-                className={`mt-4 sm:mt-0 px-6 py-2 rounded-md flex items-center ${isDarkMode
+                className={`mt-4 sm:mt-0 px-6 py-2 rounded-md border-2 flex items-center ${isDarkMode
                   ? "bg-green-700 hover:bg-green-800"
-                  : "bg-green-600 hover:bg-green-700"
-                  } text-white transition-colors`}
+                  : "bg-[#FAF7F0] border-[#B17457] text-[#B17457] hover:bg-[#B17457] hover:text-[#FAF7F0]"
+                  }  cursor-pointer transition-colors`}
               >
                 Top Up Credits
               </button>

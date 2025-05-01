@@ -8,6 +8,7 @@ import { FeatureSection } from "@/components/global/features";
 import { useRouter } from "next/navigation";
 import { montserrat600, montserrat700, montserrat800,indieFlower } from "@/lib/font-utils";
 import { ArrowUpRight } from "lucide-react";
+import { Faq } from "@/components/global/faq";
 import heroBulb from "../../public/assets/hero-bulb.png";
 import Image from "next/image";
 
@@ -63,6 +64,12 @@ export default function Home() {
           <FeatureSection />
         </section>
       </div>
+
+      <div className="flex justify-center px-4 sm:px-8 md:px-16 lg:px-32">
+        <section className="w-full ">
+          <Faq />
+        </section>
+      </div>  
     </main>
   );
 }

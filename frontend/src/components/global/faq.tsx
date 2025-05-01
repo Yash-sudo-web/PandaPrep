@@ -9,9 +9,7 @@ import {
     AccordionTrigger,
 } from "@/components/ui/accordion";
 import { faqs } from "@/lib/constant";
-import { Funnel_Display } from "next/font/google";
-
-const funnelDisplay = Funnel_Display({ subsets: ["latin"], weight: "400" });
+import { montserrat600,montserrat500 } from "@/lib/font-utils";
 
 export function Faq() {
     const { theme, resolvedTheme } = useTheme();
@@ -24,23 +22,23 @@ export function Faq() {
     const isDarkMode = mounted && resolvedTheme === "dark";
 
     return (
-        <main className={`w-full ${isDarkMode ? "bg-neutral-950" : "bg-white"} py-10`}>
+        <main className={`w-full ${isDarkMode ? "bg-neutral-950" : "bg-[#FAF7F0]"} py-10`}>
             <div
                 className={`w-full text-4xl sm:text-5xl text-center mb-6 sm:mb-10 ${
-                    isDarkMode ? "text-green-600" : "text-green-600"
-                } ${funnelDisplay.className}`}
+                    isDarkMode ? "text-[#4A4947]" : "text-[#4A4947]"
+                } ${montserrat600 .className}`}
             >
                 <p>Frequently Asked Questions</p>
             </div>
             <section
                 className={`flex flex-col items-center justify-center ${
-                    isDarkMode ? "bg-neutral-950" : "bg-white"
+                    isDarkMode ? "bg-neutral-950" : "bg-[#FAF7F0];"
                 }`}
             >
                 <Accordion
                     type="single"
                     collapsible
-                    className={`w-full max-w-lg px-4 sm:px-0 ${funnelDisplay.className}`}
+                    className={`w-full max-w-5xl px-4 sm:px-0 ${montserrat500 .className}`}
                 >
                     {faqs.map((faq, index) => (
                         <AccordionItem key={index} value={`item-${index}`}>
@@ -50,7 +48,7 @@ export function Faq() {
                                 {faq.question}
                             </AccordionTrigger>
                             <AccordionContent
-                                className={isDarkMode ? "text-white" : "text-gray-700"}
+                                className={isDarkMode ? "text-white" : "text-[#4A4947]"}
                             >
                                 {faq.answer}
                             </AccordionContent>

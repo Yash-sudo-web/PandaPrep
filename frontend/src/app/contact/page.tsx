@@ -118,7 +118,7 @@ export default function Contact() {
             className={cn(
                 isDarkMode
                     ? "bg-gradient-to-r from-neutral-950 to-green-950 text-white"
-                    : "bg-[radial-gradient(circle_at_center,_#d1fae5,_white)] text-gray-900",
+                    : "bg-[#FAF7F0] text-gray-900",
                 "min-h-screen flex flex-col items-center",
                 funnel_display.className
             )}
@@ -126,16 +126,17 @@ export default function Contact() {
             <Navbar />
 
             <section className="w-full max-w-5xl px-4 flex flex-col items-center mt-16 md:mt-28 mb-20">
-                <h1 className={`text-3xl md:text-4xl font-bold mb-2 text-center ${isDarkMode ? 'text-green-400' : 'text-green-700'}`}>
+                <h1 className={`text-3xl md:text-4xl font-bold mb-2 text-center ${isDarkMode ? 'text-green-400' : 'text-[#4A4947]'}`}>
                     Contact Us
                 </h1>
                 <p className={`${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-6 md:mb-10 text-center px-4`}>
                     Any question or remarks? Just write us a message!
                 </p>
 
-                <div className={`flex flex-col md:flex-row w-full ${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg overflow-hidden`}>
+                <div className={`flex flex-col md:flex-row w-full ${isDarkMode ? 'bg-gray-800' : 'bg-white'} rounded-xl shadow-lg overflow-hidden relative`}>
+                <span className="hidden md:block absolute top-10 bottom-10 left-2/5 w-px bg-[#4A4947] "></span>
 
-                    <div className={`${isDarkMode ? 'bg-green-900' : 'bg-green-800'} text-white p-6 md:p-8 w-full md:w-2/5 relative order-2 md:order-1`}>
+                    <div className={`${isDarkMode ? 'bg-green-900' : 'bg-white'} text-[#4A4947] p-6 md:p-8 w-full md:w-2/5 relative order-2 md:order-1`}>
                         <h2 className="text-xl md:text-2xl font-semibold mb-1">Contact Information</h2>
                         <p className="text-gray-300 mb-6 md:mb-8">Say something to start a live chat!</p>
 
@@ -221,12 +222,12 @@ export default function Contact() {
 
                     <div className={`p-6 md:p-8 w-full md:w-3/5 order-1 md:order-2 ${isDarkMode ? 'bg-neutral-950 text-white' : 'bg-white text-gray-900'}`}>
                         <form className="space-y-4 md:space-y-6" onSubmit={handleSendMessage}>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6"> 
                                 <div>
                                     <label className={`block text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-1`}>First Name</label>
                                     <input
                                         type="text"
-                                        className={`w-full border-b rounded-xl py-2 px-3 focus:outline-none ${isDarkMode ? 'border-gray-600 bg-gray-100 text-gray-900' : 'border-gray-300 bg-neutral-800 text-white'}`}
+                                        className={`w-full border rounded-xl py-2 px-3 focus:outline-none ${isDarkMode ? 'border-gray-600 bg-gray-100 text-gray-900' : 'border-[#4A4947] bg-white text-[#4A4947]'}`}
                                         value={form.firstName}
                                         onChange={(e) => handleInputChange("firstName", e.target.value)}
                                     />
@@ -235,7 +236,7 @@ export default function Contact() {
                                     <label className={`block text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-1`}>Last Name</label>
                                     <input
                                         type="text"
-                                        className={`w-full border-b rounded-xl py-2 px-3 focus:outline-none ${isDarkMode ? 'border-gray-600 bg-gray-100 text-gray-900' : 'border-gray-300 bg-neutral-800 text-white'}`}
+                                        className={`w-full border rounded-xl py-2 px-3 focus:outline-none ${isDarkMode ? 'border-gray-600 bg-gray-100 text-gray-900' : 'border-[#4A4947] bg-white text-[#4A4947]'}`}
                                         value={form.lastName}
                                         onChange={(e) => handleInputChange("lastName", e.target.value)}
                                     />
@@ -247,7 +248,7 @@ export default function Contact() {
                                         <label className={`block text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-1`}>{field.placeholder}</label>
                                         <input
                                             type={field.type}
-                                            className={`w-full border-b rounded-xl py-2 px-3 focus:outline-none ${isDarkMode ? 'border-gray-600 bg-gray-100 text-gray-900' : 'border-gray-300 bg-neutral-800 text-white'}`}
+                                            className={`w-full border rounded-xl py-2 px-3 focus:outline-none ${isDarkMode ? 'border-gray-600 bg-gray-100 text-gray-900' : 'border-[#4A4947] bg-white text-[#4A4947]'}`}
                                             value={field.value}
                                             onChange={(e) => field.onChange(e.target.value)}
                                             placeholder={field.inputPlaceholder || ''}
@@ -279,7 +280,7 @@ export default function Contact() {
                             <div>
                                 <label className={`block text-sm ${isDarkMode ? 'text-gray-300' : 'text-gray-600'} mb-1`}>Message</label>
                                 <textarea
-                                    className={`w-full border-b rounded-xl py-2 px-3 focus:outline-none ${isDarkMode ? 'border-gray-600 bg-gray-100 text-gray-900' : 'border-gray-300 bg-neutral-800 text-white'}`}
+                                    className={`w-full mt-1 border rounded-xl py-2 px-3 focus:outline-none ${isDarkMode ? 'border-gray-600 bg-gray-100 text-gray-900' : 'border-[#4A4947] bg-white text-[#4A4947]'}`}
                                     rows={4}
                                     placeholder="Write your message..."
                                     value={form.message}
@@ -289,7 +290,7 @@ export default function Contact() {
                             <div className="flex justify-end">
                                 <button
                                     type="submit"
-                                    className={`cursor-pointer ${isDarkMode ? 'bg-green-600 hover:bg-green-700' : 'bg-neutral-800 hover:bg-neutral-900'} text-white px-6 py-2 md:px-8 md:py-3 rounded-md transition-colors`}
+                                    className={`cursor-pointer border-2 ${isDarkMode ? 'bg-green-600 hover:bg-green-700' : 'bg-white border-[#B17457] text-[#B17457] hover:bg-[#B17457] hover:text-[#FAF7F0]'} px-6 py-2 md:px-8 md:py-3 rounded-md transition-colors`}
                                     disabled={emailError !== "" || phoneError !== "" || !form.email || !form.phoneNumber}
                                 >
                                     Send Message

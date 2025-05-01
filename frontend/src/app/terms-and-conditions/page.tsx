@@ -5,7 +5,6 @@ import { Funnel_Display } from "next/font/google";
 import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
-import Footer from "@/components/global/footer";
 
 const funnel_display = Funnel_Display({
   subsets: ["latin"],
@@ -30,11 +29,11 @@ const TermsAndConditions = () => {
         className={cn(
           "px-4 py-10 sm:px-10 lg:px-32 transition-colors duration-300 h-full",
           funnel_display.className,
-          isDarkMode ? "bg-black text-white" : "bg-white text-black"
+          isDarkMode ? "bg-black text-white" : "bg-[#FAF7F0] text-[#4A4947]"
         )}
       >
         <section className="max-w-7xl mx-auto mb-20">
-          <h1 className="text-center mt-16 mb-10 text-4xl text-green-600">
+          <h1 className="text-center mt-16 mb-10 text-4xl text-[#4A4947]">
             Terms & Conditions
           </h1>
 
@@ -99,7 +98,7 @@ const TermsAndConditions = () => {
               </li>
             </ul>
 
-            <h2 className="text-2xl font-bold mt-16 mb-4 text-green-600">
+            <h2 className="text-2xl font-bold mt-16 mb-4 text-[#4A4947]">
               Cancellation and Refund Policy
             </h2>
 

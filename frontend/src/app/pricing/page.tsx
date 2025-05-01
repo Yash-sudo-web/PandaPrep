@@ -100,7 +100,7 @@ export default function Pricing() {
         "min-h-screen flex flex-col items-center transition-colors duration-300",
         isDarkMode
           ? "bg-gradient-to-r from-neutral-950 to-green-950 text-white"
-          : "bg-[radial-gradient(circle_at_center,_#d1fae5,_white)] text-gray-800",
+          : "bg-[#FAF7F0] text-gray-800",
         funnel_display.className
       )}
     >
@@ -110,7 +110,7 @@ export default function Pricing() {
         <h1
           className={cn(
             "text-2xl sm:text-3xl md:text-4xl font-bold text-center mt-24 sm:mt-28 md:mt-36 mb-6 sm:mb-8",
-            isDarkMode ? "text-green-500" : "text-green-700"
+            isDarkMode ? "text-green-500" : "text-[#4A4947]"
           )}
         >
           Get Premium Subscription at a lower price!
@@ -128,7 +128,7 @@ export default function Pricing() {
                     "absolute inset-[-1000%] animate-[spin_2s_linear_infinite]",
                     isDarkMode
                       ? "bg-[conic-gradient(from_90deg_at_50%_50%,#16814e_0%,#2be4a5_50%,#16814e_100%)]"
-                      : "bg-[conic-gradient(from_90deg_at_50%_50%,#C8F7C5_0%,#2E7D32_50%,#C8F7C5_100%)]"
+                      : "bg-[#B17457]"
                   )}
                 />
                 <div
@@ -142,7 +142,7 @@ export default function Pricing() {
                       translateZ="50"
                       className={cn(
                         "text-xl font-bold",
-                        isDarkMode ? "text-green-500" : "text-green-700"
+                        isDarkMode ? "text-green-500" : "text-[#B17457]"
                       )}
                     >
                       {plan.title}
@@ -198,10 +198,10 @@ export default function Pricing() {
                         as="button"
                         onClick={() => handlePaymentClick(plan as Plan)}
                         className={cn(
-                          "w-full px-6 py-3 rounded-xl text-sm font-bold transition-colors",
+                          "w-full px-6 py-3 rounded-xl text-sm border-2 font-bold transition-colors",
                           isDarkMode
                             ? "bg-green-600 hover:bg-green-700 text-white"
-                            : "bg-green-100 hover:bg-green-200 text-neutral-800"
+                            : "bg-white border-[#B17457] text-[#B17457] hover:bg-[#B17457] hover:text-[#FAF7F0]"
                         )}
                       >
                         Get Started Now
