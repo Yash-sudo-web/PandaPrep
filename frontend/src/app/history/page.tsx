@@ -74,7 +74,7 @@ const History = () => {
 
   const handleGetAllNotes = async () => {
     try {
-      const email = getCookie("email");
+      const email = user?.email || getCookie("email");
       if (!idToken || !email) return;
       const response = await axios.post(
         `${BASE_URL}/userHistory/notes`,

@@ -141,10 +141,10 @@ const Navbar = () => {
         </div>
 
         <div
-          onClick={() => router.push("/")}
+          onClick={() => router.push("/history")}
           className={`${montserrat500.className} text-[#4A4947] text-[1.5rem] cursor-pointer`}
         >
-          About
+          History
         </div>
 
         <div className="flex items-center gap-6">

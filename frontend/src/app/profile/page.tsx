@@ -128,7 +128,7 @@ const Profile = () => {
           Authorization: `Bearer ${idToken}`,
         },
       });
-      console.log(response.data);
+
       setUser(response.data);
       setFormData({
         fullName: response.data.fullName || "",

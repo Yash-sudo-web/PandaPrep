@@ -66,12 +66,12 @@ const NotesGenerate = () => {
   }, []);
 
   const socketRef = useRef<WebSocket | null>(null);
-  let email = "";
 
   useEffect(() => {
-    email = getCookie("email") || "";
-    setFormData((prev) => ({ ...prev, email: email }));
-  }, []);
+    if (user?.email) {
+      setFormData((prev) => ({ ...prev, email: user.email }));
+    }
+  }, [user]);
 
   useEffect(() => {
     if (idToken) {
@@ -80,7 +80,7 @@ const NotesGenerate = () => {
   }, [idToken]);
 
   const [formData, setFormData] = useState({
-    email: email,
+    email: user?.email,
     syllabus: "",
     subject_name: "",
     user_instructions: "",
@@ -104,17 +104,14 @@ const NotesGenerate = () => {
     const socket = new WebSocket(wsUrl);
 
     socket.onopen = () => {
-      console.log("WebSocket connected");
       setIsConnected(true);
     };
 
     socket.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
-        console.log("WebSocket message:", data);
 
         if (data.type === "connected") {
-          console.log("WebSocket connection confirmed");
         } else if (data.type === "stage_update") {
           setCurrentStage(data.stage);
 
@@ -123,7 +120,6 @@ const NotesGenerate = () => {
             setGenerationComplete(true);
             setIsGenerating(false);
             setShowGenerateButton(true);
-            console.log(data);
             if (data.data && data.data.downloadId) {
               setDownloadId(data.data.downloadId);
             }
@@ -140,7 +136,6 @@ const NotesGenerate = () => {
     };
 
     socket.onclose = () => {
-      console.log("WebSocket disconnected");
       setIsConnected(false);
     };
 

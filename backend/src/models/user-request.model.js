@@ -108,6 +108,7 @@ const UserRequestSchema = new mongoose.Schema({
 UserRequestSchema.index({ created_at: -1 });
 UserRequestSchema.index({ status: 1 });
 UserRequestSchema.index({ 'subject_name': 'text' });
+UserRequestSchema.index({ createdAt: 1 }, { expireAfterSeconds: 2592000 });
 
 // Virtual for determining if request is completed
 UserRequestSchema.virtual('is_completed').get(function() {
