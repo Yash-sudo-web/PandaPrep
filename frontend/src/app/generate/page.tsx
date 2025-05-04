@@ -25,6 +25,8 @@ import {
   Settings,
 } from "lucide-react";
 
+import AnimatedInput from "@/components/global/input";
+
 const funnel_display = Funnel_Display({
   subsets: ["latin"],
   weight: "400",
@@ -231,9 +233,8 @@ const NotesGenerate = () => {
 
         // Extract filename from URL or use a default
         const urlParts = downloadId.split("/");
-        const defaultFilename = `${
-          formData?.subject_name || "generated"
-        }_notes.pdf`;
+        const defaultFilename = `${formData?.subject_name || "generated"
+          }_notes.pdf`;
         const filename = urlParts[urlParts.length - 1] || defaultFilename;
 
         link.download = filename;
@@ -315,9 +316,8 @@ const NotesGenerate = () => {
 
     return (
       <div
-        className={`mb-4 p-3 ${
-          isDarkMode ? "border-green-900" : "bg-green-50 border-green-200"
-        } border rounded-md`}
+        className={`mb-4 p-3 ${isDarkMode ? "border-green-900" : "bg-green-50 border-green-200"
+          } border rounded-md`}
       >
         <p className={`${isDarkMode ? "text-white" : "text-green-700"}`}>
           {statusMessage}
@@ -325,11 +325,10 @@ const NotesGenerate = () => {
         {generationComplete && (
           <button
             onClick={downloadGeneratedNotes}
-            className={`mt-2 px-4 py-2 cursor-pointer rounded-md ${
-              isDarkMode
+            className={`mt-2 px-4 py-2 cursor-pointer rounded-md ${isDarkMode
                 ? "bg-green-700 text-white hover:bg-green-900 border-green-900"
                 : "bg-white text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
-            } transition duration-300`}
+              } transition duration-300`}
           >
             Download Notes
           </button>
@@ -352,29 +351,6 @@ const NotesGenerate = () => {
     "E.g., Data Structures",
     "E.g., Computer Networks",
   ];
-
-  const [currentPlaceholderIndex, setCurrentPlaceholderIndex] = useState(0);
-  const [currentPlaceholder, setCurrentPlaceholder] = useState(placeholders[0]);
-  const [placeholderOpacity, setPlaceholderOpacity] = useState(1);
-  // Automatically cycle through placeholders with transitions
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Start the fade out transition
-      setPlaceholderOpacity(0);
-
-      // After fade out, change the placeholder
-      setTimeout(() => {
-        const nextIndex = (currentPlaceholderIndex + 1) % placeholders.length;
-        setCurrentPlaceholderIndex(nextIndex);
-        setCurrentPlaceholder(placeholders[nextIndex]);
-
-        // Start fade in
-        setPlaceholderOpacity(1);
-      }, 500); // Match this with CSS transition duration
-    }, 3000); // Change every 3 seconds
-
-    return () => clearInterval(interval);
-  }, [currentPlaceholderIndex]);
 
   const [currentStep, setCurrentStep] = useState(0);
 
@@ -399,32 +375,16 @@ const NotesGenerate = () => {
         <div className="w-full space-y-2">
           <p className={`${montserrat500.className} text-2xl`}>Subject Name</p>
           <div className="relative">
-            <input
-              type="text"
-              value={formData.subject_name}
-              onChange={(e) =>
-                handleInputChange("subject_name", e.target.value)
-              }
-              className="w-[35rem] px-4 py-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-              style={{
-                transition: "all 0.3s ease",
-              }}
+            <AnimatedInput
+              formDataValue={formData.subject_name}
+              handleInputChange={handleInputChange}
+              fieldKey="subject_name"
+              placeholders={placeholders}
             />
-            {!formData.subject_name && (
-              <div
-                className="absolute inset-y-0 left-0 flex items-center px-4 pointer-events-none text-gray-400"
-                style={{
-                  opacity: placeholderOpacity,
-                  transition: "opacity 0.5s ease",
-                }}
-              >
-                {currentPlaceholder}
-              </div>
-            )}
           </div>
         </div>
 
-        <div className="w-full flex flex-col gap-4">
+        <div className="w-full py-5 flex flex-col gap-1">
           <p className={`${montserrat500.className} text-2xl`}>
             Education Level
           </p>
@@ -665,11 +625,10 @@ const NotesGenerate = () => {
                     onClick={() => handleStepClick(index)}
                   >
                     <div
-                      className={`w-10 h-10 cursor-pointer mx-auto rounded-full flex items-center justify-center transition-all duration-300 ${
-                        currentStep >= index
+                      className={`w-10 h-10 cursor-pointer mx-auto rounded-full flex items-center justify-center transition-all duration-300 ${currentStep >= index
                           ? "bg-white border-2 border-[#B17457] text-[#B17457]"
                           : "bg-[#D9D9D9] text-gray-600"
-                      }`}
+                        }`}
                     >
                       {React.cloneElement(stepIcons[index], {
                         color: currentStep >= index ? "#B17457" : "#4A4947",

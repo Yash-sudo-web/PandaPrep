@@ -28,7 +28,7 @@ const MultiTabSwitch: React.FC<MultiTabSwitchProps> = ({
   const [selectedOption, setSelectedOption] = useState<string | null>(
     tabs[0].value
   );
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
   const isDarkMode = mounted && resolvedTheme === "dark";
@@ -55,13 +55,13 @@ const MultiTabSwitch: React.FC<MultiTabSwitchProps> = ({
         </div>
       )}
 
-      <div className="flex w-full">
-        {tabs.map((option, index) => {
+      <div className="flex flex-wrap w-full gap-2">
+        {tabs.map((option) => {
           const isPremium = premium_feature?.includes(option.value);
           const isDisabled = isPremium && userCredits === 0;
 
           return (
-            <div key={option.value} className="relative group flex-1">
+            <div key={option.value} className="relative group flex-1 min-w-[100px]">
               <button
                 className={`w-full px-6 py-2 transition duration-300 rounded-lg border-2 border-[#B17457] cursor-pointer
                   ${
@@ -69,7 +69,6 @@ const MultiTabSwitch: React.FC<MultiTabSwitchProps> = ({
                       ? "bg-[#B17457] text-white"
                       : "bg-white text-black"
                   } ${isDisabled ? "cursor-not-allowed opacity-50" : ""}
-                  ${index > 0 ? "ml-2" : ""}
                 `}
                 onClick={() => {
                   if (!isDisabled) {
@@ -80,7 +79,7 @@ const MultiTabSwitch: React.FC<MultiTabSwitchProps> = ({
                 disabled={isDisabled}
               >
                 <div
-                  className={`flex justify-center items-center gap-2 ${montserrat500.className} text-2xl`}
+                  className={`flex justify-center items-center gap-2 ${montserrat500.className} text-xl`}
                 >
                   <p>{option.label}</p>
                   {isPremium && userCredits === 0 && <Lock size={16} />}
