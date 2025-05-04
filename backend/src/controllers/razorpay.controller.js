@@ -77,10 +77,11 @@ export const verifyPaymentController = async (req, res) => {
             1500: 450,
         };
 
-        user.subscription.credits += creditsMap[paymentLog.amount] || 0;
-        user.subscription.plan = "paid";
-        await user.save();
-
+        await UserModel.findByIdAndUpdate(userId, {
+            $inc: { "subscription.credits": creditsMap[paymentLog.amount] || 0 },
+            $set: { "subscription.plan": "paid" }
+        });
+        
         res.json({ success: true, message: "Payment verified, credits added", user });
     } catch (error) {
         console.error(error);

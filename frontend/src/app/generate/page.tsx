@@ -326,8 +326,8 @@ const NotesGenerate = () => {
           <button
             onClick={downloadGeneratedNotes}
             className={`mt-2 px-4 py-2 cursor-pointer rounded-md ${isDarkMode
-                ? "bg-green-700 text-white hover:bg-green-900 border-green-900"
-                : "bg-white text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
+              ? "bg-green-700 text-white hover:bg-green-900 border-green-900"
+              : "bg-white text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
               } transition duration-300`}
           >
             Download Notes
@@ -368,7 +368,7 @@ const NotesGenerate = () => {
             <p>Enter Your Subject</p>
           </div>
 
-          <p className={`${montserrat400.className} text-xl`}>
+          <p className={`${montserrat400.className} text-lg`}>
             Let&apos;s start by defining what you want to learn about
           </p>
         </div>
@@ -376,6 +376,7 @@ const NotesGenerate = () => {
           <p className={`${montserrat500.className} text-2xl`}>Subject Name</p>
           <div className="relative">
             <AnimatedInput
+              textarea={false}
               formDataValue={formData.subject_name}
               handleInputChange={handleInputChange}
               fieldKey="subject_name"
@@ -385,7 +386,7 @@ const NotesGenerate = () => {
         </div>
 
         <div className="w-full py-5 flex flex-col gap-1">
-          <p className={`${montserrat500.className} text-2xl`}>
+          <p className={`${montserrat500.className} py-2 text-2xl`}>
             Education Level
           </p>
           <MultiTabSwitch
@@ -416,7 +417,61 @@ const NotesGenerate = () => {
   };
 
   const step2Component = () => {
-    return <div></div>;
+    return (
+      <div className="px-4 pt-1">
+        <div className="pb-5">
+          <div className={`${montserrat500.className} text-4xl flex gap-2`}>
+            <FileText size={40} className="text-[#B17457] mb-2" />
+            <p>Content Details</p>
+          </div>
+
+          <p className={`${montserrat400.className} text-lg`}>
+            Provide more information about what you want to learn
+          </p>
+        </div>
+        <div className="w-full space-y-2">
+          <p className={`${montserrat500.className} pt-4 text-2xl`}>Syllabus or Topic Outline</p>
+          <div className="relative">
+            <AnimatedInput
+              textarea={true}
+              formDataValue={formData.syllabus}
+              handleInputChange={handleInputChange}
+              fieldKey="syllabus"
+              placeholders={[
+                "Enter your syllabus...",
+                "E.g., Basic concepts: database & database users, characteristics of the database systems, concepts and architecture, data models, schemas & instances, DBMS architecture & data independence........",
+                "E.g., The basic human aspirations and their fulfillment through Right understanding and Resolution, Right understanding and Resolution as the activities of the Self, Self being central to Human Existence.......",
+              ]}
+            />
+            <p className={`${montserrat400.className} text-sm text-[#4A4947]`}>
+              List the main topics you want to be covered in your notes
+            </p>
+          </div>
+
+          <div className="w-full space-y-2 ">
+            <p className={`${montserrat500.className} pt-5 text-2xl`}> User Instructions (Optional)</p>
+            <div className="relative">
+              <AnimatedInput
+                textarea={true}
+                formDataValue={formData.user_instructions}
+                handleInputChange={handleInputChange}
+                fieldKey="user_instructions"
+                placeholders={[
+                  "Enter your instructions...",
+                  "E.g., Elaborate more on ER diagrams",
+                  "E.g., Go in depth on the topic of Normalization",
+                ]}
+              />
+              <p className={`${montserrat400.className} text-sm text-[#4A4947]`}>
+                Any specific requirements or focus areas for your notes
+              </p>
+            </div>
+          </div>
+
+
+        </div>
+      </div>
+    );
   };
 
   const step3Component = () => {
@@ -626,8 +681,8 @@ const NotesGenerate = () => {
                   >
                     <div
                       className={`w-10 h-10 cursor-pointer mx-auto rounded-full flex items-center justify-center transition-all duration-300 ${currentStep >= index
-                          ? "bg-white border-2 border-[#B17457] text-[#B17457]"
-                          : "bg-[#D9D9D9] text-gray-600"
+                        ? "bg-white border-2 border-[#B17457] text-[#B17457]"
+                        : "bg-[#D9D9D9] text-gray-600"
                         }`}
                     >
                       {React.cloneElement(stepIcons[index], {
@@ -641,7 +696,7 @@ const NotesGenerate = () => {
             </div>
           </div>
 
-          <div className="bg-white shadow-md rounded-lg p-6 min-h-[300px] w-4/5 mt-10">
+          <div className="bg-white shadow-md rounded-lg p-6 min-h-[300px] w-[65rem] mt-10">
             <div className="flex flex-col gap-4 h-[40rem]">
               {currentStep === 0 && step1Component()}
               {currentStep === 1 && step2Component()}
@@ -649,25 +704,30 @@ const NotesGenerate = () => {
               {currentStep === 3 && step4Component()}
             </div>
             <hr className="border-none h-px bg-[rgba(0,0,0,0.19)] my-4 -mx-6" />
-            <div className="flex justify-between mt-6 mx-10">
-              <button
-                className="cursor-pointer px-4 py-2 border border-[#B17457] rounded transition-colors flex items-center gap-2 hover:bg-gray-100"
-                onClick={() => setCurrentStep((prev) => Math.max(prev - 1, 0))}
-                disabled={currentStep === 0}
-              >
-                <ArrowLeft size={16} />
-                <span>Back</span>
-              </button>
+
+
+            <div className={`flex ${currentStep === 0 ? "justify-end" : "justify-between"} mt-6 mx-10`}>
+
+              {currentStep !== 0 && (
+                <button
+                  className="cursor-pointer px-4 py-2 border border-[#B17457] rounded transition-colors flex items-center gap-2 hover:bg-gray-100"
+                  onClick={() => setCurrentStep((prev) => Math.max(prev - 1, 0))}
+                  disabled={currentStep === 0}
+                >
+                  <ArrowLeft size={20} />
+                  <span className="text-lg">Back</span>
+                </button>
+              )}
 
               <button
-                className="cursor-pointer px-4 py-2 border rounded bg-[#B17457] text-white transition-colors flex items-center gap-2 hover:bg-[#8f523a]"
+                className="cursor-pointer px-4 py-2 border rounded-lg bg-[#B17457] text-white transition-colors flex items-center gap-2 hover:bg-[#8f523a]"
                 onClick={() =>
                   setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
                 }
                 disabled={currentStep === steps.length - 1}
               >
-                <span>Continue</span>
-                <ArrowRight size={16} />
+                <span className="text-lg" >Continue</span>
+                <ArrowRight size={20} />
               </button>
             </div>
           </div>

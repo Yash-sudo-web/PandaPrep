@@ -5,8 +5,8 @@ type AnimatedInputProps = {
   handleInputChange: (field: string, value: string) => void;
   fieldKey: string;
   placeholders: string[];
-  className?: string;
-  inputProps?: React.InputHTMLAttributes<HTMLInputElement>;
+  inputProps?: React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement>;
+  textarea: boolean;
 };
 
 const AnimatedInput: React.FC<AnimatedInputProps> = ({
@@ -14,8 +14,8 @@ const AnimatedInput: React.FC<AnimatedInputProps> = ({
   handleInputChange,
   fieldKey,
   placeholders,
-  className = "",
   inputProps = {},
+  textarea = false,
 }) => {
   const [currentPlaceholderIndex, setCurrentPlaceholderIndex] = useState(0);
   const [currentPlaceholder, setCurrentPlaceholder] = useState(placeholders[0]);
@@ -38,17 +38,28 @@ const AnimatedInput: React.FC<AnimatedInputProps> = ({
 
   return (
     <div className="relative">
-      <input
+      {textarea ? (
+        <textarea
+          type="text"
+          value={formDataValue}
+          onChange={(e) => handleInputChange(fieldKey, e.target.value)}
+          className={`w-full h-32 border px-4 py-2 resize-none border-gray-500 rounded-md transition-all `}
+          style={{ transition: "all 0.3s ease" }}
+          {...inputProps}
+        />
+      ) : <input
         type="text"
         value={formDataValue}
         onChange={(e) => handleInputChange(fieldKey, e.target.value)}
-        className={`w-[35rem] px-4 py-2 border border-gray-500 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all ${className}`}
+        className={`w-[35rem] px-4 py-2 border border-gray-500 rounded-md transition-all `}
         style={{ transition: "all 0.3s ease" }}
         {...inputProps}
       />
+
+      }
       {!formDataValue && (
         <div
-          className="absolute inset-y-0 left-0 flex items-center px-4 pointer-events-none text-gray-400"
+          className="absolute inset-y-0 left-0 flex pt-2 px-4 pointer-events-none text-gray-400"
           style={{
             opacity: placeholderOpacity,
             transition: "opacity 0.5s ease",
