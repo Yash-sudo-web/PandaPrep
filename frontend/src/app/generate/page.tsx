@@ -27,6 +27,8 @@ import {
   Settings,
   Sparkles,
   AlertCircle,
+  Download,
+  Redo
 } from "lucide-react";
 
 import AnimatedInput from "@/components/global/input";
@@ -288,9 +290,8 @@ const NotesGenerate = () => {
 
         // Extract filename from URL or use a default
         const urlParts = downloadId.split("/");
-        const defaultFilename = `${
-          formData?.subject_name || "generated"
-        }_notes.pdf`;
+        const defaultFilename = `${formData?.subject_name || "generated"
+          }_notes.pdf`;
         const filename = urlParts[urlParts.length - 1] || defaultFilename;
 
         link.download = filename;
@@ -372,25 +373,12 @@ const NotesGenerate = () => {
 
     return (
       <div
-        className={`mb-4 p-3 ${
-          isDarkMode ? "border-green-900" : "bg-green-50 border-green-200"
-        } border rounded-md`}
+        className={` w-2xs p-3 ${isDarkMode ? "border-green-900" : "bg-green-50 border-green-200"
+          } border rounded-md`}
       >
         <p className={`${isDarkMode ? "text-white" : "text-green-700"}`}>
           {statusMessage}
         </p>
-        {generationComplete && (
-          <button
-            onClick={downloadGeneratedNotes}
-            className={`mt-2 px-4 py-2 cursor-pointer rounded-md ${
-              isDarkMode
-                ? "bg-green-700 text-white hover:bg-green-900 border-green-900"
-                : "bg-white text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
-            } transition duration-300`}
-          >
-            Download Notes
-          </button>
-        )}
       </div>
     );
   };
@@ -432,9 +420,8 @@ const NotesGenerate = () => {
         </div>
         <div className="w-full space-y-2">
           <p
-            className={`${montserrat500.className} text-2xl ${
-              validationErrors.subject_name ? "text-red-500" : ""
-            }`}
+            className={`${montserrat500.className} text-2xl ${validationErrors.subject_name ? "text-red-500" : ""
+              }`}
           >
             Subject Name {validationErrors.subject_name}
           </p>
@@ -501,9 +488,8 @@ const NotesGenerate = () => {
         </div>
         <div className="w-full space-y-2">
           <p
-            className={`${montserrat500.className} pt-4 text-2xl ${
-              validationErrors.syllabus ? "text-red-500" : ""
-            }`}
+            className={`${montserrat500.className} pt-4 text-2xl ${validationErrors.syllabus ? "text-red-500" : ""
+              }`}
           >
             Syllabus or Topic Outline {validationErrors.syllabus}
           </p>
@@ -562,11 +548,13 @@ const NotesGenerate = () => {
     return (
       <div className="px-4 pt-1">
         <div className="pb-5">
-          <div className="text-4xl flex gap-2">
+          <div className={`${montserrat500.className} text-4xl flex gap-2`}>
             <Settings size={40} className="text-[#B17457] mb-2" />
             <p>Format Options</p>
           </div>
-          <p className="text-lg">Customize how your notes will be presented</p>
+          <p className={`${montserrat400.className} text-lg`}>
+            Customize how your notes will be presented
+          </p>
         </div>
 
         <div className={`${montserrat500.className} text-2xl pt-3 pb-5`}>
@@ -581,19 +569,17 @@ const NotesGenerate = () => {
                 onClick={() =>
                   setFormData((prev) => ({ ...prev, note_type: type }))
                 }
-                className={`w-1/3 cursor-pointer text-lg font-medium py-2 rounded-lg ${
-                  montserrat400.className
-                } ${
-                  formData.note_type === type
+                className={`w-1/3 cursor-pointer text-lg font-medium py-2 rounded-lg ${montserrat400.className
+                  } ${formData.note_type === type
                     ? "bg-white shadow"
                     : "text-gray-700"
-                }`}
+                  }`}
               >
                 {type === "concise"
                   ? "Concise"
                   : type === "qa"
-                  ? "Q&A"
-                  : "Detailed"}
+                    ? "Q&A"
+                    : "Detailed"}
               </button>
             ))}
           </div>
@@ -661,38 +647,51 @@ const NotesGenerate = () => {
     );
   };
 
+
   const step4Component = () => {
+    const title = isGenerating
+      ? "Your Notes are being generated"
+      : "Your Notes are Ready!";
+
+    const message = isGenerating
+      ? "Please wait while we prepare your notes..."
+      : generationComplete
+        ? "Here's a preview of what we've created"
+        : "";
+
     return (
-      <div className="px-4 pt-1 h-full flex flex-col items-center justify-center">
-        {isGenerating || generationComplete ? (
-          renderGenerationStatus()
-        ) : (
-          <div className="text-center">
+      <div>
+        <div className="pb-5 px-4 flex justify-between items-center border-b border-gray-300">
+          <div className="flex items-center gap-2 text-4xl">
+            <BookOpen size={40} className="text-[#B17457]" />
+            <p className={`${montserrat500.className}`}>Generated Notes</p>
+          </div>
+
+          <button className={`${montserrat500.className} h-10 flex items-center gap-1 px-3 cursor-pointer border border-[#B17457] rounded-md hover:bg-gray-100 transition text-sm`}>
+            <Download size={20} />
+            Download
+          </button>
+        </div>
+
+        <div className="px-4 pt-1 h-full flex flex-col items-center justify-center">
+          <div className="w-full max-w-md text-center">
             <div className="mb-8">
-              <Sparkles size={60} className="text-[#B17457] mx-auto mb-4" />
-              <h2 className={`${montserrat500.className} text-3xl`}>
-                Ready to Generate
+              <div className="w-16 h-16 bg-[#B17457] rounded-full flex items-center justify-center mx-auto mb-4">
+                <Sparkles size={32} className="text-white" />
+              </div>
+              <h2 className={`${montserrat500.className} text-2xl`}>
+                {title}
               </h2>
-              <p className={`${montserrat400.className} text-lg mt-2`}>
-                Click the Generate Notes button below to create your
-                personalized study notes.
+              <p className={`${montserrat400.className} text-sm mt-2`}>
+                {message}
               </p>
             </div>
-            {error && (
-              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
-                <p className="text-red-600">{error}</p>
-              </div>
-            )}
-            <button
-              className="cursor-pointer px-6 py-3 border rounded-lg bg-[#B17457] text-white transition-colors flex items-center gap-2 hover:bg-[#8f523a] mx-auto"
-              onClick={handleSubmit}
-              disabled={isGenerating}
-            >
-              <span className="text-lg">Generate Notes</span>
-              <Sparkles size={20} />
-            </button>
           </div>
-        )}
+          
+          <div className="w-[60rem] h-[22rem] rounded-2xl bg-black">
+
+          </div>
+        </div>
       </div>
     );
   };
@@ -729,13 +728,12 @@ const NotesGenerate = () => {
                     onClick={() => handleStepClick(index)}
                   >
                     <div
-                      className={`w-10 h-10 cursor-pointer mx-auto rounded-full flex items-center justify-center transition-all duration-300 ${
-                        isErrorState
-                          ? "bg-red-100 border-2 border-red-500"
-                          : currentStep >= index
+                      className={`w-10 h-10 cursor-pointer mx-auto rounded-full flex items-center justify-center transition-all duration-300 ${isErrorState
+                        ? "bg-red-100 border-2 border-red-500"
+                        : currentStep >= index
                           ? "bg-white border-2 border-[#B17457] text-[#B17457]"
                           : "bg-[#D9D9D9] text-gray-600"
-                      }`}
+                        }`}
                     >
                       {stepsCompleted[index] && currentStep > index ? (
                         <CheckCircle
@@ -751,9 +749,8 @@ const NotesGenerate = () => {
                       )}
                     </div>
                     <div
-                      className={`text-sm mt-1 ${
-                        isErrorState ? "text-red-500 font-medium" : ""
-                      }`}
+                      className={`text-sm mt-1 ${isErrorState ? "text-red-500 font-medium" : ""
+                        }`}
                     >
                       {label}
                     </div>
@@ -773,17 +770,15 @@ const NotesGenerate = () => {
             <hr className="border-none h-px bg-[rgba(0,0,0,0.19)] my-4 -mx-6" />
 
             <div
-              className={`flex ${
-                currentStep === 0 ? "justify-end" : "justify-between"
-              } mt-6 mx-10`}
+              className={`flex ${currentStep === 0 ? "justify-end" : "justify-between"
+                } mt-6 mx-10`}
             >
-              {currentStep !== 0 && (
+              {currentStep !== 0 && currentStep !== 3 && (
                 <button
                   className="cursor-pointer px-4 py-2 border border-[#B17457] rounded transition-colors flex items-center gap-2 hover:bg-gray-100"
                   onClick={() =>
                     setCurrentStep((prev) => Math.max(prev - 1, 0))
                   }
-                  disabled={currentStep === 0}
                 >
                   <ArrowLeft size={20} />
                   <span className="text-lg">Back</span>
@@ -812,6 +807,31 @@ const NotesGenerate = () => {
                     <ArrowRight size={20} />
                   )}
                 </button>
+              )}
+              {currentStep === 3 && (
+                <div className="flex justify-between items-center w-full">
+                  <div className="">
+                    {renderGenerationStatus()}
+                  </div>
+
+                  <div className="flex gap-2 ml-10">
+                    <button
+                      className="cursor-pointer px-4 py-2 border rounded-lg bg-white text-black transition-colors flex items-center gap-2 border-[#B17457] hover:bg-gray-100">
+                      <Redo size={20} />
+                      <span className="text-lg">Regenerate</span>
+                    </button>
+
+                    <button
+                      className="cursor-pointer px-4 py-2 border rounded-lg bg-[#B17457] text-white transition-colors flex items-center gap-2 hover:bg-[#8f523a]"
+                      onClick={() => {
+                        setCurrentStep(0);
+                      }}
+                    >
+                      <span className="text-lg">Create New Notes</span>
+                      <Sparkles size={20} />
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </div>
