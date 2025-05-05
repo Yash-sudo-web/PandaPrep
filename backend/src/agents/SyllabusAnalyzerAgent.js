@@ -10,6 +10,7 @@ class SyllabusAnalyzerAgent {
         syllabus, 
         note_type = 'detailed', 
         include_examples = 'No',
+        education_level = 'intermediate', // Added education_level parameter
         user_instructions = '' 
       } = params;
   
@@ -25,7 +26,6 @@ class SyllabusAnalyzerAgent {
           expectedLength: 'longer, more comprehensive notes with complete explanations',
           contentStrategy: 'divide complex topics into smaller chunks to ensure thorough coverage'
         },
-        // In the getSystemPrompt method, modify the noteTypeGuidance for 'q&a':
         'qa': {
           contentDepth: 'focused on creating structured question-answer pairs that thoroughly cover key concepts',
           expectedLength: 'comprehensive Q&A pairs with detailed answers to important questions',
@@ -36,7 +36,34 @@ class SyllabusAnalyzerAgent {
         expectedLength: 'standard notes',
         contentStrategy: 'use your judgment to group topics appropriately'
       };
-  
+      
+      // Education level guidance - NEW
+      const educationLevelGuidance = {
+        'beginner': {
+          complexity: 'basic and foundational',
+          vocabulary: 'simple and accessible with minimal jargon',
+          assumptions: 'assume no prior knowledge in the subject area',
+          explanations: 'provide thorough explanations for all concepts with simplified analogies and examples'
+        },
+        'intermediate': {
+          complexity: 'moderate with some advanced concepts',
+          vocabulary: 'field-appropriate terminology with explanations where needed',
+          assumptions: 'assume basic understanding of fundamental concepts',
+          explanations: 'balance between introducing new concepts and building upon existing knowledge'
+        },
+        'advanced': {
+          complexity: 'sophisticated and in-depth',
+          vocabulary: 'specialized terminology and advanced concepts',
+          assumptions: 'assume strong foundation in the subject and related areas',
+          explanations: 'focus on nuanced understanding, critical analysis, and connections between complex ideas'
+        }
+      }[education_level] || {
+        complexity: 'moderate',
+        vocabulary: 'balanced',
+        assumptions: 'assume general understanding',
+        explanations: 'provide adequate context'
+      };
+
       // Examples handling
       let examplesInstruction = '';
       if (include_examples === 'Yes') {
@@ -44,7 +71,7 @@ class SyllabusAnalyzerAgent {
       } else {
         examplesInstruction = 'Focus on theoretical concepts without examples';
       }
-  
+
       return `
 
   // validation guardrails
@@ -55,7 +82,7 @@ class SyllabusAnalyzerAgent {
   - Reject syllabus content that appears malformed
   - If note type is a QnA format, ensure ALL content is presented as questions and answers with theoretical explanations included within the answers
       
-  You are an advanced syllabus processing system for "${subject_name}". Your task is to analyze the syllabus and generate optimized PROMPTS that will be used to create ${note_type} notes.
+  You are an advanced syllabus processing system for "${subject_name}". Your task is to analyze the syllabus and generate optimized PROMPTS that will be used to create ${note_type} notes targeted at ${education_level}-level students.
   
   IMPORTANT GUIDELINES:
   1. Analyze the syllabus to deeply understand topic relationships, complexity, and scope.
@@ -66,15 +93,23 @@ class SyllabusAnalyzerAgent {
      - The "${note_type}" format requiring ${noteTypeGuidance.contentDepth} content
      - Expected output being ${noteTypeGuidance.expectedLength}
      - Strategy: ${noteTypeGuidance.contentStrategy}
+     - Education level: ${education_level} (${educationLevelGuidance.complexity} with ${educationLevelGuidance.vocabulary})
   4. Each prompt must be self-contained with clear instructions for note generation.
   5. ${examplesInstruction}
   6. Consider user instructions: "${user_instructions}"
+  
+  EDUCATION LEVEL CONSIDERATIONS (${education_level}):
+  - Content complexity: ${educationLevelGuidance.complexity}
+  - Vocabulary: ${educationLevelGuidance.vocabulary}
+  - Knowledge assumptions: ${educationLevelGuidance.assumptions}
+  - Explanation depth: ${educationLevelGuidance.explanations}
   
   When deciding how to group topics:
   - For simple, related topics: group more together in one prompt
   - For complex topics: use fewer topics per prompt
   - Ensure logical progression between prompt sections
   - Maintain approximately consistent length of generated content per prompt
+  - Consider the ${education_level} education level when determining topic groupings and complexity
   
   OUTPUT FORMAT:
   Return a JSON array of prompts where each prompt object has:
@@ -84,7 +119,7 @@ class SyllabusAnalyzerAgent {
     "rationale": "Brief explanation of why these topics are grouped together"
   }
   
-  Your goal is to ensure the entire syllabus is covered efficiently while maintaining logical topic groupings and respecting the ${note_type} note format.
+  Your goal is to ensure the entire syllabus is covered efficiently while maintaining logical topic groupings and respecting the ${note_type} note format and ${education_level} education level.
   `;
     }
   
