@@ -64,6 +64,10 @@ function validateRequest(body) {
   if (body.include_images && !['yes', 'no'].includes(body.include_images)) {
     error.push("include_images must be 'yes' or 'no'");
   }
+  
+  if (body.education_level && !['beginner', 'intermediate', 'advanced'].includes(body.education_level.toLowerCase())) {
+    error.push("education_level must be one of: beginner, intermediate, advanced");
+  }
 
   return {
     isValid: error.length === 0,
@@ -100,6 +104,7 @@ export async function generateNotesController(req, res) {
       note_type = 'concise',
       include_examples = 'no',
       include_images = 'no',
+      education_level = 'intermediate', 
       user_instructions = '',
     } = req.body;
     const format = req.body.format || 'pdf';
@@ -113,6 +118,7 @@ export async function generateNotesController(req, res) {
       note_type,
       include_examples,
       include_images,
+      education_level, 
       user_instructions,
       format,
       status: 'pending',
@@ -138,7 +144,7 @@ export async function generateNotesController(req, res) {
       message: 'Notes generation initiated',
       requestId: requestId,
       websocketUrl: `/ws?requestId=${requestId}`,
-      estimatedTimeSeconds: calculateEstimatedTime(syllabus.length, note_type, include_images),
+      estimatedTimeSeconds: calculateEstimatedTime(syllabus.length, note_type, include_images, education_level), 
     });
 
     // Start the generation process in the background
@@ -191,14 +197,16 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
       note_type = 'concise',
       include_examples = 'no',
       include_images = 'no',
+      education_level = 'intermediate', 
       user_instructions = '',
     } = requestBody;
     const format = requestBody.format || 'pdf';
 
-    console.log(`[${requestId}] Generating ${note_type} notes for ${subject_name}`);
+    console.log(`[${requestId}] Generating ${note_type} notes for ${subject_name} at ${education_level} level`);
     broadcastStage(requestId, 'generation_started', {
       subject_name,
       note_type,
+      education_level,
       include_images: include_images === 'yes',
       syllabusLength: syllabus.length,
     });
@@ -210,6 +218,7 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
       note_type: note_type.toLowerCase(),
       include_examples,
       include_images,
+      education_level, 
       user_instructions,
     };
 
@@ -224,6 +233,7 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
     console.log(`[${requestId}] Analyzing syllabus...`);
     broadcastStage(requestId, 'analyzing_syllabus', {
       syllabusLength: syllabus.length,
+      education_level,
     });
 
     const promptsList = await SyllabusAnalyzerAgent.process(params);
@@ -236,6 +246,7 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
     broadcastStage(requestId, 'syllabus_analyzed', {
       sections: promptsList.length,
       topics: promptsList.map((p) => p.topics || []),
+      education_level,
     });
 
     // Step 2: Generate notes for each prompt
@@ -287,7 +298,7 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
     // Prepare filename
     const sanitizedSubject = subject_name.replace(/[^a-z0-9]/gi, '_').toLowerCase();
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    filePrefix = `${sanitizedSubject}_${note_type}_${timestamp}`;
+    filePrefix = `${sanitizedSubject}_${note_type}_${education_level}_${timestamp}`;
 
     // Create a dedicated output directory for this request
     const requestOutputDir = path.join(OUTPUT_DIR, requestIdDb.toString());
@@ -526,9 +537,10 @@ async function createZipArchive(requestId, sourceDir, filePrefix, downloadUrl) {
  * @param {number} syllabusLength - Length of syllabus text
  * @param {string} noteType - Type of notes
  * @param {string} includeImages - Whether to include images
+ * @param {string} educationLevel - Education level for the notes
  * @returns {number} - Estimated time in seconds
  */
-function calculateEstimatedTime(syllabusLength, noteType, includeImages) {
+function calculateEstimatedTime(syllabusLength, noteType, includeImages, educationLevel = 'intermediate') {
   // Base time
   let baseTime = 30; // 30 seconds baseline
 
@@ -538,6 +550,10 @@ function calculateEstimatedTime(syllabusLength, noteType, includeImages) {
   // Adjust for note type
   if (noteType === 'detailed') baseTime *= 1.5;
   if (noteType === 'qa') baseTime *= 1.3;
+
+  // Adjust for education level
+  if (educationLevel === 'advanced') baseTime *= 1.2;
+  if (educationLevel === 'beginner') baseTime *= 0.9;
 
   // Add time for images
   if (includeImages === 'yes') baseTime += 45;
@@ -569,6 +585,7 @@ export async function getGenerationStatus(req, res) {
       status: request.status,
       subject: request.subject_name,
       noteType: request.note_type,
+      educationLevel: request.education_level || 'intermediate', 
       createdAt: request.created_at,
       processingTime: request.processing_time_ms,
       outputFile: request.output_file,
