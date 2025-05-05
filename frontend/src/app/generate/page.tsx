@@ -14,18 +14,23 @@ import { BASE_URL } from "@/lib/constant";
 import PDFLikeMarkdownDisplay from "@/components/global/PDFdisplay";
 import { getCookie } from "@/lib/utils";
 import { useTheme } from "next-themes";
-import { montserrat400, montserrat500, montserrat700 } from "@/lib/font-utils";
+import { montserrat400, montserrat500, montserrat600, montserrat700, montserrat800 } from "@/lib/font-utils";
 import {
   ArrowLeft,
   ArrowRight,
   BookOpen,
   BookText,
+  ChartLine,
+  CheckCircle,
   FileText,
   Lightbulb,
   Settings,
+  Sparkles,
+  AlertCircle,
 } from "lucide-react";
 
 import AnimatedInput from "@/components/global/input";
+import { Switch } from "@/components/ui/switch";
 
 const funnel_display = Funnel_Display({
   subsets: ["latin"],
@@ -48,6 +53,16 @@ const NotesGenerate = () => {
   const [userCredits, setUserCredits] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
   const [idToken, setIdToken] = useState<string | null>(null);
+  const [validationErrors, setValidationErrors] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const [stepsCompleted, setStepsCompleted] = useState<{
+    [key: number]: boolean;
+  }>({
+    0: false,
+    1: false,
+    2: false,
+  });
 
   // Check auth state and redirect if not logged in
   useEffect(() => {
@@ -96,12 +111,40 @@ const NotesGenerate = () => {
     subject_name: "",
     user_instructions: "",
     note_type: "concise",
-    include_examples: "no",
+    include_examples: "yes",
     include_images: "no",
   });
 
+  // Validate steps when form data changes
+  useEffect(() => {
+    validateSteps();
+  }, [formData]);
+
+  const validateSteps = () => {
+    // Validate step 1
+    const step1Valid = !!formData.subject_name.trim();
+
+    // Validate step 2
+    const step2Valid =
+      !!formData.syllabus.trim() && formData.syllabus.length >= 10;
+
+    // Step 3 is always valid as it has default values
+    const step3Valid = true;
+
+    setStepsCompleted({
+      0: step1Valid,
+      1: step2Valid,
+      2: step3Valid,
+    });
+  };
+
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+
+    // Clear any validation errors for this field
+    if (validationErrors[field]) {
+      setValidationErrors((prev) => ({ ...prev, [field]: false }));
+    }
   };
 
   const connectWebSocket = (reqId: string) => {
@@ -171,16 +214,28 @@ const NotesGenerate = () => {
     }
   };
 
+  const validateForm = () => {
+    const errors: { [key: string]: boolean } = {};
+
+    if (!formData.subject_name.trim()) {
+      errors.subject_name = true;
+    }
+
+    if (!formData.syllabus.trim() || formData.syllabus.length < 10) {
+      errors.syllabus = true;
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async () => {
     try {
-      if (!formData.syllabus || !formData.subject_name) {
-        setError("Please fill in all required fields.");
+      if (!validateForm()) {
+        setError("Please fill in all required fields correctly.");
         return;
       }
-      if (formData.syllabus.length < 10) {
-        setError("Syllabus should be at least 10 characters long.");
-        return;
-      }
+      setCurrentStep(3);
       setIsGenerating(true);
       setShowGenerateButton(false);
       setError("");
@@ -233,8 +288,9 @@ const NotesGenerate = () => {
 
         // Extract filename from URL or use a default
         const urlParts = downloadId.split("/");
-        const defaultFilename = `${formData?.subject_name || "generated"
-          }_notes.pdf`;
+        const defaultFilename = `${
+          formData?.subject_name || "generated"
+        }_notes.pdf`;
         const filename = urlParts[urlParts.length - 1] || defaultFilename;
 
         link.download = filename;
@@ -316,8 +372,9 @@ const NotesGenerate = () => {
 
     return (
       <div
-        className={`mb-4 p-3 ${isDarkMode ? "border-green-900" : "bg-green-50 border-green-200"
-          } border rounded-md`}
+        className={`mb-4 p-3 ${
+          isDarkMode ? "border-green-900" : "bg-green-50 border-green-200"
+        } border rounded-md`}
       >
         <p className={`${isDarkMode ? "text-white" : "text-green-700"}`}>
           {statusMessage}
@@ -325,10 +382,11 @@ const NotesGenerate = () => {
         {generationComplete && (
           <button
             onClick={downloadGeneratedNotes}
-            className={`mt-2 px-4 py-2 cursor-pointer rounded-md ${isDarkMode
-              ? "bg-green-700 text-white hover:bg-green-900 border-green-900"
-              : "bg-white text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
-              } transition duration-300`}
+            className={`mt-2 px-4 py-2 cursor-pointer rounded-md ${
+              isDarkMode
+                ? "bg-green-700 text-white hover:bg-green-900 border-green-900"
+                : "bg-white text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
+            } transition duration-300`}
           >
             Download Notes
           </button>
@@ -364,7 +422,7 @@ const NotesGenerate = () => {
       <div className="px-4 pt-1">
         <div className="pb-5">
           <div className={`${montserrat500.className} text-4xl flex gap-2`}>
-            <BookText size={40} className="text-[#B17457] mb-2" />
+            <BookText size={40} className={`text-[#B17457] mb-2`} />
             <p>Enter Your Subject</p>
           </div>
 
@@ -373,7 +431,13 @@ const NotesGenerate = () => {
           </p>
         </div>
         <div className="w-full space-y-2">
-          <p className={`${montserrat500.className} text-2xl`}>Subject Name</p>
+          <p
+            className={`${montserrat500.className} text-2xl ${
+              validationErrors.subject_name ? "text-red-500" : ""
+            }`}
+          >
+            Subject Name {validationErrors.subject_name}
+          </p>
           <div className="relative">
             <AnimatedInput
               textarea={false}
@@ -381,7 +445,13 @@ const NotesGenerate = () => {
               handleInputChange={handleInputChange}
               fieldKey="subject_name"
               placeholders={placeholders}
+              className={validationErrors.subject_name ? "border-red-500" : ""}
             />
+            {validationErrors.subject_name && (
+              <p className="text-red-500 text-sm mt-1">
+                Subject name is required
+              </p>
+            )}
           </div>
         </div>
 
@@ -421,7 +491,7 @@ const NotesGenerate = () => {
       <div className="px-4 pt-1">
         <div className="pb-5">
           <div className={`${montserrat500.className} text-4xl flex gap-2`}>
-            <FileText size={40} className="text-[#B17457] mb-2" />
+            <FileText size={40} className={`text-[#B17457] mb-2`} />
             <p>Content Details</p>
           </div>
 
@@ -430,7 +500,13 @@ const NotesGenerate = () => {
           </p>
         </div>
         <div className="w-full space-y-2">
-          <p className={`${montserrat500.className} pt-4 text-2xl`}>Syllabus or Topic Outline</p>
+          <p
+            className={`${montserrat500.className} pt-4 text-2xl ${
+              validationErrors.syllabus ? "text-red-500" : ""
+            }`}
+          >
+            Syllabus or Topic Outline {validationErrors.syllabus}
+          </p>
           <div className="relative">
             <AnimatedInput
               textarea={true}
@@ -442,14 +518,23 @@ const NotesGenerate = () => {
                 "E.g., Basic concepts: database & database users, characteristics of the database systems, concepts and architecture, data models, schemas & instances, DBMS architecture & data independence........",
                 "E.g., The basic human aspirations and their fulfillment through Right understanding and Resolution, Right understanding and Resolution as the activities of the Self, Self being central to Human Existence.......",
               ]}
+              className={validationErrors.syllabus ? "border-red-500" : ""}
             />
+            {validationErrors.syllabus && (
+              <p className="text-red-500 text-sm mt-1">
+                Syllabus is required and should be at least 10 characters
+              </p>
+            )}
             <p className={`${montserrat400.className} text-sm text-[#4A4947]`}>
               List the main topics you want to be covered in your notes
             </p>
           </div>
 
           <div className="w-full space-y-2 ">
-            <p className={`${montserrat500.className} pt-5 text-2xl`}> User Instructions (Optional)</p>
+            <p className={`${montserrat500.className} pt-5 text-2xl`}>
+              {" "}
+              User Instructions (Optional)
+            </p>
             <div className="relative">
               <AnimatedInput
                 textarea={true}
@@ -462,200 +547,161 @@ const NotesGenerate = () => {
                   "E.g., Go in depth on the topic of Normalization",
                 ]}
               />
-              <p className={`${montserrat400.className} text-sm text-[#4A4947]`}>
+              <p
+                className={`${montserrat400.className} text-sm text-[#4A4947]`}
+              >
                 Any specific requirements or focus areas for your notes
               </p>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  };
+  const step3Component = () => {
+    return (
+      <div className="px-4 pt-1">
+        <div className="pb-5">
+          <div className="text-4xl flex gap-2">
+            <Settings size={40} className="text-[#B17457] mb-2" />
+            <p>Format Options</p>
+          </div>
+          <p className="text-lg">Customize how your notes will be presented</p>
+        </div>
 
+        <div className={`${montserrat500.className} text-2xl pt-3 pb-5`}>
+          Note Format
+        </div>
 
+        <div className="w-full space-y-2 pb-8">
+          <div className="bg-[#D9D9D9] rounded-xl p-1.5 flex justify-between items-center">
+            {["concise", "qa", "detailed"].map((type) => (
+              <button
+                key={type}
+                onClick={() =>
+                  setFormData((prev) => ({ ...prev, note_type: type }))
+                }
+                className={`w-1/3 cursor-pointer text-lg font-medium py-2 rounded-lg ${
+                  montserrat400.className
+                } ${
+                  formData.note_type === type
+                    ? "bg-white shadow"
+                    : "text-gray-700"
+                }`}
+              >
+                {type === "concise"
+                  ? "Concise"
+                  : type === "qa"
+                  ? "Q&A"
+                  : "Detailed"}
+              </button>
+            ))}
+          </div>
+
+          <div
+            className={`${montserrat500.className} flex justify-between text-md text-center text-gray-600 px-1 pt-5`}
+          >
+            <div className="w-1/3">
+              <p>Brief bullet points</p>
+              <p>Key concepts only</p>
+            </div>
+            <div className="w-1/3">
+              <p>Question & Answer</p>
+              <p>Test Your Knowledge</p>
+            </div>
+            <div className="w-1/3">
+              <p>Comprehensive</p>
+              <p>In-depth explanations</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-[#D9D9D966] rounded-xl p-1.5 flex justify-between items-center mt-5 h-[65px]">
+          <div className="pl-3 flex items-center gap-3">
+            <div className="p-2 bg-[#B1745780] rounded-lg">
+              <Lightbulb />
+            </div>
+            <p className={`${montserrat500.className} text-xl`}>
+              Include Examples
+            </p>
+          </div>
+          <div className="pr-4">
+            <Switch
+              checked={formData.include_examples === "yes"}
+              onCheckedChange={(checked) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  include_examples: checked ? "yes" : "no",
+                }))
+              }
+            />
+          </div>
+        </div>
+        <div className="bg-[#D9D9D966] rounded-xl p-1.5 flex justify-between items-center mt-5 h-[65px]">
+          <div className="pl-3 flex items-center gap-3">
+            <div className="p-2 bg-[#B1745780] rounded-lg">
+              <ChartLine />
+            </div>
+            <p className={`${montserrat500.className} text-xl`}>
+              Include Visuals
+            </p>
+          </div>
+          <div className="pr-4">
+            <Switch
+              checked={formData.include_images === "yes"}
+              onCheckedChange={(checked) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  include_images: checked ? "yes" : "no",
+                }))
+              }
+            />
+          </div>
         </div>
       </div>
     );
   };
 
-  const step3Component = () => {
-    return <div></div>;
-  };
-
   const step4Component = () => {
-    return <div></div>;
+    return (
+      <div className="px-4 pt-1 h-full flex flex-col items-center justify-center">
+        {isGenerating || generationComplete ? (
+          renderGenerationStatus()
+        ) : (
+          <div className="text-center">
+            <div className="mb-8">
+              <Sparkles size={60} className="text-[#B17457] mx-auto mb-4" />
+              <h2 className={`${montserrat500.className} text-3xl`}>
+                Ready to Generate
+              </h2>
+              <p className={`${montserrat400.className} text-lg mt-2`}>
+                Click the Generate Notes button below to create your
+                personalized study notes.
+              </p>
+            </div>
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-red-600">{error}</p>
+              </div>
+            )}
+            <button
+              className="cursor-pointer px-6 py-3 border rounded-lg bg-[#B17457] text-white transition-colors flex items-center gap-2 hover:bg-[#8f523a] mx-auto"
+              onClick={handleSubmit}
+              disabled={isGenerating}
+            >
+              <span className="text-lg">Generate Notes</span>
+              <Sparkles size={20} />
+            </button>
+          </div>
+        )}
+      </div>
+    );
   };
 
   return (
-    // <div
-    //   className={cn(
-    //     "min-h-screen bg-white text-green-700 pt-20",
-    //     funnel_display.className
-    //   )}
-    // >
-    //   <Navbar />
-    //   <main
-    //     className={`flex flex-col justify-center items-center min-h-screen ${
-    //       isDarkMode
-    //         ? "bg-[radial-gradient(circle_at_center,_#134e2b,_#0a0a0a)]"
-    //         : "bg-[radial-gradient(circle_at_center,_#d1fae5,_white)]"
-    //     } p-4 md:p-6`}
-    //   >
-    //     <h1
-    //       className={`text-3xl md:text-4xl font-extrabold ${
-    //         isDarkMode ? "text-white" : "text-green-700"
-    //       }  mb-2 md:mb-4 text-center`}
-    //     >
-    //       Generate Notes
-    //     </h1>
-    //     <p
-    //       className={`text-base md:text-lg mb-4 md:mb-6 text-center px-4 ${
-    //         isDarkMode ? "text-white" : "text-gray-600"
-    //       }`}
-    //     >
-    //       Enter a topic and select the depth of notes you want.
-    //     </p>
-    //     <div className="md:hidden w-full max-w-md mb-4">
-    //       <button
-    //         onClick={toggleView}
-    //         className="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition duration-300"
-    //       >
-    //         {showPreview ? "Show Form" : "Show Preview"}
-    //       </button>
-    //     </div>
-
-    //     <div
-    //       className={`${
-    //         isDarkMode
-    //           ? "bg-neutral-900 border-neutral-800 text-white"
-    //           : "bg-white border-neutral-800 text-black"
-    //       } w-full max-w-6xl  shadow-xl rounded-2xl p-4 md:p-8 text-center`}
-    //     >
-    //       <div className="flex flex-col lg:flex-row w-full">
-    //         <div
-    //           className={`w-full lg:w-[35%] ${
-    //             showPreview ? "hidden md:block" : "block"
-    //           }`}
-    //         >
-    //           <div className="flex flex-col gap-4 md:gap-8">
-    //             <PlaceholdersAndVanishInput
-    //               label="Enter Subject Name"
-    //               placeholders={[
-    //                 "Enter subject...",
-    //                 "E.g., Machine Learning",
-    //                 "E.g., Web Development",
-    //               ]}
-    //               handleChange={handleInputChange}
-    //               field="subject_name"
-    //             />
-    //             <PlaceholdersAndVanishInput
-    //               label="Enter your Syllabus"
-    //               placeholders={[
-    //                 "Enter your syllabus...",
-    //                 "E.g., Basic concepts: database & database users, characteristics of the database systems, concepts and architecture, data models, schemas & instances, DBMS architecture & data independence........",
-    //                 "E.g., The basic human aspirations and their fulfillment through Right understanding and Resolution, Right understanding and Resolution as the activities of the Self, Self being central to Human Existence.......",
-    //               ]}
-    //               handleChange={handleInputChange}
-    //               field="syllabus"
-    //             />
-
-    //             <PlaceholdersAndVanishInput
-    //               label="User Instructions"
-    //               placeholders={[
-    //                 "Enter your instructions...",
-    //                 "E.g., Elaborate more on ER diagrams",
-    //                 "E.g., Go in depth on the topic of Normalization",
-    //               ]}
-    //               handleChange={handleInputChange}
-    //               field="user_instructions"
-    //             />
-    //             <div className="flex flex-col gap-4 md:flex-row md:items-center lg:flex-col">
-    //               <div className="w-full md:w-auto">
-    //                 <MultiTabSwitch
-    //                   tabs={[
-    //                     { label: "Concise", value: "concise" },
-    //                     { label: "QnA", value: "qa" },
-    //                     { label: "Detailed", value: "detailed" },
-    //                   ]}
-    //                   label="Choose the type of Notes generated"
-    //                   lgSize
-    //                   premium_feature={["detailed"]}
-    //                   handleChange={handleInputChange}
-    //                   field="note_type"
-    //                   userCredits={userCredits}
-    //                 />
-    //               </div>
-    //               <div className="flex flex-row gap-2 md:w-auto">
-    //                 <MultiTabSwitch
-    //                   tabs={[
-    //                     { label: "Yes", value: "yes" },
-    //                     { label: "No", value: "no" },
-    //                   ]}
-    //                   label="Include Examples?"
-    //                   handleChange={handleInputChange}
-    //                   field="include_examples"
-    //                   userCredits={userCredits}
-    //                 />
-    //                 <MultiTabSwitch
-    //                   tabs={[
-    //                     { label: "No", value: "no" },
-    //                     { label: "Yes", value: "yes" },
-    //                   ]}
-    //                   label="Include Visuals?"
-    //                   premium_feature={["yes"]}
-    //                   handleChange={handleInputChange}
-    //                   field="include_images"
-    //                   userCredits={userCredits}
-    //                 />
-    //               </div>
-    //             </div>
-
-    //             {error && (
-    //               <div className="text-red-500 p-2 bg-red-50 rounded-md">
-    //                 {error}
-    //               </div>
-    //             )}
-
-    //             {renderGenerationStatus()}
-
-    //             <button
-    //               onClick={handleSubmit}
-    //               disabled={isGenerating}
-    //               className={`px-6 py-2 border rounded-lg shadow-md transition duration-300 ${
-    //                 isGenerating
-    //                   ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-    //                   : `cursor-pointer ${
-    //                       isDarkMode
-    //                         ? "bg-green-700 text-white hover:bg-green-900 border-green-900"
-    //                         : "bg-white text-green-700 border-green-700 hover:bg-green-700 hover:text-white"
-    //                     }`
-    //               }`}
-    //             >
-    //               {isGenerating
-    //                 ? "Generating..."
-    //                 : generationComplete
-    //                 ? "Generate Again"
-    //                 : "Generate"}
-    //             </button>
-    //           </div>
-    //         </div>
-
-    //       <div className="hidden lg:block w-[1px] h-auto bg-green-400 mx-6"></div>
-    //         <div
-    //           className={`w-full lg:w-[65%] mt-6 lg:mt-0 ${
-    //             !showPreview ? "hidden md:block" : "block"
-    //           }`}
-    //         >
-    //           <PDFLikeMarkdownDisplay
-    //             markdownContent={markdownContent}
-    //             isGenerating={isGenerating}
-    //             downloadId={downloadId}
-    //           />
-    //         </div>
-    //       </div>
-    //     </div>
-    //   </main>
-    // </div>
     <div>
       <div className="bg-[#F3EFE5] pt-20">
         <Navbar />
-        <div className="text-center text-3xl text-[#4A4947] pt-16 pb-10 font-bold">
+        <div className={`text-center text-5xl text-[#4A4947] pt-16 pb-10 ${montserrat600.className}`}>
           Generate Notes
         </div>
         <div className="flex flex-col items-center px-6 pb-10 w-full">
@@ -672,6 +718,9 @@ const NotesGenerate = () => {
                 const stepCount = steps.length - 1;
                 const leftPercent =
                   edgeInset + ((100 - edgeInset * 2) / stepCount) * index;
+                const isErrorState =
+                  (index === 0 && validationErrors.subject_name) ||
+                  (index === 1 && validationErrors.syllabus);
                 return (
                   <div
                     key={index}
@@ -680,16 +729,34 @@ const NotesGenerate = () => {
                     onClick={() => handleStepClick(index)}
                   >
                     <div
-                      className={`w-10 h-10 cursor-pointer mx-auto rounded-full flex items-center justify-center transition-all duration-300 ${currentStep >= index
-                        ? "bg-white border-2 border-[#B17457] text-[#B17457]"
-                        : "bg-[#D9D9D9] text-gray-600"
-                        }`}
+                      className={`w-10 h-10 cursor-pointer mx-auto rounded-full flex items-center justify-center transition-all duration-300 ${
+                        isErrorState
+                          ? "bg-red-100 border-2 border-red-500"
+                          : currentStep >= index
+                          ? "bg-white border-2 border-[#B17457] text-[#B17457]"
+                          : "bg-[#D9D9D9] text-gray-600"
+                      }`}
                     >
-                      {React.cloneElement(stepIcons[index], {
-                        color: currentStep >= index ? "#B17457" : "#4A4947",
-                      })}
+                      {stepsCompleted[index] && currentStep > index ? (
+                        <CheckCircle
+                          color={isErrorState ? "#EF4444" : "#B17457"}
+                          size={24}
+                        />
+                      ) : isErrorState ? (
+                        <AlertCircle color="#EF4444" size={24} />
+                      ) : (
+                        React.cloneElement(stepIcons[index], {
+                          color: currentStep >= index ? "#B17457" : "#4A4947",
+                        })
+                      )}
                     </div>
-                    <div className="text-sm mt-1">{label}</div>
+                    <div
+                      className={`text-sm mt-1 ${
+                        isErrorState ? "text-red-500 font-medium" : ""
+                      }`}
+                    >
+                      {label}
+                    </div>
                   </div>
                 );
               })}
@@ -705,13 +772,17 @@ const NotesGenerate = () => {
             </div>
             <hr className="border-none h-px bg-[rgba(0,0,0,0.19)] my-4 -mx-6" />
 
-
-            <div className={`flex ${currentStep === 0 ? "justify-end" : "justify-between"} mt-6 mx-10`}>
-
+            <div
+              className={`flex ${
+                currentStep === 0 ? "justify-end" : "justify-between"
+              } mt-6 mx-10`}
+            >
               {currentStep !== 0 && (
                 <button
                   className="cursor-pointer px-4 py-2 border border-[#B17457] rounded transition-colors flex items-center gap-2 hover:bg-gray-100"
-                  onClick={() => setCurrentStep((prev) => Math.max(prev - 1, 0))}
+                  onClick={() =>
+                    setCurrentStep((prev) => Math.max(prev - 1, 0))
+                  }
                   disabled={currentStep === 0}
                 >
                   <ArrowLeft size={20} />
@@ -719,16 +790,29 @@ const NotesGenerate = () => {
                 </button>
               )}
 
-              <button
-                className="cursor-pointer px-4 py-2 border rounded-lg bg-[#B17457] text-white transition-colors flex items-center gap-2 hover:bg-[#8f523a]"
-                onClick={() =>
-                  setCurrentStep((prev) => Math.min(prev + 1, steps.length - 1))
-                }
-                disabled={currentStep === steps.length - 1}
-              >
-                <span className="text-lg" >Continue</span>
-                <ArrowRight size={20} />
-              </button>
+              {currentStep < 3 && (
+                <button
+                  className="cursor-pointer px-4 py-2 border rounded-lg bg-[#B17457] text-white transition-colors flex items-center gap-2 hover:bg-[#8f523a]"
+                  onClick={() => {
+                    if (currentStep === 2) {
+                      handleSubmit();
+                    } else {
+                      setCurrentStep((prev) =>
+                        Math.min(prev + 1, steps.length - 1)
+                      );
+                    }
+                  }}
+                >
+                  <span className="text-lg">
+                    {currentStep === 2 ? "Generate Notes" : "Continue"}
+                  </span>
+                  {currentStep === 2 ? (
+                    <Sparkles size={20} />
+                  ) : (
+                    <ArrowRight size={20} />
+                  )}
+                </button>
+              )}
             </div>
           </div>
         </div>

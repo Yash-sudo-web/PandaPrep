@@ -7,6 +7,7 @@ type AnimatedInputProps = {
   placeholders: string[];
   inputProps?: React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement>;
   textarea: boolean;
+  className?: string;
 };
 
 const AnimatedInput: React.FC<AnimatedInputProps> = ({
@@ -16,6 +17,7 @@ const AnimatedInput: React.FC<AnimatedInputProps> = ({
   placeholders,
   inputProps = {},
   textarea = false,
+  className = "",
 }) => {
   const [currentPlaceholderIndex, setCurrentPlaceholderIndex] = useState(0);
   const [currentPlaceholder, setCurrentPlaceholder] = useState(placeholders[0]);
@@ -43,7 +45,7 @@ const AnimatedInput: React.FC<AnimatedInputProps> = ({
           type="text"
           value={formDataValue}
           onChange={(e) => handleInputChange(fieldKey, e.target.value)}
-          className={`w-full h-32 border px-4 py-2 resize-none border-gray-500 rounded-md transition-all `}
+          className={`w-full h-32 border px-4 py-2 resize-none border-gray-500 rounded-md transition-all ${className} focus:outline-none`}
           style={{ transition: "all 0.3s ease" }}
           {...inputProps}
         />
@@ -51,7 +53,7 @@ const AnimatedInput: React.FC<AnimatedInputProps> = ({
         type="text"
         value={formDataValue}
         onChange={(e) => handleInputChange(fieldKey, e.target.value)}
-        className={`w-[35rem] px-4 py-2 border border-gray-500 rounded-md transition-all `}
+        className={`w-[35rem] px-4 py-2 border border-gray-500 rounded-md transition-all ${className} focus:outline-none`}
         style={{ transition: "all 0.3s ease" }}
         {...inputProps}
       />
