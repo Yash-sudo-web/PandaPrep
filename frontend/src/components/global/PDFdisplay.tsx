@@ -4,9 +4,6 @@ import rehypeRaw from "rehype-raw";
 import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
 
-const PAGE_WIDTH = "100%";
-const PAGE_HEIGHT = "auto";
-
 const PDFLikeMarkdownDisplay = ({
   markdownContent,
   isGenerating,
@@ -70,7 +67,7 @@ const PDFLikeMarkdownDisplay = ({
       ) : (
         <div
           ref={containerRef}
-          className={`pdf-container flex flex-col items-center gap-6 py-8 overflow-y-auto h-[45rem] w-full px-4 rounded-xl ${
+          className={`pdf-container flex flex-col items-center gap-6 py-8 overflow-y-auto h-full w-full px-4 rounded-xl ${
             isDarkMode ? "bg-[#121212]" : "bg-gray-100"
           }`}
         >
