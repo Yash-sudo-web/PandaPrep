@@ -947,7 +947,7 @@ const NotesGenerate = () => {
             </div>
           </div>
 
-          <div className="bg-white shadow-md rounded-lg p-6 min-h-[300px] w-[65rem] mt-10">
+          <div className="bg-white shadow-md rounded-lg p-6 min-h-[300px] w-[40rem] xl:w-[65rem] mt-10">
             <div className="flex flex-col gap-4 h-[40rem]">
               {currentStep === 0 && step1Component()}
               {currentStep === 1 && step2Component()}
