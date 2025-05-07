@@ -892,54 +892,58 @@ const NotesGenerate = () => {
             />
 
             <div className="absolute top-full left-0 w-full mt-2">
-            {steps.map((label, index) => {
-  const edgeInset = 2;
-  const stepCount = steps.length - 1;
-  const leftPercent =
-    edgeInset + ((100 - edgeInset * 2) / stepCount) * index;
-  const isErrorState =
-    (index === 0 && validationErrors.subject_name) ||
-    (index === 1 && validationErrors.syllabus);
-  const isNotClickable = index === 3 && !hasAttemptedGeneration;
-  return (
-    <div
-      key={index}
-      className={`absolute -translate-x-1/2 text-center ${isNotClickable ? "pointer-events-none opacity-50" : ""}`}
-      style={{ left: `${leftPercent}%` }}
-      onClick={() => handleStepClick(index)}
-    >
-      <div
-        className={`w-10 h-10 ${isNotClickable ? "cursor-not-allowed" : "cursor-pointer"} mx-auto rounded-full flex items-center justify-center transition-all duration-300 ${
-          isErrorState
-            ? "bg-red-100 border-2 border-red-500"
-            : currentStep >= index
-            ? "bg-white border-2 border-[#B17457] text-[#B17457]"
-            : "bg-[#D9D9D9] text-gray-600"
-        }`}
-      >
-        {stepsCompleted[index] && currentStep > index ? (
-          <CheckCircle
-            color={isErrorState ? "#EF4444" : "#B17457"}
-            size={24}
-          />
-        ) : isErrorState ? (
-          <AlertCircle color="#EF4444" size={24} />
-        ) : (
-          React.cloneElement(stepIcons[index], {
-            color: currentStep >= index ? "#B17457" : "#4A4947",
-          })
-        )}
-      </div>
-      <div
-        className={`text-sm mt-1 ${
-          isErrorState ? "text-red-500 font-medium" : ""
-        }`}
-      >
-        {label}
-      </div>
-    </div>
-  );
-})}
+              {steps.map((label, index) => {
+                const edgeInset = 2;
+                const stepCount = steps.length - 1;
+                const leftPercent =
+                  edgeInset + ((100 - edgeInset * 2) / stepCount) * index;
+                const isErrorState =
+                  (index === 0 && validationErrors.subject_name) ||
+                  (index === 1 && validationErrors.syllabus);
+                const isNotClickable = index === 3 && !hasAttemptedGeneration;
+                return (
+                  <div
+                    key={index}
+                    className={`absolute -translate-x-1/2 text-center ${
+                      isNotClickable ? "pointer-events-none opacity-50" : ""
+                    }`}
+                    style={{ left: `${leftPercent}%` }}
+                    onClick={() => handleStepClick(index)}
+                  >
+                    <div
+                      className={`w-10 h-10 ${
+                        isNotClickable ? "cursor-not-allowed" : "cursor-pointer"
+                      } mx-auto rounded-full flex items-center justify-center transition-all duration-300 ${
+                        isErrorState
+                          ? "bg-red-100 border-2 border-red-500"
+                          : currentStep >= index
+                          ? "bg-white border-2 border-[#B17457] text-[#B17457]"
+                          : "bg-[#D9D9D9] text-gray-600"
+                      }`}
+                    >
+                      {stepsCompleted[index] && currentStep > index ? (
+                        <CheckCircle
+                          color={isErrorState ? "#EF4444" : "#B17457"}
+                          size={24}
+                        />
+                      ) : isErrorState ? (
+                        <AlertCircle color="#EF4444" size={24} />
+                      ) : (
+                        React.cloneElement(stepIcons[index], {
+                          color: currentStep >= index ? "#B17457" : "#4A4947",
+                        })
+                      )}
+                    </div>
+                    <div
+                      className={`text-sm mt-1 ${
+                        isErrorState ? "text-red-500 font-medium" : ""
+                      }`}
+                    >
+                      {label}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

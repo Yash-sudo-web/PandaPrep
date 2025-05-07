@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Moon, Sun, ChevronDown, ChevronUp, Lock } from "lucide-react";
+import { Moon, Sun, ChevronDown, ChevronUp, Lock, Menu, X } from "lucide-react";
 import { getAuth, onAuthStateChanged, signOut, User } from "firebase/auth";
 import { useTheme } from "next-themes";
 import { motion, AnimatePresence } from "framer-motion";
@@ -26,6 +26,7 @@ const Navbar = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [dropdownRef, setDropdownRef] = useState<HTMLElement | null>(null);
   const [servicesDropdown, setServicesDropdown] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -49,6 +50,23 @@ const Navbar = () => {
     };
   }, [dropdownRef]);
 
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 1100);
+    };
+
+    checkScreenSize();
+
+    window.addEventListener('resize', checkScreenSize);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [router, isMobile]);
+
   const handleSignOut = async () => {
     try {
       await signOut(auth);
@@ -64,16 +82,37 @@ const Navbar = () => {
     setMounted(true);
   }, []);
 
+  // Close dropdown when mobile menu opens
+  useEffect(() => {
+    if (menuOpen) {
+      setDropdownOpen(false);
+      setServicesDropdown(false);
+    }
+  }, [menuOpen]);
+
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [menuOpen]);
+
   return (
-    <div className="bg-[#D8D2C2] py-[0.5rem] px-6 my-6 mx-10 rounded-[1.5rem] border border-[#C9C3B3] flex justify-between items-center fixed top-0 left-0 right-0 z-50">
+    <div className="bg-[#D8D2C2] py-[0.5rem] px-6 my-6 mx-2 lg:mx-10 rounded-[1.5rem] border border-[#C9C3B3] flex justify-between items-center fixed top-0 left-0 right-0 z-50">
       <div
         onClick={() => router.push("/")}
-        className={`${montserrat700.className} text-[#4A4947] text-[2rem] cursor-pointer`}
+        className={`${montserrat700.className} text-[1.5rem] lg:text-[2rem] text-[#4A4947] cursor-pointer`}
       >
         PandaPrepAI
       </div>
 
-      <div className="flex gap-12 items-center relative mr-6">
+      <div className="hidden lg:flex gap-12 items-center relative mr-6">
         <div className="relative">
           <button
             onClick={() => setServicesDropdown(!servicesDropdown)}
@@ -230,6 +269,181 @@ const Navbar = () => {
           </div>
         </div>
       </div>
+
+      <div className="flex lg:hidden items-center gap-3">
+        {mounted && (
+          <button
+            onClick={() => (isDark ? setTheme("light") : setTheme("dark"))}
+            className="flex items-center justify-center w-9 h-9 rounded-[0.5rem] border-2 border-[#4A4947] relative overflow-hidden cursor-pointer"
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={isDark ? "moon" : "sun"}
+                initial={{ rotate: -90, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: 90, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="absolute"
+              >
+                {isDark ? (
+                  <Moon size={18} color="#4A4947" strokeWidth={3} />
+                ) : (
+                  <Sun size={18} color="#4A4947" strokeWidth={3} />
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </button>
+        )}
+
+        {user && (
+          <div className="relative">
+            <button
+              onClick={() => setDropdownOpen(!dropdownOpen)}
+              className="flex items-center cursor-pointer"
+            >
+              <Image
+                src={user.photoURL || "/default-avatar.png"}
+                alt="User Avatar"
+                width={36}
+                height={36}
+                className="rounded-full"
+              />
+            </button>
+
+            <AnimatePresence>
+              {dropdownOpen && (
+                <motion.div
+                  ref={setDropdownRef}
+                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className="absolute top-[3.5rem] right-0 bg-white/70 backdrop-blur-md border border-[#C9C3B3] rounded-2xl shadow-2xl py-3 w-60 z-50 flex flex-col overflow-hidden"
+                >
+                  <Link
+                    href="/profile"
+                    className="px-5 py-3 text-[#4A4947] hover:bg-[#f0eee9] text-[1.25rem] transition-all duration-200 hover:pl-6"
+                  >
+                    Profile
+                  </Link>
+                  <div className="border-t border-[#C9C3B3] mx-4" />
+                  <button
+                    onClick={handleSignOut}
+                    className="text-left w-full px-5 py-3 text-red-600 hover:bg-red-50 text-[1.25rem] cursor-pointer transition-all duration-200 hover:pl-6"
+                  >
+                    Sign Out
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        )}
+
+        <button
+          onClick={() => setMenuOpen(!menuOpen)}
+          className="flex items-center justify-center w-9 h-9 rounded-[0.5rem] border-2 border-[#4A4947] relative overflow-hidden cursor-pointer"
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={menuOpen ? "close" : "menu"}
+              initial={{ rotate: -90, opacity: 0 }}
+              animate={{ rotate: 0, opacity: 1 }}
+              exit={{ rotate: 90, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="absolute"
+            >
+              {menuOpen ? (
+                <X size={18} color="#4A4947" strokeWidth={3} />
+              ) : (
+                <Menu size={18} color="#4A4947" strokeWidth={3} />
+              )}
+            </motion.div>
+          </AnimatePresence>
+        </button>
+      </div>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className="fixed inset-0 top-[5.5rem] bg-[#D8D2C2]/95 backdrop-blur-sm z-40 flex flex-col md:hidden"
+          >
+            <div className="flex flex-col items-center pt-8 pb-6 px-6 gap-6 overflow-y-auto">
+              <div className="w-full">
+                <button
+                  onClick={() => setServicesDropdown(!servicesDropdown)}
+                  className={`${montserrat500.className} w-full py-4 border-b border-[#4A4947]/30 text-[#4A4947] text-[1.5rem] flex items-center justify-between cursor-pointer`}
+                >
+                  <span>Services</span>
+                  {servicesDropdown ? (
+                    <ChevronUp size={24} strokeWidth={2} />
+                  ) : (
+                    <ChevronDown size={24} strokeWidth={2} />
+                  )}
+                </button>
+                
+                <AnimatePresence>
+                  {servicesDropdown && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="flex flex-col pl-4 py-2">
+                        <Link
+                          href="/generate"
+                          className="py-3 text-[#4A4947] text-[1.25rem]"
+                        >
+                          Notes Generator
+                        </Link>
+                        <div className="group relative flex justify-between py-3 text-[#4A4947] text-[1.25rem] cursor-not-allowed">
+                          <div className="flex items-center gap-2 blur-[0.5px]">
+                            Notes Summarizer
+                          </div>
+                        </div>
+                        <div className="group relative flex justify-between py-3 text-[#4A4947] text-[1.25rem] cursor-not-allowed">
+                          <div className="flex items-center gap-2 blur-[0.5px]">
+                            Chat with PDFs
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              
+              <Link
+                href="/pricing"
+                className={`${montserrat500.className} w-full py-4 border-b border-[#4A4947]/30 text-[#4A4947] text-[1.5rem]`}
+              >
+                Pricing
+              </Link>
+              
+              <Link
+                href="/history"
+                className={`${montserrat500.className} w-full py-4 border-b border-[#4A4947]/30 text-[#4A4947] text-[1.5rem]`}
+              >
+                History
+              </Link>
+              
+              {!user && (
+                <Link 
+                  href="/auth"
+                  className="mt-4 w-full text-center text-[#4A4947] border-2 border-[#4A4947] rounded-xl px-4 py-3 text-[1.2rem]"
+                >
+                  Login / Sign In
+                </Link>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
