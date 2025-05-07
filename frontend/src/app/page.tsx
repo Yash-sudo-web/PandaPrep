@@ -30,24 +30,26 @@ export default function Home() {
   return (
     <main className="overflow-x-hidden bg-[#FAF7F0]">
       <Navbar/>
-      <div className="flex flex-col items-center justify-center h-screen">
+      <div className="flex flex-col items-center justify-center min-h-screen px-4 py-8 md:py-0">
         <p
-          className={`${indieFlower.className} text-[3.125rem]  text-[#4A4947]`}
+          className={`${indieFlower.className} text-[2rem] md:text-[3.125rem] text-[#4A4947] text-center`}
         >
           From Chaos to Clarity
         </p>
         <p
-          className={`${montserrat600.className} text-[1.25rem] text-[#B17457] text-center`}
+          className={`${montserrat600.className} text-[1rem] md:text-[1.25rem] text-[#B17457] text-center px-2`}
         >
           Stop stressing over messy notes — Our AI helps you focus, learn
-          faster, <br/> and retain more with every study session.
+          faster, <br className="hidden md:block"/> and retain more with every study session.
         </p>
-        <Image src={heroBulb} alt="hero-bulb" className="h-[7rem] w-[45rem]" />
-
-        <div className="flex flex-col items-center justify-center mt-10">
+        <div className="w-full max-w-[45rem] px-4 mt-4">
+          <Image src={heroBulb} alt="hero-bulb" className="w-full h-auto" />
+        </div>
+  
+        <div className="flex flex-col items-center justify-center mt-6 md:mt-10">
           <button
             onClick={() => router.push("/auth")}
-            className={`bg-[#FAF7F0] border-2 border-[#B17457] text-[#B17457] font-bold text-[1.25rem] rounded-[15px] w-[215px] h-[55px] shrink-0 transition duration-300 ease-in-out hover:bg-[#B17457] hover:border-[#B17457] hover:text-[#FAF7F0] ${montserrat700.className} flex items-center justify-center gap-1 cursor-pointer`}
+            className={`bg-[#FAF7F0] border-2 border-[#B17457] text-[#B17457] font-bold text-[1rem] md:text-[1.25rem] rounded-[15px] w-[180px] md:w-[215px] h-[45px] md:h-[55px] shrink-0 transition duration-300 ease-in-out hover:bg-[#B17457] hover:border-[#B17457] hover:text-[#FAF7F0] ${montserrat700.className} flex items-center justify-center gap-1 cursor-pointer`}
           >
             <p>Get Started</p>
             <ArrowUpRight strokeWidth={3}/>
@@ -56,17 +58,17 @@ export default function Home() {
       </div>
 
       <div
-        className={`flex justify-center px-4 sm:px-8 md:px-16 lg:px-32 ${
+        className={`flex justify-center ${
           isDarkMode ? "bg-neutral-950 text-white" : "bg-[#FAF7F0] text-[#4A4947]"
         }`}
       >
-        <section className="w-full ">
+        <section className="w-full">
           <FeatureSection />
         </section>
       </div>
 
       <div className="flex justify-center px-4 sm:px-8 md:px-16 lg:px-32">
-        <section className="w-full ">
+        <section className="w-full">
           <Faq />
         </section>
       </div>  

@@ -39,7 +39,6 @@ export function FeatureSection() {
 
   useEffect(() => {
     setMounted(true);
-
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev === cards.length - 1 ? 0 : prev + 1));
     }, 3000);
@@ -51,24 +50,22 @@ export function FeatureSection() {
   const handleManualSlideChange = (index: number) => {
     setCurrentSlide(index);
     if (intervalId) {
-      clearInterval(intervalId); 
+      clearInterval(intervalId);
       const newInterval = setInterval(() => {
         setCurrentSlide((prev) => (prev === cards.length - 1 ? 0 : prev + 1));
-      }, 3000); 
+      }, 3000);
       setIntervalId(newInterval);
     }
   };
 
   return (
-    <div className={`w-full pb-16 bg-[#FAF7F0] ${montserrat600.className}`}>
+    <div className={`w-full pb-16 bg-[#FAF7F0] overflow-x-hidden px-20 md:px-0 ${montserrat600.className}`}>
       <div className="flex flex-col items-center justify-center">
-        <h2
-          className={`${montserrat700.className} text-5xl text-[#4A4947] mb-12 text-center`}
-        >
+        <h2 className={`${montserrat700.className} text-3xl md:text-5xl text-[#4A4947] mb-12 text-center`}>
           Your Ultimate Learning Toolkit
         </h2>
         <div className="relative">
-          <div className="absolute left-[-100] top-5 transform -translate-x-1/2 -translate-y-1/2 z-10">
+          <div className="absolute left-[-100] top-5 transform -translate-x-1/2 -translate-y-1/2 z-10 hidden md:block">
             <Image
               src={carouselPanda1}
               alt="Decorative panda illustration"
@@ -83,29 +80,41 @@ export function FeatureSection() {
                 style={{ transform: `translateX(-${currentSlide * 100}%)` }}
               >
                 {cards.map((card, index) => (
-                  <div key={index} className="min-w-full">
-                    <div className="border border-[#B17457] rounded-xl flex w-full h-[400px] relative">
-                      <div className="flex items-center justify-center w-2/5">
+                  <div key={index} className="min-w-full px-2">
+                    <div className="border border-[#B17457] rounded-xl flex flex-col md:flex-row w-full h-auto md:h-[400px] relative p-4 md:p-0">
+                      <div className="flex items-center justify-center w-full md:w-2/5 mb-4 md:mb-0">
                         <Image
                           src={card.image}
                           alt={`Feature illustration for ${card.title}`}
-                          className="h-[300px] w-[300px] rounded-3xl"
+                          className="h-[200px] w-[200px] md:h-[300px] md:w-[300px] rounded-3xl"
                         />
                       </div>
-                      <div
-                        style={{ marginLeft: "-15px" }}
-                        className="text-center flex flex-col items-center justify-center w-3/5"
-                      >
+                      <div className="text-center flex flex-col items-center justify-center w-full md:w-3/5 px-2">
                         <div
-                          className={`${montserrat600.className} text-[#4A4947] text-[2rem] font-semibold`}
+                          className={`${montserrat600.className} text-[#4A4947] text-[1.5rem] md:text-[2rem] font-semibold`}
                         >
                           {card.title}
                         </div>
                         <div
-                          className={`${montserrat600.className} text-[#B17457] text-[16px] pt-2`}
+                          className={`${montserrat600.className} text-[#B17457] text-[14px] md:text-[16px] pt-2`}
                         >
                           {card.description}
                         </div>
+                        {index === 0 ? (
+                          <button
+                            onClick={() => router.push("/generate")}
+                            className="mt-4 px-4 py-2 bg-[#B17457] text-white rounded-lg hover:bg-[#a76348] transition"
+                          >
+                            Try Now
+                          </button>
+                        ) : (
+                          <button
+                            disabled
+                            className="mt-4 px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed"
+                          >
+                            Coming Soon
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -126,7 +135,7 @@ export function FeatureSection() {
               ))}
             </div>
           </div>
-          <div className="absolute right-[-140] bottom-[-100] transform -translate-x-1/2 -translate-y-1/2 z-10">
+          <div className="absolute right-[-140] bottom-[-100] transform -translate-x-1/2 -translate-y-1/2 z-10 hidden md:block">
             <Image
               src={carouselPanda2}
               alt="Decorative panda illustration"
