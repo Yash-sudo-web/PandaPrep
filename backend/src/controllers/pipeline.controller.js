@@ -462,7 +462,7 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
         completed_at: new Date(),
       }
     );
-    if (note_type === 'detailed' || include_images === 'yes') {
+    if (note_type === 'detailed') {
       await UserModel.updateOne({ _id: _userId }, { $inc: { 'subscription.credits': -1 } });
     }
   } catch (error) {
