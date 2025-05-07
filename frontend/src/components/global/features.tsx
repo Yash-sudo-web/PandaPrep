@@ -15,6 +15,7 @@ export function FeatureSection() {
   const router = useRouter();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
+  const [windowWidth, setWindowWidth] = useState(0);
 
   const cards = [
     {
@@ -42,9 +43,19 @@ export function FeatureSection() {
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev === cards.length - 1 ? 0 : prev + 1));
     }, 3000);
-    setIntervalId(interval);
+    setIntervalId(interval as NodeJS.Timeout);
 
-    return () => clearInterval(interval);
+    const handleResize = () => {
+      setWindowWidth(window.innerWidth);
+    };
+    
+    setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('resize', handleResize);
+    };
   }, [cards.length]);
 
   const handleManualSlideChange = (index: number) => {
@@ -54,95 +65,103 @@ export function FeatureSection() {
       const newInterval = setInterval(() => {
         setCurrentSlide((prev) => (prev === cards.length - 1 ? 0 : prev + 1));
       }, 3000);
-      setIntervalId(newInterval);
+      setIntervalId(newInterval as NodeJS.Timeout);
     }
   };
 
+  const showDecorativePandas = windowWidth >= 1485;
+
   return (
-    <div className={`w-full pb-16 bg-[#FAF7F0] overflow-x-hidden px-20 md:px-0 ${montserrat600.className}`}>
+    <div className={`w-full pb-16 bg-[#FAF7F0] overflow-x-hidden px-4 sm:px-8 md:px-12 lg:px-20 ${montserrat600.className}`}>
       <div className="flex flex-col items-center justify-center">
-        <h2 className={`${montserrat700.className} text-3xl md:text-5xl text-[#4A4947] mb-12 text-center`}>
+        <h2 className={`${montserrat700.className} text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-[#4A4947] mb-6 md:mb-12 text-center`}>
           Your Ultimate Learning Toolkit
         </h2>
-        <div className="relative">
-          <div className="absolute left-[-100] top-5 transform -translate-x-1/2 -translate-y-1/2 z-10 hidden md:block">
-            <Image
-              src={carouselPanda1}
-              alt="Decorative panda illustration"
-              width={275}
-              height={150}
-            />
-          </div>
-          <div className="relative w-full max-w-5xl">
-            <div className="overflow-hidden relative">
-              <div
-                className="flex transition-transform duration-500 ease-in-out relative"
-                style={{ transform: `translateX(-${currentSlide * 100}%)` }}
-              >
-                {cards.map((card, index) => (
-                  <div key={index} className="min-w-full px-2">
-                    <div className="border border-[#B17457] rounded-xl flex flex-col md:flex-row w-full h-auto md:h-[400px] relative p-4 md:p-0">
-                      <div className="flex items-center justify-center w-full md:w-2/5 mb-4 md:mb-0">
-                        <Image
-                          src={card.image}
-                          alt={`Feature illustration for ${card.title}`}
-                          className="h-[200px] w-[200px] md:h-[300px] md:w-[300px] rounded-3xl"
-                        />
+        
+        <div className="relative max-w-5xl mx-auto">
+
+          {showDecorativePandas && (
+            <div className="absolute left-[-200px] top-[-90px] z-10">
+              <Image
+                src={carouselPanda1}
+                alt="Decorative panda illustration"
+                width={275}
+                height={150}
+              />
+            </div>
+          )}
+          
+          <div className="overflow-hidden">
+            <div
+              className="flex transition-transform duration-500 ease-in-out"
+              style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+            >
+              {cards.map((card, index) => (
+                <div key={index} className="min-w-full px-1 sm:px-2">
+                  <div className="border border-[#B17457] rounded-xl flex flex-col md:flex-row w-full h-auto md:h-[400px] p-3 sm:p-4 md:p-0">
+                    <div className="flex items-center justify-center w-full md:w-2/5 mb-4 md:mb-0">
+                      <Image
+                        src={card.image}
+                        alt={`Feature illustration for ${card.title}`}
+                        className="h-[150px] w-[150px] sm:h-[180px] sm:w-[180px] md:h-[250px] md:w-[250px] lg:h-[300px] lg:w-[300px] rounded-3xl"
+                      />
+                    </div>
+                    <div className="text-center flex flex-col items-center justify-center w-full md:w-3/5 px-2 md:px-4 lg:px-6">
+                      <div
+                        className={`${montserrat600.className} text-[#4A4947] text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold`}
+                      >
+                        {card.title}
                       </div>
-                      <div className="text-center flex flex-col items-center justify-center w-full md:w-3/5 px-2">
-                        <div
-                          className={`${montserrat600.className} text-[#4A4947] text-[1.5rem] md:text-[2rem] font-semibold`}
-                        >
-                          {card.title}
-                        </div>
-                        <div
-                          className={`${montserrat600.className} text-[#B17457] text-[14px] md:text-[16px] pt-2`}
-                        >
-                          {card.description}
-                        </div>
-                        {index === 0 ? (
-                          <button
-                            onClick={() => router.push("/generate")}
-                            className="mt-4 px-4 py-2 bg-[#B17457] text-white rounded-lg hover:bg-[#a76348] transition"
-                          >
-                            Try Now
-                          </button>
-                        ) : (
-                          <button
-                            disabled
-                            className="mt-4 px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed"
-                          >
-                            Coming Soon
-                          </button>
-                        )}
+                      <div
+                        className={`${montserrat600.className} text-[#B17457] text-xs sm:text-sm md:text-base lg:text-lg pt-2`}
+                      >
+                        {card.description}
                       </div>
+                      {index === 0 ? (
+                        <button
+                          onClick={() => router.push("/generate")}
+                          className="mt-3 md:mt-4 px-3 md:px-4 py-1 md:py-2 bg-[#B17457] cursor-pointer text-white text-sm md:text-base rounded-lg hover:bg-[#a76348] transition"
+                        >
+                          Try Now
+                        </button>
+                      ) : (
+                        <button
+                          disabled
+                          className="mt-3 md:mt-4 px-3 md:px-4 py-1 md:py-2 bg-gray-400 text-white text-sm md:text-base rounded-lg cursor-not-allowed"
+                        >
+                          Coming Soon
+                        </button>
+                      )}
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex justify-center mt-8 space-x-2">
-              {cards.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleManualSlideChange(index)}
-                  className={`w-3 h-3 rounded-full transition-all ${
-                    currentSlide === index ? "bg-[#B17457] w-6" : "bg-gray-300"
-                  }`}
-                  aria-label={`Go to slide ${index + 1}`}
-                />
+                </div>
               ))}
             </div>
           </div>
-          <div className="absolute right-[-140] bottom-[-100] transform -translate-x-1/2 -translate-y-1/2 z-10 hidden md:block">
-            <Image
-              src={carouselPanda2}
-              alt="Decorative panda illustration"
-              width={137}
-              height={137}
-            />
+
+          <div className="flex justify-center mt-4 md:mt-8 space-x-2">
+            {cards.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => handleManualSlideChange(index)}
+                className={`w-2 md:w-3 h-2 md:h-3 rounded-full transition-all ${
+                  currentSlide === index ? "bg-[#B17457] w-4 md:w-6" : "bg-gray-300"
+                }`}
+                aria-label={`Go to slide ${index + 1}`}
+              />
+            ))}
           </div>
+          
+          {showDecorativePandas && (
+            <div className="absolute right-[-80px] bottom-[-10px] z-10">
+              <Image
+                src={carouselPanda2}
+                alt="Decorative panda illustration"
+                width={137}
+                height={137}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>
