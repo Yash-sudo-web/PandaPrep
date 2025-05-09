@@ -38,32 +38,32 @@ const MultiTabSwitch: React.FC<MultiTabSwitchProps> = ({
   }, []);
 
   return (
-    <div className="w-full flex flex-col items-start gap-2 relative">
+    <div className="w-full flex flex-col items-start gap-1 sm:gap-2 relative">
       {field === "include_images" && (
-        <div className="flex items-center ml-2 gap-1">
+        <div className="flex items-center ml-1 sm:ml-2 gap-1">
           <div className="relative group">
             <Info
-              size={16}
+              size={14}
               className={`${
                 isDarkMode ? "text-white" : "text-gray-500"
-              } cursor-pointer mt-0.5`}
+              } cursor-pointer mt-0.5 sm:w-4 sm:h-4`}
             />
-            <div className="absolute invisible group-hover:visible bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-[#ECFDF4] text-[#4A5565] text-xs px-3 py-1 rounded-md shadow-md z-50 w-max">
+            <div className="absolute invisible group-hover:visible bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-[#ECFDF4] text-[#4A5565] text-xs px-2 py-1 sm:px-3 sm:py-1 rounded-md shadow-md z-50 w-max">
               This is an Experimental Feature.
             </div>
           </div>
         </div>
       )}
 
-      <div className="flex flex-wrap w-full gap-2">
+      <div className="flex flex-wrap w-full gap-1 sm:gap-2">
         {tabs.map((option) => {
           const isPremium = premium_feature?.includes(option.value);
           const isDisabled = isPremium && userCredits === 0;
 
           return (
-            <div key={option.value} className="relative group flex-1 min-w-[100px]">
+            <div key={option.value} className="relative group flex-1 min-w-[80px] sm:min-w-[100px]">
               <button
-                className={`w-full px-6 py-2 transition duration-300 rounded-lg border-2 border-[#B17457] cursor-pointer
+                className={`w-full px-2 sm:px-6 py-1 sm:py-2 transition duration-300 rounded-lg border-2 border-[#B17457] cursor-pointer
                   ${
                     selectedOption === option.value
                       ? "bg-[#B17457] text-white"
@@ -79,14 +79,14 @@ const MultiTabSwitch: React.FC<MultiTabSwitchProps> = ({
                 disabled={isDisabled}
               >
                 <div
-                  className={`flex justify-center items-center gap-2 ${montserrat500.className} text-xl`}
+                  className={`flex justify-center items-center gap-1 sm:gap-2 ${montserrat500.className} text-sm sm:text-xl`}
                 >
                   <p>{option.label}</p>
-                  {isPremium && userCredits === 0 && <Lock size={16} />}
+                  {isPremium && userCredits === 0 && <Lock size={12} className="sm:w-4 sm:h-4" />}
                 </div>
               </button>
               {isDisabled && (
-                <div className="absolute invisible group-hover:visible bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-[#F3EFE5] text-[#4A5565] text-xs px-3 py-1 rounded-md shadow-md z-50 w-max">
+                <div className="absolute invisible group-hover:visible bottom-full left-1/2 transform -translate-x-1/2 mb-2 bg-[#F3EFE5] text-[#4A5565] text-xs px-2 py-1 sm:px-3 sm:py-1 rounded-md shadow-md z-50 w-max">
                   You have 0 credits left.
                 </div>
               )}
