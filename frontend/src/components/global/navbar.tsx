@@ -13,6 +13,7 @@ import { deleteCookie } from "@/lib/utils";
 import { useRef } from "react";
 import { montserrat500, montserrat700 } from "@/lib/font-utils";
 
+
 const Navbar = () => {
   const auth = getAuth(app);
   const router = useRouter();
@@ -104,10 +105,10 @@ const Navbar = () => {
   }, [menuOpen]);
 
   return (
-    <div className="bg-[#D8D2C2] py-[0.5rem] px-6 my-6 mx-2 lg:mx-10 rounded-[1.5rem] border border-[#C9C3B3] flex justify-between items-center fixed top-0 left-0 right-0 z-50">
+    <div className={` py-[0.5rem] px-6 my-6 mx-2 lg:mx-10 rounded-[1.5rem] border flex justify-between items-center fixed top-0 left-0 right-0 z-50 ${isDark ? "bg-[#3A3935] border-[#504E49]" : "bg-[#D8D2C2] border-[#C9C3B3]"}`}>
       <div
         onClick={() => router.push("/")}
-        className={`${montserrat700.className} text-[1.5rem] lg:text-[2rem] text-[#4A4947] cursor-pointer`}
+        className={`${montserrat700.className} text-[1.5rem] lg:text-[2rem] cursor-pointer ${isDark ? " text-[#D0CCC4]" : "text-[#4A4947]"}`}
       >
         PandaPrepAI
       </div>
@@ -116,7 +117,7 @@ const Navbar = () => {
         <div className="relative">
           <button
             onClick={() => setServicesDropdown(!servicesDropdown)}
-            className={`${montserrat500.className} text-[#4A4947] text-[1.5rem] flex items-center gap-2 cursor-pointer`}
+            className={`${montserrat500.className}  text-[1.5rem] flex items-center gap-2 cursor-pointer  ${isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}
           >
             <span>Services</span>
             {servicesDropdown ? (
@@ -174,14 +175,14 @@ const Navbar = () => {
 
         <div
           onClick={() => router.push("/pricing")}
-          className={`${montserrat500.className} text-[#4A4947] text-[1.5rem] cursor-pointer`}
+          className={`${montserrat500.className} text-[1.5rem] cursor-pointer ${isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}
         >
           Pricing
         </div>
 
         <div
           onClick={() => router.push("/history")}
-          className={`${montserrat500.className} text-[#4A4947] text-[1.5rem] cursor-pointer`}
+          className={`${montserrat500.className} text-[1.5rem] cursor-pointer ${isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}
         >
           History
         </div>
@@ -190,7 +191,7 @@ const Navbar = () => {
           {mounted && (
             <button
               onClick={() => (isDark ? setTheme("light") : setTheme("dark"))}
-              className="flex items-center justify-center w-10 h-10 rounded-[0.625rem] border-2 border-[#4A4947] relative overflow-hidden cursor-pointer"
+              className={`flex items-center justify-center w-10 h-10 rounded-[0.625rem] border-2 border-[#4A4947] relative overflow-hidden cursor-pointer ${isDark ? "border-[#D0CCC4]" : "border-[#4A4947]"}`}
             >
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
@@ -202,7 +203,7 @@ const Navbar = () => {
                   className="absolute"
                 >
                   {isDark ? (
-                    <Moon size={20} color="#4A4947" strokeWidth={3} />
+                    <Moon size={20} color="#D0CCC4" strokeWidth={3} />
                   ) : (
                     <Sun size={20} color="#4A4947" strokeWidth={3} />
                   )}
@@ -225,7 +226,7 @@ const Navbar = () => {
                     className="rounded-full"
                   />
                   {dropdownOpen ? (
-                    <ChevronUp size={16} color="#4A4947" />
+                    <ChevronUp size={16} color="#D0CCC4" />
                   ) : (
                     <ChevronDown size={16} color="#4A4947" />
                   )}
@@ -261,7 +262,7 @@ const Navbar = () => {
             ) : (
               <button
                 onClick={() => router.push("/auth")}
-                className="text-[#4A4947] border border-[#4A4947] rounded-xl px-4 py-2 text-[1.1rem]"
+                className={` border cursor-pointer rounded-xl px-4 py-2 text-[1.1rem] ${montserrat500.className} ${isDark ? "text-[#D0CCC4] border-[#D0CCC4]" : "text-[#4A4947] border-[#4A4947]"}`}
               >
                 Login / Sign In
               </button>
@@ -274,7 +275,7 @@ const Navbar = () => {
         {mounted && (
           <button
             onClick={() => (isDark ? setTheme("light") : setTheme("dark"))}
-            className="flex items-center justify-center w-9 h-9 rounded-[0.5rem] border-2 border-[#4A4947] relative overflow-hidden cursor-pointer"
+            className={`flex items-center justify-center w-9 h-9 rounded-[0.5rem] border-2 border-[#4A4947] relative overflow-hidden cursor-pointer ${isDark?" border-[#D0CCC4]":"border-[#4A4947]"}`}
           >
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
