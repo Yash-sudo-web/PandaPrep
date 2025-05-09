@@ -6,19 +6,20 @@ import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { FeatureSection } from "@/components/global/features";
 import { useRouter } from "next/navigation";
-import { montserrat600, montserrat700, montserrat800,indieFlower } from "@/lib/font-utils";
+import {
+  montserrat600,
+  montserrat700,
+  montserrat800,
+  indieFlower,
+} from "@/lib/font-utils";
 import { ArrowUpRight } from "lucide-react";
 import { Faq } from "@/components/global/faq";
-import heroBulb from "../../public/assets/hero-bulb.png";
+import heroBulbLight from "../../public/assets/hero-bulb-light.png";
+import heroBulbDark from "../../public/assets/hero-bulb-dark.png";
 import Image from "next/image";
 
 export default function Home() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
   const router = useRouter();
-  const toggleFAQ = (index: number) => {
-    setOpenIndex(openIndex === index ? null : index);
-  };
-
   const { theme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -28,38 +29,65 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="overflow-x-hidden bg-[#FAF7F0]">
-      <Navbar/>
+    <main
+      className={`overflow-x-hidden ${
+        isDarkMode ? "bg-[#1E1D1B]" : "bg-[#FAF7F0]"
+      } `}
+    >
+      <Navbar />
       <div className="flex flex-col items-center justify-center min-h-screen px-4 py-8 md:py-0">
         <p
-          className={`${indieFlower.className} text-[2rem] md:text-[3.125rem] text-[#4A4947] text-center`}
+          className={`${indieFlower.className} text-[2rem] md:text-[3.125rem] ${
+            isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
+          } text-center`}
         >
           From Chaos to Clarity
         </p>
         <p
-          className={`${montserrat600.className} text-[1rem] md:text-[1.25rem] text-[#B17457] text-center px-2`}
+          className={`${
+            montserrat600.className
+          } text-[1rem] md:text-[1.25rem] ${
+            isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]"
+          } text-center px-2`}
         >
           Stop stressing over messy notes — Our AI helps you focus, learn
-          faster, <br className="hidden md:block"/> and retain more with every study session.
+          faster, <br className="hidden md:block" /> and retain more with every
+          study session.
         </p>
         <div className="w-full max-w-[45rem] px-4 mt-4">
-          <Image src={heroBulb} alt="hero-bulb" className="w-full h-auto" />
+          <Image
+            src={isDarkMode ? heroBulbDark : heroBulbLight}
+            alt="hero-bulb"
+            className="w-full h-auto"
+          />
         </div>
-  
+
         <div className="flex flex-col items-center justify-center mt-6 md:mt-10">
           <button
             onClick={() => router.push("/auth")}
-            className={`bg-[#FAF7F0] border-2 border-[#B17457] text-[#B17457] font-bold text-[1rem] md:text-[1.25rem] rounded-[15px] w-[180px] md:w-[215px] h-[45px] md:h-[55px] shrink-0 transition duration-300 ease-in-out hover:bg-[#B17457] hover:border-[#B17457] hover:text-[#FAF7F0] ${montserrat700.className} flex items-center justify-center gap-1 cursor-pointer`}
+            className={`
+    ${
+      isDarkMode
+        ? "bg-[#1E1D1B] border border-[#D29C7B] text-[#FAF7F0] hover:bg-[#D29C7B] hover:border-[#D29C7B] hover:text-[#1E1D1B]"
+        : "bg-[#FAF7F0] border-2 border-[#B17457] text-[#B17457] hover:bg-[#B17457] hover:border-[#B17457] hover:text-[#FAF7F0]"
+    }
+    font-bold text-[1rem] md:text-[1.25rem] rounded-[15px] w-[180px] md:w-[215px] h-[45px] md:h-[55px] 
+    shrink-0 transition duration-300 ease-in-out ${
+      montserrat700.className
+    } flex items-center justify-center gap-1 cursor-pointer
+  `}
           >
             <p>Get Started</p>
-            <ArrowUpRight strokeWidth={3}/>
+            <ArrowUpRight strokeWidth={3} />
           </button>
         </div>
       </div>
 
       <div
         className={`flex justify-center ${
-          isDarkMode ? "bg-neutral-950 text-white" : "bg-[#FAF7F0] text-[#4A4947]"
+          isDarkMode
+            ? "bg-neutral-950 text-white"
+            : "bg-[#FAF7F0] text-[#4A4947]"
         }`}
       >
         <section className="w-full">
@@ -71,7 +99,7 @@ export default function Home() {
         <section className="w-full">
           <Faq />
         </section>
-      </div>  
+      </div>
     </main>
   );
 }

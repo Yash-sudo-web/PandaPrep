@@ -13,7 +13,6 @@ import { deleteCookie } from "@/lib/utils";
 import { useRef } from "react";
 import { montserrat500, montserrat700 } from "@/lib/font-utils";
 
-
 const Navbar = () => {
   const auth = getAuth(app);
   const router = useRouter();
@@ -105,10 +104,10 @@ const Navbar = () => {
   }, [menuOpen]);
 
   return (
-    <div className={` py-[0.5rem] px-6 my-6 mx-2 lg:mx-10 rounded-[1.5rem] border flex justify-between items-center fixed top-0 left-0 right-0 z-50 ${isDark ? "bg-[#3A3935] border-[#504E49]" : "bg-[#D8D2C2] border-[#C9C3B3]"}`}>
+    <div className={`py-[0.5rem] px-6 my-6 mx-2 lg:mx-10 rounded-[1.5rem] border flex justify-between items-center fixed top-0 left-0 right-0 z-50 ${isDark ? "bg-[#3A3935] border-[#504E49]" : "bg-[#D8D2C2] border-[#C9C3B3]"}`}>
       <div
         onClick={() => router.push("/")}
-        className={`${montserrat700.className} text-[1.5rem] lg:text-[2rem] cursor-pointer ${isDark ? " text-[#D0CCC4]" : "text-[#4A4947]"}`}
+        className={`${montserrat700.className} text-[1.5rem] lg:text-[2rem] cursor-pointer ${isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}
       >
         PandaPrepAI
       </div>
@@ -117,13 +116,13 @@ const Navbar = () => {
         <div className="relative">
           <button
             onClick={() => setServicesDropdown(!servicesDropdown)}
-            className={`${montserrat500.className}  text-[1.5rem] flex items-center gap-2 cursor-pointer  ${isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}
+            className={`${montserrat500.className} text-[1.5rem] flex items-center gap-2 cursor-pointer ${isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}
           >
             <span>Services</span>
             {servicesDropdown ? (
-              <ChevronUp size={24} strokeWidth={2} />
+              <ChevronUp size={24} strokeWidth={2} className={isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"} />
             ) : (
-              <ChevronDown size={24} strokeWidth={2} />
+              <ChevronDown size={24} strokeWidth={2} className={isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"} />
             )}
           </button>
 
@@ -135,17 +134,29 @@ const Navbar = () => {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="absolute top-[3rem] right-0 bg-white/70 backdrop-blur-md border border-[#C9C3B3] rounded-2xl shadow-2xl py-3 w-72 z-50 flex flex-col overflow-hidden"
+                className={`absolute top-[3rem] right-0 backdrop-blur-md border rounded-2xl shadow-2xl py-3 w-72 z-50 flex flex-col overflow-hidden ${
+                  isDark 
+                    ? "bg-[#3A3935]/70 border-[#504E49]" 
+                    : "bg-white/70 border-[#C9C3B3]"
+                }`}
               >
                 <Link
                   href="/generate"
-                  className="px-5 py-3 text-[#4A4947] hover:bg-[#f0eee9] text-[1.25rem] transition-all duration-200 hover:pl-6"
+                  className={`px-5 py-3 hover:bg-opacity-20 text-[1.25rem] transition-all duration-200 hover:pl-6 ${
+                    isDark 
+                      ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black" 
+                      : "text-[#4A4947] hover:bg-[#f0eee9]"
+                  }`}
                 >
                   Notes Generator
                 </Link>
-                <div className="border-t border-[#C9C3B3] mx-4" />
+                <div className={`border-t mx-4 ${isDark ? "border-[#504E49]" : "border-[#C9C3B3]"}`} />
                 <div
-                  className="group relative flex justify-between px-5 py-3 text-[#4A4947] hover:bg-[#f0eee9] text-[1.25rem] transition-all duration-200 hover:pl-6 cursor-not-allowed"
+                  className={`group relative flex justify-between px-5 py-3 text-[1.25rem] transition-all duration-200 hover:pl-6 cursor-not-allowed ${
+                    isDark 
+                      ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black" 
+                      : "text-[#4A4947] hover:bg-[#f0eee9]"
+                  }`}
                 >
                   <div className="flex items-center gap-2 blur-[0.5px]">
                     Notes Summarizer
@@ -156,11 +167,15 @@ const Navbar = () => {
                   </div>
                 </div>
 
-                <div className="border-t border-[#C9C3B3] mx-4" />
+                <div className={`border-t mx-4 ${isDark ? "border-[#504E49]" : "border-[#C9C3B3]"}`} />
                 <div
-                  className="group relative flex justify-between px-5 py-3 text-[#4A4947] hover:bg-[#f0eee9] text-[1.25rem] transition-all duration-200 hover:pl-6 cursor-not-allowed"
+                  className={`group relative flex justify-between px-5 py-3 text-[1.25rem] transition-all duration-200 hover:pl-6 cursor-not-allowed ${
+                    isDark 
+                      ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black" 
+                      : "text-[#4A4947] hover:bg-[#f0eee9]"
+                  }`}
                 >
-                  <div className="flex items-center gap-2 blur-[0.5px] ">
+                  <div className="flex items-center gap-2 blur-[0.5px]">
                     Chat with PDFs
                   </div>
  
@@ -191,7 +206,9 @@ const Navbar = () => {
           {mounted && (
             <button
               onClick={() => (isDark ? setTheme("light") : setTheme("dark"))}
-              className={`flex items-center justify-center w-10 h-10 rounded-[0.625rem] border-2 border-[#4A4947] relative overflow-hidden cursor-pointer ${isDark ? "border-[#D0CCC4]" : "border-[#4A4947]"}`}
+              className={`flex items-center justify-center w-10 h-10 rounded-[0.625rem] border-2 relative overflow-hidden cursor-pointer ${
+                isDark ? "border-[#D0CCC4]" : "border-[#4A4947]"
+              }`}
             >
               <AnimatePresence mode="wait" initial={false}>
                 <motion.div
@@ -226,9 +243,9 @@ const Navbar = () => {
                     className="rounded-full"
                   />
                   {dropdownOpen ? (
-                    <ChevronUp size={16} color="#D0CCC4" />
+                    <ChevronUp size={16} className={isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"} />
                   ) : (
-                    <ChevronDown size={16} color="#4A4947" />
+                    <ChevronDown size={16} className={isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"} />
                   )}
                 </button>
 
@@ -240,18 +257,28 @@ const Navbar = () => {
                       animate={{ opacity: 1, scale: 1, y: 0 }}
                       exit={{ opacity: 0, scale: 0.95, y: -10 }}
                       transition={{ duration: 0.2 }}
-                      className="absolute top-[3.5rem] right-0 bg-white/70 backdrop-blur-md border border-[#C9C3B3] rounded-2xl shadow-2xl py-3 w-60 z-50 flex flex-col overflow-hidden"
+                      className={`absolute top-[3.5rem] right-0 backdrop-blur-md border rounded-2xl shadow-2xl py-3 w-60 z-50 flex flex-col overflow-hidden ${
+                        isDark 
+                          ? "bg-[#3A3935]/70 border-[#504E49]" 
+                          : "bg-white/70 border-[#C9C3B3]"
+                      }`}
                     >
                       <Link
                         href="/profile"
-                        className="px-5 py-3 text-[#4A4947] hover:bg-[#f0eee9] text-[1.25rem] transition-all duration-200 hover:pl-6"
+                        className={`px-5 py-3 text-[1.25rem] transition-all duration-200 hover:pl-6 ${
+                          isDark 
+                            ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black" 
+                            : "text-[#4A4947] hover:bg-[#f0eee9]"
+                        }`}
                       >
                         Profile
                       </Link>
-                      <div className="border-t border-[#C9C3B3] mx-4" />
+                      <div className={`border-t mx-4 ${isDark ? "border-[#504E49]" : "border-[#C9C3B3]"}`} />
                       <button
                         onClick={handleSignOut}
-                        className="text-left w-full px-5 py-3 text-red-600 hover:bg-red-50 text-[1.25rem] cursor-pointer transition-all duration-200 hover:pl-6"
+                        className={`text-left w-full px-5 py-3 text-red-600 text-[1.25rem] cursor-pointer transition-all duration-200 hover:pl-6 ${
+                          isDark ? "hover:bg-red-900/30" : "hover:bg-red-50"
+                        }`}
                       >
                         Sign Out
                       </button>
@@ -262,7 +289,9 @@ const Navbar = () => {
             ) : (
               <button
                 onClick={() => router.push("/auth")}
-                className={` border cursor-pointer rounded-xl px-4 py-2 text-[1.1rem] ${montserrat500.className} ${isDark ? "text-[#D0CCC4] border-[#D0CCC4]" : "text-[#4A4947] border-[#4A4947]"}`}
+                className={`border cursor-pointer rounded-xl px-4 py-2 text-[1.1rem] ${montserrat500.className} ${
+                  isDark ? "text-[#D0CCC4] border-[#D0CCC4]" : "text-[#4A4947] border-[#4A4947]"
+                }`}
               >
                 Login / Sign In
               </button>
@@ -275,7 +304,9 @@ const Navbar = () => {
         {mounted && (
           <button
             onClick={() => (isDark ? setTheme("light") : setTheme("dark"))}
-            className={`flex items-center justify-center w-9 h-9 rounded-[0.5rem] border-2 border-[#4A4947] relative overflow-hidden cursor-pointer ${isDark?" border-[#D0CCC4]":"border-[#4A4947]"}`}
+            className={`flex items-center justify-center w-9 h-9 rounded-[0.5rem] border-2 relative overflow-hidden cursor-pointer ${
+              isDark ? "border-[#D0CCC4]" : "border-[#4A4947]"
+            }`}
           >
             <AnimatePresence mode="wait" initial={false}>
               <motion.div
@@ -287,7 +318,7 @@ const Navbar = () => {
                 className="absolute"
               >
                 {isDark ? (
-                  <Moon size={18} color="#4A4947" strokeWidth={3} />
+                  <Moon size={18} color="#D0CCC4" strokeWidth={3} />
                 ) : (
                   <Sun size={18} color="#4A4947" strokeWidth={3} />
                 )}
@@ -319,18 +350,28 @@ const Navbar = () => {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -10 }}
                   transition={{ duration: 0.2 }}
-                  className="absolute top-[3.5rem] right-0 bg-white/70 backdrop-blur-md border border-[#C9C3B3] rounded-2xl shadow-2xl py-3 w-60 z-50 flex flex-col overflow-hidden"
+                  className={`absolute top-[3.5rem] right-0 backdrop-blur-md border rounded-2xl shadow-2xl py-3 w-60 z-50 flex flex-col overflow-hidden ${
+                    isDark 
+                      ? "bg-[#3A3935]/70 border-[#504E49]" 
+                      : "bg-white/70 border-[#C9C3B3]"
+                  }`}
                 >
                   <Link
                     href="/profile"
-                    className="px-5 py-3 text-[#4A4947] hover:bg-[#f0eee9] text-[1.25rem] transition-all duration-200 hover:pl-6"
+                    className={`px-5 py-3 text-[1.25rem] transition-all duration-200 hover:pl-6 ${
+                      isDark 
+                        ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black" 
+                        : "text-[#4A4947] hover:bg-[#f0eee9]"
+                    }`}
                   >
                     Profile
                   </Link>
-                  <div className="border-t border-[#C9C3B3] mx-4" />
+                  <div className={`border-t mx-4 ${isDark ? "border-[#504E49]" : "border-[#C9C3B3]"}`} />
                   <button
                     onClick={handleSignOut}
-                    className="text-left w-full px-5 py-3 text-red-600 hover:bg-red-50 text-[1.25rem] cursor-pointer transition-all duration-200 hover:pl-6"
+                    className={`text-left w-full px-5 py-3 text-red-600 text-[1.25rem] cursor-pointer transition-all duration-200 hover:pl-6 ${
+                      isDark ? "hover:bg-red-900/30" : "hover:bg-red-50"
+                    }`}
                   >
                     Sign Out
                   </button>
@@ -342,7 +383,9 @@ const Navbar = () => {
 
         <button
           onClick={() => setMenuOpen(!menuOpen)}
-          className="flex items-center justify-center w-9 h-9 rounded-[0.5rem] border-2 border-[#4A4947] relative overflow-hidden cursor-pointer"
+          className={`flex items-center justify-center w-9 h-9 rounded-[0.5rem] border-2 relative overflow-hidden cursor-pointer ${
+            isDark ? "border-[#D0CCC4]" : "border-[#4A4947]"
+          }`}
         >
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
@@ -354,9 +397,9 @@ const Navbar = () => {
               className="absolute"
             >
               {menuOpen ? (
-                <X size={18} color="#4A4947" strokeWidth={3} />
+                <X size={18} className={isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"} strokeWidth={3} />
               ) : (
-                <Menu size={18} color="#4A4947" strokeWidth={3} />
+                <Menu size={18} className={isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"} strokeWidth={3} />
               )}
             </motion.div>
           </AnimatePresence>
@@ -371,19 +414,25 @@ const Navbar = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className="fixed inset-0 top-[5.5rem] bg-[#D8D2C2]/95 backdrop-blur-sm z-40 flex flex-col md:hidden"
+            className={`fixed inset-0 top-[5.5rem] backdrop-blur-sm z-40 flex flex-col md:hidden ${
+              isDark ? "bg-[#3A3935]/95" : "bg-[#D8D2C2]/95"
+            }`}
           >
             <div className="flex flex-col items-center pt-8 pb-6 px-6 gap-6 overflow-y-auto">
               <div className="w-full">
                 <button
                   onClick={() => setServicesDropdown(!servicesDropdown)}
-                  className={`${montserrat500.className} w-full py-4 border-b border-[#4A4947]/30 text-[#4A4947] text-[1.5rem] flex items-center justify-between cursor-pointer`}
+                  className={`${montserrat500.className} w-full py-4 text-[1.5rem] flex items-center justify-between cursor-pointer border-b ${
+                    isDark 
+                      ? "text-[#D0CCC4] border-[#504E49]/50" 
+                      : "text-[#4A4947] border-[#4A4947]/30"
+                  }`}
                 >
                   <span>Services</span>
                   {servicesDropdown ? (
-                    <ChevronUp size={24} strokeWidth={2} />
+                    <ChevronUp size={24} strokeWidth={2} className={isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"} />
                   ) : (
-                    <ChevronDown size={24} strokeWidth={2} />
+                    <ChevronDown size={24} strokeWidth={2} className={isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"} />
                   )}
                 </button>
                 
@@ -399,16 +448,20 @@ const Navbar = () => {
                       <div className="flex flex-col pl-4 py-2">
                         <Link
                           href="/generate"
-                          className="py-3 text-[#4A4947] text-[1.25rem]"
+                          className={`py-3 text-[1.25rem] ${isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}
                         >
                           Notes Generator
                         </Link>
-                        <div className="group relative flex justify-between py-3 text-[#4A4947] text-[1.25rem] cursor-not-allowed">
+                        <div className={`group relative flex justify-between py-3 text-[1.25rem] cursor-not-allowed ${
+                          isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"
+                        }`}>
                           <div className="flex items-center gap-2 blur-[0.5px]">
                             Notes Summarizer
                           </div>
                         </div>
-                        <div className="group relative flex justify-between py-3 text-[#4A4947] text-[1.25rem] cursor-not-allowed">
+                        <div className={`group relative flex justify-between py-3 text-[1.25rem] cursor-not-allowed ${
+                          isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"
+                        }`}>
                           <div className="flex items-center gap-2 blur-[0.5px]">
                             Chat with PDFs
                           </div>
@@ -421,14 +474,22 @@ const Navbar = () => {
               
               <Link
                 href="/pricing"
-                className={`${montserrat500.className} w-full py-4 border-b border-[#4A4947]/30 text-[#4A4947] text-[1.5rem]`}
+                className={`${montserrat500.className} w-full py-4 text-[1.5rem] border-b ${
+                  isDark 
+                    ? "text-[#D0CCC4] border-[#504E49]/50" 
+                    : "text-[#4A4947] border-[#4A4947]/30"
+                }`}
               >
                 Pricing
               </Link>
               
               <Link
                 href="/history"
-                className={`${montserrat500.className} w-full py-4 border-b border-[#4A4947]/30 text-[#4A4947] text-[1.5rem]`}
+                className={`${montserrat500.className} w-full py-4 text-[1.5rem] border-b ${
+                  isDark 
+                    ? "text-[#D0CCC4] border-[#504E49]/50" 
+                    : "text-[#4A4947] border-[#4A4947]/30"
+                }`}
               >
                 History
               </Link>
@@ -436,7 +497,11 @@ const Navbar = () => {
               {!user && (
                 <Link 
                   href="/auth"
-                  className="mt-4 w-full text-center text-[#4A4947] border-2 border-[#4A4947] rounded-xl px-4 py-3 text-[1.2rem]"
+                  className={`mt-4 w-full text-center border-2 rounded-xl px-4 py-3 text-[1.2rem] ${
+                    isDark 
+                      ? "text-[#D0CCC4] border-[#D0CCC4]" 
+                      : "text-[#4A4947] border-[#4A4947]"
+                  }`}
                 >
                   Login / Sign In
                 </Link>

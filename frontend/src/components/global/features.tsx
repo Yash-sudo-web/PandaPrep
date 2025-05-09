@@ -6,12 +6,19 @@ import { montserrat600, montserrat700 } from "@/lib/font-utils";
 import heroPanda1 from "../../../public/assets/hero-panda-1.png";
 import heroPanda2 from "../../../public/assets/hero-panda-2.png";
 import heroPanda3 from "../../../public/assets/hero-panda-3.png";
-import carouselPanda1 from "../../../public/assets/scribble-panda-1.png";
-import carouselPanda2 from "../../../public/assets/scribble-panda-2.png";
+import carouselPanda1Light from "../../../public/assets/scribble-panda-1-light.png";
+import carouselPanda2Light from "../../../public/assets/scribble-panda-2-light.png";
+import carouselPanda1Dark from "../../../public/assets/scribble-panda-1-dark.png";
+import carouselPanda2Dark from "../../../public/assets/scribble-panda-2-dark.png";
 
 export function FeatureSection() {
   const { theme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const isDarkMode = mounted && resolvedTheme === "dark";
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const router = useRouter();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
@@ -48,13 +55,13 @@ export function FeatureSection() {
     const handleResize = () => {
       setWindowWidth(window.innerWidth);
     };
-    
+
     setWindowWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
 
     return () => {
       clearInterval(interval);
-      window.removeEventListener('resize', handleResize);
+      window.removeEventListener("resize", handleResize);
     };
   }, [cards.length]);
 
@@ -72,25 +79,36 @@ export function FeatureSection() {
   const showDecorativePandas = windowWidth >= 1485;
 
   return (
-    <div className={`w-full pb-16 bg-[#FAF7F0] overflow-x-hidden px-4 sm:px-8 md:px-12 lg:px-20 ${montserrat600.className}`}>
+    <div
+      className={`w-full pb-16 ${
+        isDarkMode ? "bg-[#1E1D1B]" : "bg-[#FAF7F0]"
+      } overflow-x-hidden px-4 sm:px-8 md:px-12 lg:px-20 ${
+        montserrat600.className
+      }`}
+    >
       <div className="flex flex-col items-center justify-center">
-        <h2 className={`${montserrat700.className} text-2xl sm:text-3xl md:text-4xl lg:text-5xl text-[#4A4947] mb-6 md:mb-12 text-center`}>
+        <h2
+          className={`${
+            montserrat700.className
+          } text-2xl sm:text-3xl md:text-4xl lg:text-5xl ${
+            isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
+          }  mb-6 md:mb-12 text-center`}
+        >
           Your Ultimate Learning Toolkit
         </h2>
-        
-        <div className="relative max-w-5xl mx-auto">
 
+        <div className="relative max-w-5xl mx-auto">
           {showDecorativePandas && (
             <div className="absolute left-[-200px] top-[-90px] z-10">
               <Image
-                src={carouselPanda1}
+                src={isDarkMode ? carouselPanda1Dark : carouselPanda1Light}
                 alt="Decorative panda illustration"
                 width={275}
                 height={150}
               />
             </div>
           )}
-          
+
           <div className="overflow-hidden">
             <div
               className="flex transition-transform duration-500 ease-in-out"
@@ -108,26 +126,38 @@ export function FeatureSection() {
                     </div>
                     <div className="text-center flex flex-col items-center justify-center w-full md:w-3/5 px-2 md:px-4 lg:px-6">
                       <div
-                        className={`${montserrat600.className} text-[#4A4947] text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold`}
+                        className={`${montserrat600.className} ${
+                          isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
+                        } text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold`}
                       >
                         {card.title}
                       </div>
                       <div
-                        className={`${montserrat600.className} text-[#B17457] text-xs sm:text-sm md:text-base lg:text-lg pt-2`}
+                        className={`${montserrat600.className} ${
+                          isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]"
+                        } text-xs sm:text-sm md:text-base lg:text-lg pt-2`}
                       >
                         {card.description}
                       </div>
                       {index === 0 ? (
                         <button
                           onClick={() => router.push("/generate")}
-                          className="mt-3 md:mt-4 px-3 md:px-4 py-1 md:py-2 bg-[#B17457] cursor-pointer text-white text-sm md:text-base rounded-lg hover:bg-[#a76348] transition"
+                          className={`mt-3 md:mt-4 px-3 md:px-4 py-1 md:py-2 rounded-lg text-sm md:text-base cursor-pointer transition
+                          ${
+                            isDarkMode
+                              ? "bg-[#B17457] hover:bg-[#a76348] text-white"
+                              : "bg-[#B17457] hover:bg-[#a76348] text-white"
+                          }
+                        `}
                         >
                           Try Now
                         </button>
                       ) : (
                         <button
                           disabled
-                          className="mt-3 md:mt-4 px-3 md:px-4 py-1 md:py-2 bg-gray-400 text-white text-sm md:text-base rounded-lg cursor-not-allowed"
+                          className={`mt-3 md:mt-4 px-3 md:px-4 py-1 md:py-2 rounded-lg text-sm md:text-base cursor-not-allowed
+      ${isDarkMode ? "bg-gray-600 text-gray-300" : "bg-gray-400 text-white"}
+    `}
                         >
                           Coming Soon
                         </button>
@@ -145,17 +175,19 @@ export function FeatureSection() {
                 key={index}
                 onClick={() => handleManualSlideChange(index)}
                 className={`w-2 md:w-3 h-2 md:h-3 rounded-full transition-all ${
-                  currentSlide === index ? "bg-[#B17457] w-4 md:w-6" : "bg-gray-300"
+                  currentSlide === index
+                    ? "bg-[#B17457] w-4 md:w-6"
+                    : "bg-gray-300"
                 }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
             ))}
           </div>
-          
+
           {showDecorativePandas && (
             <div className="absolute right-[-80px] bottom-[-10px] z-10">
               <Image
-                src={carouselPanda2}
+                src={isDarkMode ? carouselPanda2Dark : carouselPanda2Light}
                 alt="Decorative panda illustration"
                 width={137}
                 height={137}
