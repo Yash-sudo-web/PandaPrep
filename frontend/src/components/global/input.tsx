@@ -42,26 +42,26 @@ const AnimatedInput: React.FC<AnimatedInputProps> = ({
     <div className="relative">
       {textarea ? (
         <textarea
-          type="text"
           value={formDataValue}
           onChange={(e) => handleInputChange(fieldKey, e.target.value)}
-          className={`w-full h-32 border px-4 py-2 resize-none border-gray-500 rounded-md transition-all ${className} focus:outline-none`}
+          className={`w-full h-24 sm:h-32 border px-3 sm:px-4 py-2 text-sm sm:text-base resize-none border-gray-500 rounded-md transition-all ${className} focus:outline-none`}
           style={{ transition: "all 0.3s ease" }}
           {...inputProps}
         />
-      ) : <input
-        type="text"
-        value={formDataValue}
-        onChange={(e) => handleInputChange(fieldKey, e.target.value)}
-        className={`w-[35rem] px-4 py-2 border border-gray-500 rounded-md transition-all ${className} focus:outline-none`}
-        style={{ transition: "all 0.3s ease" }}
-        {...inputProps}
-      />
-
-      }
+      ) : (
+        <input
+          type="text"
+          value={formDataValue}
+          onChange={(e) => handleInputChange(fieldKey, e.target.value)}
+          className={`w-full px-3 sm:px-4 py-1 sm:py-2 text-sm sm:text-base border border-gray-500 rounded-md transition-all ${className} focus:outline-none`}
+          style={{ transition: "all 0.3s ease" }}
+          {...inputProps}
+        />
+      )}
+      
       {!formDataValue && (
         <div
-          className="absolute inset-y-0 left-0 flex pt-2 px-4 pointer-events-none text-gray-400"
+          className="absolute inset-y-0 left-0 flex pt-2 px-3 sm:px-4 pointer-events-none text-gray-400 text-sm sm:text-base"
           style={{
             opacity: placeholderOpacity,
             transition: "opacity 0.5s ease",

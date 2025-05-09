@@ -6,21 +6,12 @@ import { getAuth, onAuthStateChanged, User } from "firebase/auth";
 import app from "@/firebase/firebaseconfig";
 import { Funnel_Display } from "next/font/google";
 import Navbar from "@/components/global/navbar";
-import { PlaceholdersAndVanishInput } from "@/components/ui/input-text";
-import { cn } from "@/lib/utils";
 import MultiTabSwitch from "@/components/ui/option-switch";
 import axios from "axios";
 import { BASE_URL } from "@/lib/constant";
 import PDFLikeMarkdownDisplay from "@/components/global/PDFdisplay";
-import { getCookie } from "@/lib/utils";
 import { useTheme } from "next-themes";
-import {
-  montserrat400,
-  montserrat500,
-  montserrat600,
-  montserrat700,
-  montserrat800,
-} from "@/lib/font-utils";
+import { montserrat400, montserrat500, montserrat600 } from "@/lib/font-utils";
 import {
   ArrowLeft,
   ArrowRight,
@@ -36,15 +27,11 @@ import {
   Download,
   Redo,
   Loader2,
+  Lock,
 } from "lucide-react";
 
 import AnimatedInput from "@/components/global/input";
 import { Switch } from "@/components/ui/switch";
-
-const funnel_display = Funnel_Display({
-  subsets: ["latin"],
-  weight: "400",
-});
 
 const NotesGenerate = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -435,14 +422,19 @@ const NotesGenerate = () => {
 
   const step1Component = () => {
     return (
-      <div className="px-4 pt-1">
-        <div className="pb-5">
-          <div className={`${montserrat500.className} text-4xl flex gap-2`}>
-            <BookText size={40} className={`text-[#B17457] mb-2`} />
+      <div className="px-2 sm:px-4 pt-1">
+        <div className="pb-3 sm:pb-5">
+          <div
+            className={`${montserrat500.className} text-2xl sm:text-4xl flex gap-2`}
+          >
+            <BookText
+              size={24}
+              className={`text-[#B17457] mb-2 sm:w-10 sm:h-10`}
+            />
             <p>Enter Your Subject</p>
           </div>
 
-          <p className={`${montserrat400.className} text-lg`}>
+          <p className={`${montserrat400.className} text-base sm:text-lg`}>
             Let&apos;s start by defining what you want to learn about
           </p>
         </div>
@@ -611,7 +603,7 @@ const NotesGenerate = () => {
                     if (isDisabled) return;
                     setFormData((prev) => ({ ...prev, note_type: type }));
                   }}
-                  className={`w-1/3 text-lg font-medium py-2 rounded-lg ${
+                  className={`w-1/3 text-sm sm:text-lg font-medium py-1 sm:py-2 rounded-lg ${
                     montserrat400.className
                   } ${isSelected ? "bg-white shadow" : "text-gray-700"} ${
                     isDisabled
@@ -627,29 +619,10 @@ const NotesGenerate = () => {
 
                   {isDisabled && (
                     <>
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <rect
-                            width="18"
-                            height="11"
-                            x="3"
-                            y="11"
-                            rx="2"
-                            ry="2"
-                          />
-                          <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                        </svg>
+                      <span className="absolute right-1 sm:right-3 top-1/2 -translate-y-1/2">
+                      <Lock size={17}/>
                       </span>
-                      <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white p-2 rounded text-sm w-40 opacity-0 group-hover:opacity-100 transition-opacity hidden group-hover:block pointer-events-none">
+                      <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white p-2 rounded text-xs w-32 sm:w-40 opacity-0 group-hover:opacity-100 transition-opacity hidden group-hover:block pointer-events-none">
                         You have 0 credits left!
                       </div>
                     </>
@@ -676,16 +649,16 @@ const NotesGenerate = () => {
             </div>
           </div>
         </div>
-        <div className="bg-[#D9D9D966] rounded-xl p-1.5 flex justify-between items-center mt-5 h-[65px]">
-          <div className="pl-3 flex items-center gap-3">
-            <div className="p-2 bg-[#B1745780] rounded-lg">
-              <Lightbulb />
+        <div className="bg-[#D9D9D966] rounded-xl p-1.5 flex justify-between items-center mt-5 h-auto min-h-[50px] sm:h-[65px]">
+          <div className="pl-2 sm:pl-3 flex items-center gap-2 sm:gap-3">
+            <div className="p-1 sm:p-2 bg-[#B1745780] rounded-lg">
+              <Lightbulb size={16} className="sm:w-6 sm:h-6" />
             </div>
-            <p className={`${montserrat500.className} text-xl`}>
+            <p className={`${montserrat500.className} text-base sm:text-xl`}>
               Include Examples
             </p>
           </div>
-          <div className="pr-4">
+          <div className="pr-2 sm:pr-4">
             <Switch
               checked={formData.include_examples === "yes"}
               onCheckedChange={(checked) =>
@@ -786,7 +759,11 @@ const NotesGenerate = () => {
         <div className="pb-5 px-4 flex justify-between items-center border-b border-gray-300">
           <div className="flex items-center gap-2 text-4xl">
             <BookOpen size={40} className="text-[#B17457]" />
-            <p className={`${montserrat500.className}`}>Generated Notes</p>
+            <div
+              className={`text-center text-2xl sm:text-5xl text-[#4A4947] pt-12 sm:pt-16 pb-6 sm:pb-10 ${montserrat600.className}`}
+            >
+              Generate Notes
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -836,7 +813,7 @@ const NotesGenerate = () => {
             </div>
           </div>
 
-          <div className="w-[60rem] h-[22rem] rounded-2xl bg-gray-100 border border-gray-300 flex items-center justify-center relative overflow-hidden">
+          <div className="w-full sm:w-[50rem] lg:w-[60rem] h-[18rem] sm:h-[22rem] rounded-2xl bg-gray-100 border border-gray-300 flex items-center justify-center relative overflow-hidden">
             {isGenerating ? (
               showPreview && markdownContent ? (
                 <div className="w-full h-full">
@@ -879,15 +856,15 @@ const NotesGenerate = () => {
       <div className="bg-[#F3EFE5] pt-20">
         <Navbar />
         <div
-          className={`text-center text-5xl text-[#4A4947] pt-16 pb-10 ${montserrat600.className}`}
+          className={`text-center text-3xl sm:text-5xl text-[#4A4947] pt-16 pb-10 ${montserrat600.className}`}
         >
           Generate Notes
         </div>
-        <div className="flex flex-col items-center px-6 pb-10 w-full">
-          <div className="relative h-6 mb-16 w-4/5">
-            <div className="absolute top-1/2 -translate-y-1/2 w-full h-4 rounded-2xl bg-[#D9D9D9]" />
+        <div className="flex flex-col items-center px-4 sm:px-6 pb-6 sm:pb-10 w-full">
+          <div className="relative h-6 mb-8 sm:mb-16 w-full sm:w-4/5">
+            <div className="absolute top-1/2 -translate-y-1/2 w-full h-3 sm:h-4 rounded-2xl bg-[#D9D9D9]" />
             <div
-              className="absolute top-1/2 -translate-y-1/2 h-4 rounded-2xl bg-[#B17457] transition-all duration-300"
+              className="absolute top-1/2 -translate-y-1/2 h-3 sm:h-4 rounded-2xl bg-[#B17457] transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
             />
 
@@ -911,7 +888,7 @@ const NotesGenerate = () => {
                     onClick={() => handleStepClick(index)}
                   >
                     <div
-                      className={`w-10 h-10 ${
+                      className={`w-8 h-8 sm:w-10 sm:h-10 ${
                         isNotClickable ? "cursor-not-allowed" : "cursor-pointer"
                       } mx-auto rounded-full flex items-center justify-center transition-all duration-300 ${
                         isErrorState
@@ -924,18 +901,24 @@ const NotesGenerate = () => {
                       {stepsCompleted[index] && currentStep > index ? (
                         <CheckCircle
                           color={isErrorState ? "#EF4444" : "#B17457"}
-                          size={24}
+                          size={16}
+                          className="sm:w-6 sm:h-6"
                         />
                       ) : isErrorState ? (
-                        <AlertCircle color="#EF4444" size={24} />
+                        <AlertCircle
+                          color="#EF4444"
+                          size={16}
+                          className="sm:w-6 sm:h-6"
+                        />
                       ) : (
                         React.cloneElement(stepIcons[index], {
                           color: currentStep >= index ? "#B17457" : "#4A4947",
+                          size: window.innerWidth < 640 ? 16 : 20,
                         })
                       )}
                     </div>
                     <div
-                      className={`text-sm mt-1 ${
+                      className={`text-xs sm:text-sm mt-1 ${
                         isErrorState ? "text-red-500 font-medium" : ""
                       }`}
                     >
@@ -947,19 +930,19 @@ const NotesGenerate = () => {
             </div>
           </div>
 
-          <div className="bg-white shadow-md rounded-lg p-6 min-h-[300px] w-[65rem] mt-10">
-            <div className="flex flex-col gap-4 h-[40rem]">
+          <div className="bg-white shadow-md rounded-lg p-4 sm:p-6 min-h-[300px] w-full max-w-[65rem] mt-15 sm:mt-10">
+            <div className="flex flex-col gap-4 h-auto sm:h-[40rem]">
               {currentStep === 0 && step1Component()}
               {currentStep === 1 && step2Component()}
               {currentStep === 2 && step3Component()}
               {currentStep === 3 && step4Component()}
             </div>
-            <hr className="border-none h-px bg-[rgba(0,0,0,0.19)] my-4 -mx-6" />
+            <hr className="border-none h-px bg-[rgba(0,0,0,0.19)] my-4 -mx-4 sm:-mx-6" />
 
             <div
               className={`flex ${
                 currentStep === 0 ? "justify-end" : "justify-between"
-              } mt-6 mx-10`}
+              } mt-4 sm:mt-6 mx-2 sm:mx-10`}
             >
               {currentStep !== 0 && currentStep !== 3 && (
                 <button
@@ -975,7 +958,7 @@ const NotesGenerate = () => {
 
               {currentStep < 3 && (
                 <button
-                  className="cursor-pointer px-4 py-2 border rounded-lg bg-[#B17457] text-white transition-colors flex items-center gap-2 hover:bg-[#8f523a]"
+                  className="cursor-pointer px-2 sm:px-4 py-1 sm:py-2 border rounded-lg bg-[#B17457] text-white transition-colors flex items-center gap-1 sm:gap-2 hover:bg-[#8f523a]"
                   onClick={() => {
                     if (currentStep === 2) {
                       handleSubmit();
@@ -986,13 +969,13 @@ const NotesGenerate = () => {
                     }
                   }}
                 >
-                  <span className="text-lg">
+                  <span className="text-sm sm:text-lg">
                     {currentStep === 2 ? "Generate Notes" : "Continue"}
                   </span>
                   {currentStep === 2 ? (
-                    <Sparkles size={20} />
+                    <Sparkles size={16} className="sm:w-5 sm:h-5" />
                   ) : (
-                    <ArrowRight size={20} />
+                    <ArrowRight size={16} className="sm:w-5 sm:h-5" />
                   )}
                 </button>
               )}
