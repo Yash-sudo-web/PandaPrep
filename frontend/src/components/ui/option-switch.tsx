@@ -79,7 +79,7 @@ const MultiTabSwitch: React.FC<MultiTabSwitchProps> = ({
                 disabled={isDisabled}
               >
                 <div
-                  className={`flex justify-center items-center gap-1 sm:gap-2 ${montserrat500.className} text-sm sm:text-xl`}
+                  className={`flex justify-center items-center gap-1 sm:gap-2 ${montserrat500.className} text-[12px] sm:text-xl`}
                 >
                   <p>{option.label}</p>
                   {isPremium && userCredits === 0 && <Lock size={12} className="sm:w-4 sm:h-4" />}
