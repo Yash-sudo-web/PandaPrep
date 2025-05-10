@@ -53,7 +53,7 @@ const AnimatedInput: React.FC<AnimatedInputProps> = ({
           type="text"
           value={formDataValue}
           onChange={(e) => handleInputChange(fieldKey, e.target.value)}
-          className={`w-full px-3 sm:px-4 py-1 sm:py-2 text-sm sm:text-base border border-gray-500 rounded-md transition-all ${className} focus:outline-none`}
+          className={`w-full px-3 sm:px-4 py-2 sm:py-2 text-sm sm:text-base border border-gray-500 rounded-md transition-all ${className} focus:outline-none`}
           style={{ transition: "all 0.3s ease" }}
           {...inputProps}
         />
