@@ -107,6 +107,7 @@ const NotesGenerate = () => {
     subject_name: "",
     user_instructions: "",
     note_type: "concise",
+    education_level: "beginner",
     include_examples: "yes",
     include_images: "no",
   });
@@ -426,19 +427,29 @@ const NotesGenerate = () => {
 
   const step1Component = () => {
     return (
-      <div className="px-2 sm:px-4 pt-1">
+      <div
+        className={`px-2 sm:px-4 pt-1 ${
+          isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
+        } transition-colors duration-300`}
+      >
         <div className="pb-3 sm:pb-5">
           <div
             className={`${montserrat500.className} text-2xl sm:text-4xl flex gap-2`}
           >
             <BookText
               size={24}
-              className={`text-[#B17457] mb-2 sm:w-10 sm:h-10`}
+              className={`text-[#B17457] mb-2 sm:w-10 sm:h-10 ${
+                isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]"
+              }`}
             />
             <p>Enter Your Subject</p>
           </div>
 
-          <p className={`${montserrat400.className} text-sm sm:text-lg`}>
+          <p
+            className={`${montserrat400.className} text-sm sm:text-lg ${
+              isDarkMode ? "text-[#A9A29A]" : ""
+            }`}
+          >
             Let&apos;s start by defining what you want to learn about
           </p>
         </div>
@@ -449,9 +460,6 @@ const NotesGenerate = () => {
             }`}
           >
             Subject Name{" "}
-            {validationErrors.subject_name && (
-              <span className="text-red-500">*</span>
-            )}
           </p>
           <div className="relative">
             <AnimatedInput
@@ -460,7 +468,11 @@ const NotesGenerate = () => {
               handleInputChange={handleInputChange}
               fieldKey="subject_name"
               placeholders={placeholders}
-              className={validationErrors.subject_name ? "border-red-500" : ""}
+              className={`${
+                validationErrors.subject_name ? "border-red-500" : ""
+              } ${
+                isDarkMode ? "bg-[#333230] border-[#444340] text-[#D0CCC4]" : ""
+              }`}
             />
             {validationErrors.subject_name && (
               <p className="text-red-500 text-sm mt-1">
@@ -482,21 +494,38 @@ const NotesGenerate = () => {
             ]}
             lgSize
             handleChange={handleInputChange}
-            field="note_type"
+            field="education_level"
             userCredits={userCredits}
           />
         </div>
-        <div className="mt-4 bg-[#F3EFE5] p-3 rounded-xl border-4 border-[#B17457]">
-          <div className="text-[#4A4947] flex gap-1 sm:gap-2 items-center">
-            <Lightbulb size={20} className={`sm:w-8 sm:h-8`} />
+        <div
+          className={`mt-4 ${
+            isDarkMode
+              ? "bg-[#252320] border-[#D29C7B]"
+              : "bg-[#F3EFE5] border-[#B17457]"
+          } p-3 rounded-xl border-4 transition-colors duration-300`}
+        >
+          <div
+            className={`${
+              isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
+            } flex gap-1 sm:gap-2 items-center`}
+          >
+            <Lightbulb
+              size={20}
+              className={`sm:w-8 sm:h-8 ${isDarkMode ? "text-[#D29C7B]" : ""}`}
+            />
             <p className={`${montserrat500.className} text-lg sm:text-2xl`}>
               Tip
             </p>
           </div>
-          <p className={`${montserrat400.className} text-[12px] sm:text-lg`}>
+          <p
+            className={`${montserrat400.className} text-[12px] sm:text-lg ${
+              isDarkMode ? "text-[#A9A29A]" : ""
+            }`}
+          >
             Be specific with your subject to get more targeted notes. For
-            example, “Introduction to Neural Networks” is better than just
-            “Machine Learning”.
+            example, &quot;Introduction to Neural Networks&quot; is better than
+            just &quot;Machine Learning&quot;.
           </p>
         </div>
       </div>
@@ -505,34 +534,40 @@ const NotesGenerate = () => {
 
   const step2Component = () => {
     return (
-      <div className="px-2 sm:px-4 pt-1">
+      <div
+        className={`px-2 sm:px-4 pt-1 ${
+          isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
+        } transition-colors duration-300`}
+      >
         <div className="pb-3 sm:pb-5">
           <div
             className={`${montserrat500.className} text-2xl sm:text-4xl flex gap-2 items-center`}
           >
             <FileText
               size={24}
-              className="text-[#B17457] sm:w-10 sm:h-10 mb-1"
+              className={`mb-1 sm:w-10 sm:h-10 ${
+                isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]"
+              }`}
             />
             <p>Content Details</p>
           </div>
 
-          <p className={`${montserrat400.className} text-sm sm:text-lg`}>
+          <p
+            className={`${montserrat400.className} text-sm sm:text-lg ${
+              isDarkMode ? "text-[#A9A29A]" : ""
+            }`}
+          >
             Provide more information about what you want to learn
           </p>
         </div>
 
         <div className="w-full space-y-4">
-          {/* Syllabus Input */}
           <p
             className={`${montserrat500.className} text-2xl ${
               validationErrors.syllabus ? "text-red-500" : ""
             }`}
           >
             Syllabus or Topic Outline{" "}
-            {validationErrors.syllabus && (
-              <span className="text-red-500">*</span>
-            )}
           </p>
 
           <div className="relative">
@@ -548,6 +583,8 @@ const NotesGenerate = () => {
               ]}
               className={`min-h-[100px] sm:min-h-[130px] ${
                 validationErrors.syllabus ? "border-red-500" : ""
+              } ${
+                isDarkMode ? "bg-[#333230] border-[#444340] text-[#D0CCC4]" : ""
               }`}
             />
             {validationErrors.syllabus && (
@@ -556,13 +593,14 @@ const NotesGenerate = () => {
               </p>
             )}
             <p
-              className={`${montserrat400.className} text-sm sm:text-base text-[#4A4947] mt-1`}
+              className={`${montserrat400.className} text-sm sm:text-base ${
+                isDarkMode ? "text-[#A9A29A]" : "text-[#4A4947]"
+              } mt-1`}
             >
               List the main topics you want to be covered in your notes
             </p>
           </div>
 
-          {/* User Instructions */}
           <p className={`${montserrat500.className} pt-5 text-2xl`}>
             User Instructions (Optional)
           </p>
@@ -577,10 +615,14 @@ const NotesGenerate = () => {
                 "E.g., Elaborate more on ER diagrams",
                 "E.g., Go in depth on the topic of Normalization",
               ]}
-              className="min-h-[80px] sm:min-h-[120px]"
+              className={`min-h-[80px] sm:min-h-[120px] ${
+                isDarkMode ? "bg-[#333230] border-[#444340] text-[#D0CCC4]" : ""
+              }`}
             />
             <p
-              className={`${montserrat400.className} text-sm sm:text-base text-[#4A4947] mt-1`}
+              className={`${montserrat400.className} text-sm sm:text-base ${
+                isDarkMode ? "text-[#A9A29A]" : "text-[#4A4947]"
+              } mt-1`}
             >
               Any specific requirements or focus areas for your notes
             </p>
@@ -592,18 +634,28 @@ const NotesGenerate = () => {
 
   const step3Component = () => {
     return (
-      <div className="px-2 sm:px-4 pt-1">
+      <div
+        className={`px-2 sm:px-4 pt-1 ${
+          isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
+        } transition-colors duration-300`}
+      >
         <div className="pb-3 sm:pb-5">
           <div
             className={`${montserrat500.className} text-2xl sm:text-4xl flex gap-2 items-center`}
           >
             <Settings
               size={24}
-              className="text-[#B17457] sm:w-10 sm:h-10 mb-1"
+              className={`mb-1 sm:w-10 sm:h-10 ${
+                isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]"
+              }`}
             />
             <p>Format Options</p>
           </div>
-          <p className={`${montserrat400.className} text-sm sm:text-lg`}>
+          <p
+            className={`${montserrat400.className} text-sm sm:text-lg ${
+              isDarkMode ? "text-[#A9A29A]" : ""
+            }`}
+          >
             Customize how your notes will be presented
           </p>
         </div>
@@ -613,8 +665,11 @@ const NotesGenerate = () => {
         </p>
 
         <div className="w-full space-y-4 pb-8">
-          {/* Format Tabs */}
-          <div className="bg-[#D9D9D9] rounded-xl p-1.5 flex justify-between items-center">
+          <div
+            className={`${
+              isDarkMode ? "bg-[#333230]" : "bg-[#D9D9D9]"
+            } rounded-xl p-1.5 flex justify-between items-center transition-colors duration-300`}
+          >
             {["concise", "qa", "detailed"].map((type) => {
               const isDisabled = type === "detailed" && userCredits <= 0;
               const isSelected = formData.note_type === type;
@@ -629,12 +684,20 @@ const NotesGenerate = () => {
                   className={`w-1/3 text-sm sm:text-lg font-medium py-1 sm:py-2 rounded-lg ${
                     montserrat400.className
                   }
-                    ${isSelected ? "bg-white shadow" : "text-gray-700"}
-                    ${
-                      isDisabled
-                        ? "opacity-70 cursor-not-allowed group relative"
-                        : "cursor-pointer"
-                    }`}
+                  ${
+                    isSelected
+                      ? isDarkMode
+                        ? "bg-[#444340] text-[#D0CCC4]"
+                        : "bg-white shadow text-gray-700"
+                      : isDarkMode
+                      ? "text-[#A9A29A]"
+                      : "text-gray-700"
+                  }
+                  ${
+                    isDisabled
+                      ? "opacity-70 cursor-not-allowed group relative"
+                      : "cursor-pointer"
+                  }`}
                 >
                   {type === "concise"
                     ? "Concise"
@@ -645,7 +708,10 @@ const NotesGenerate = () => {
                   {isDisabled && (
                     <>
                       <span className="absolute right-1 sm:right-3 top-1/2 -translate-y-1/2">
-                        <Lock size={17} />
+                        <Lock
+                          size={17}
+                          className={isDarkMode ? "text-[#A9A29A]" : ""}
+                        />
                       </span>
                       <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white p-2 rounded text-xs w-32 sm:w-40 opacity-0 group-hover:opacity-100 transition-opacity hidden group-hover:block pointer-events-none">
                         You have 0 credits left!
@@ -657,9 +723,12 @@ const NotesGenerate = () => {
             })}
           </div>
 
-          {/* Format Descriptions */}
           <div
-            className={`${montserrat500.className} flex justify-between text-xs sm:text-md text-center text-gray-600 px-1 pt-5`}
+            className={`${
+              montserrat500.className
+            } flex justify-between text-xs sm:text-md text-center ${
+              isDarkMode ? "text-[#A9A29A]" : "text-gray-600"
+            } px-1 pt-5`}
           >
             <div className="w-1/3">
               <p>Brief bullet points</p>
@@ -676,11 +745,23 @@ const NotesGenerate = () => {
           </div>
         </div>
 
-        {/* Include Examples */}
-        <div className="bg-[#D9D9D966] rounded-xl p-1.5 flex justify-between items-center mt-5 min-h-[50px] sm:h-[65px]">
+        <div
+          className={`${
+            isDarkMode ? "bg-[#333230]" : "bg-[#D9D9D966]"
+          } rounded-xl p-1.5 flex justify-between items-center mt-5 min-h-[50px] sm:h-[65px] transition-colors duration-300`}
+        >
           <div className="pl-2 sm:pl-3 flex items-center gap-2 sm:gap-3">
-            <div className="p-1 sm:p-2 bg-[#B1745780] rounded-lg">
-              <Lightbulb size={16} className="sm:w-6 sm:h-6" />
+            <div
+              className={`p-1 sm:p-2 ${
+                isDarkMode ? "bg-[#444340]" : "bg-[#B1745780]"
+              } rounded-lg transition-colors duration-300`}
+            >
+              <Lightbulb
+                size={16}
+                className={`sm:w-6 sm:h-6 ${
+                  isDarkMode ? "text-[#D29C7B]" : ""
+                }`}
+              />
             </div>
             <p className={`${montserrat500.className} text-base sm:text-xl`}>
               Include Examples
@@ -699,11 +780,23 @@ const NotesGenerate = () => {
           </div>
         </div>
 
-        {/* Include Visuals */}
-        <div className="bg-[#D9D9D966] rounded-xl p-1.5 flex justify-between items-center mt-5 min-h-[50px] sm:h-[65px]">
+        <div
+          className={`${
+            isDarkMode ? "bg-[#333230]" : "bg-[#D9D9D966]"
+          } rounded-xl p-1.5 flex justify-between items-center mt-5 min-h-[50px] sm:h-[65px] transition-colors duration-300`}
+        >
           <div className="pl-2 sm:pl-3 flex items-center gap-2 sm:gap-3">
-            <div className="p-1 sm:p-2 bg-[#B1745780] rounded-lg">
-              <ChartLine size={16} className="sm:w-6 sm:h-6" />
+            <div
+              className={`p-1 sm:p-2 ${
+                isDarkMode ? "bg-[#444340]" : "bg-[#B1745780]"
+              } rounded-lg transition-colors duration-300`}
+            >
+              <ChartLine
+                size={16}
+                className={`sm:w-6 sm:h-6 ${
+                  isDarkMode ? "text-[#D29C7B]" : ""
+                }`}
+              />
             </div>
             <p
               className={`${montserrat500.className} text-base sm:text-xl flex items-center`}
@@ -715,7 +808,7 @@ const NotesGenerate = () => {
                   height="18"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="currentColor"
+                  stroke={isDarkMode ? "#A9A29A" : "currentColor"}
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
@@ -749,22 +842,41 @@ const NotesGenerate = () => {
   const step4Component = () => {
     if (!hasAttemptedGeneration && !isGenerating) {
       return (
-        <div className="px-4 pt-1 h-full flex flex-col items-center justify-center">
+        <div
+          className={`px-4 pt-1 h-full flex flex-col items-center justify-center ${
+            isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
+          } transition-colors duration-300`}
+        >
           <div className="w-full max-w-md text-center">
             <div className="mb-8">
-              <div className="w-16 h-16 bg-gray-300 rounded-full flex items-center justify-center mx-auto mb-4">
-                <AlertCircle size={32} className="text-gray-600" />
+              <div
+                className={`w-16 h-16 ${
+                  isDarkMode ? "bg-[#333230]" : "bg-gray-300"
+                } rounded-full flex items-center justify-center mx-auto mb-4 transition-colors duration-300`}
+              >
+                <AlertCircle
+                  size={32}
+                  className={isDarkMode ? "text-[#A9A29A]" : "text-gray-600"}
+                />
               </div>
               <h2 className={`${montserrat500.className} text-2xl`}>
                 No Notes Generated Yet
               </h2>
-              <p className={`${montserrat400.className} text-sm mt-2`}>
+              <p
+                className={`${montserrat400.className} text-sm mt-2 ${
+                  isDarkMode ? "text-[#A9A29A]" : ""
+                }`}
+              >
                 Please complete steps 1-3 and generate your notes first.
               </p>
             </div>
             <button
               onClick={() => setCurrentStep(0)}
-              className="cursor-pointer px-4 py-2 border rounded-lg bg-[#B17457] text-white transition-colors flex items-center gap-2 hover:bg-[#8f523a] mx-auto"
+              className={`cursor-pointer px-4 py-2 border rounded-lg ${
+                isDarkMode
+                  ? "bg-[#D29C7B] hover:bg-[#b1876c]"
+                  : "bg-[#B17457] hover:bg-[#8f523a]"
+              } text-white transition-colors flex items-center gap-2 mx-auto`}
             >
               <span className="text-lg">Start from beginning</span>
               <ArrowRight size={20} />
@@ -785,20 +897,43 @@ const NotesGenerate = () => {
       : "";
 
     return (
-      <div>
-        <div className="pb-5 px-4 flex flex-col sm:flex-row sm:justify-between sm:items-center border-b border-gray-300 gap-4 sm:gap-0">
+      <div
+        className={`${
+          isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
+        } transition-colors duration-300`}
+      >
+        <div
+          className={`pb-5 px-4 flex flex-col sm:flex-row sm:justify-between sm:items-center border-b ${
+            isDarkMode ? "border-[#333230]" : "border-gray-300"
+          } gap-4 sm:gap-0 transition-colors duration-300`}
+        >
           <div
             className={`${montserrat500.className} text-2xl sm:text-4xl flex gap-2 items-center`}
           >
-            <BookOpen size={24} className="text-[#B17457] sm:w-10 sm:h-10" />
+            <BookOpen
+              size={24}
+              className={`sm:w-10 sm:h-10 ${
+                isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]"
+              }`}
+            />
             <p className="">Generate Notes</p>
           </div>
 
-          <div className={`flex ${!isGenerating ? "justify-end" : "justify-between sm:justify-end"} items-center gap-3 w-full sm:w-auto`}>
+          <div
+            className={`flex ${
+              !isGenerating ? "justify-end" : "justify-between sm:justify-end"
+            } items-center gap-3 w-full sm:w-auto`}
+          >
             {isGenerating && markdownContent && (
               <button
                 onClick={togglePreview}
-                className={`${montserrat500.className} h-10 flex items-center gap-1 px-3 cursor-pointer border border-[#B17457] rounded-md hover:bg-gray-100 transition text-sm`}
+                className={`${
+                  montserrat500.className
+                } h-10 flex items-center gap-1 px-3 cursor-pointer border ${
+                  isDarkMode
+                    ? "border-[#D29C7B] hover:bg-[#333230]"
+                    : "border-[#B17457] hover:bg-gray-100"
+                } rounded-md transition text-sm`}
               >
                 {showPreview ? "Hide Preview" : "Show Preview"}
               </button>
@@ -807,7 +942,11 @@ const NotesGenerate = () => {
               onClick={downloadGeneratedNotes}
               className={`${
                 montserrat500.className
-              } h-10 flex items-center gap-1 px-3 cursor-pointer border border-[#B17457] rounded-md hover:bg-gray-100 transition text-sm ${
+              } h-10 flex items-center gap-1 px-3 cursor-pointer border ${
+                isDarkMode
+                  ? "border-[#D29C7B] hover:bg-[#333230]"
+                  : "border-[#B17457] hover:bg-gray-100"
+              } rounded-md transition text-sm ${
                 !generationComplete || !downloadId
                   ? "opacity-50 cursor-not-allowed"
                   : ""
@@ -825,23 +964,42 @@ const NotesGenerate = () => {
             <div className="mb-8">
               <div
                 className={`sm:w-16 sm:h-16 w-12 h-12 ${
-                  isGenerating ? "bg-[#B1745780]" : "bg-[#B17457]"
-                } rounded-full flex items-center justify-center mx-auto mb-4 sm:mt-0 mt-8`}
+                  isGenerating
+                    ? isDarkMode
+                      ? "bg-[#444340]"
+                      : "bg-[#B1745780]"
+                    : isDarkMode
+                    ? "bg-[#B17457]"
+                    : "bg-[#B17457]"
+                } rounded-full flex items-center justify-center mx-auto mb-4 sm:mt-0 mt-8 transition-colors duration-300`}
               >
                 {isGenerating ? (
-                  <Loader2 size={24} className="text-white animate-spin sm:w-8 sm:h-8" />
+                  <Loader2
+                    size={24}
+                    className="text-white animate-spin sm:w-8 sm:h-8"
+                  />
                 ) : (
                   <Sparkles size={24} className="text-white sm:w-8 sm:h-8" />
                 )}
               </div>
               <h2 className={`${montserrat500.className} text-2xl`}>{title}</h2>
-              <p className={`${montserrat400.className} text-sm mt-2`}>
+              <p
+                className={`${montserrat400.className} text-sm mt-2 ${
+                  isDarkMode ? "text-[#A9A29A]" : ""
+                }`}
+              >
                 {message}
               </p>
             </div>
           </div>
 
-          <div className="w-full sm:w-[50rem] lg:w-[60rem] h-[18rem] sm:h-[22rem] rounded-2xl bg-gray-100 border border-gray-300 flex items-center justify-center relative overflow-hidden">
+          <div
+            className={`w-full sm:w-[50rem] lg:w-[60rem] h-[18rem] sm:h-[22rem] rounded-2xl ${
+              isDarkMode
+                ? "bg-[#252320] border-[#333230]"
+                : "bg-gray-100 border-gray-300"
+            } border flex items-center justify-center relative overflow-hidden transition-colors duration-300`}
+          >
             {isGenerating ? (
               showPreview && markdownContent ? (
                 <div className="w-full h-full">
@@ -852,9 +1010,21 @@ const NotesGenerate = () => {
                   />
                 </div>
               ) : (
-                <div className="text-center backdrop-blur-md bg-white/30 absolute inset-0 flex flex-col items-center justify-center">
-                  <Loader2 className="animate-spin h-10 w-10 text-gray-500 mx-auto mb-4" />
-                  <p className={`${montserrat500.className} text-gray-500`}>
+                <div
+                  className={`text-center backdrop-blur-md ${
+                    isDarkMode ? "bg-[#252320]/30" : "bg-white/30"
+                  } absolute inset-0 flex flex-col items-center justify-center transition-colors duration-300`}
+                >
+                  <Loader2
+                    className={`animate-spin h-10 w-10 ${
+                      isDarkMode ? "text-[#A9A29A]" : "text-gray-500"
+                    } mx-auto mb-4`}
+                  />
+                  <p
+                    className={`${montserrat500.className} ${
+                      isDarkMode ? "text-[#A9A29A]" : "text-gray-500"
+                    }`}
+                  >
                     Generating your notes...
                   </p>
                 </div>
@@ -867,7 +1037,11 @@ const NotesGenerate = () => {
               />
             ) : (
               <div className="text-center">
-                <p className={`${montserrat500.className} text-gray-500`}>
+                <p
+                  className={`${montserrat500.className} ${
+                    isDarkMode ? "text-[#A9A29A]" : "text-gray-500"
+                  }`}
+                >
                   No preview available
                 </p>
                 {error && <p className="text-red-500 mt-2">{error}</p>}
@@ -881,16 +1055,18 @@ const NotesGenerate = () => {
 
   return (
     <div>
-      <div className="bg-[#F3EFE5] pt-20">
+      <div className={`${isDarkMode ? "bg-[#1E1D1B]" : "bg-[#F3EFE5]"} pt-20`}>
         <Navbar />
         <div
-          className={`text-center text-3xl sm:text-5xl text-[#4A4947] pt-16 pb-10 ${montserrat600.className}`}
+          className={`text-center text-3xl sm:text-5xl ${
+            isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
+          } pt-16 pb-10 ${montserrat600.className}`}
         >
           Generate Notes
         </div>
         <div className="flex flex-col items-center px-4 sm:px-6 pb-6 sm:pb-10 w-full">
           <div className="relative h-6 mb-8 sm:mb-16 w-full sm:w-4/5">
-            <div className="absolute top-1/2 -translate-y-1/2 w-full h-3 sm:h-4 rounded-2xl bg-[#D9D9D9]" />
+            <div className={`absolute top-1/2 -translate-y-1/2 w-full h-3 sm:h-4 rounded-2xl ${isDarkMode ? "bg-[#364052]" : "bg-[#D9D9D9]"}`} />
             <div
               className="absolute top-1/2 -translate-y-1/2 h-3 sm:h-4 rounded-2xl bg-[#B17457] transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
@@ -916,35 +1092,56 @@ const NotesGenerate = () => {
                     onClick={() => handleStepClick(index)}
                   >
                     <div
-                      className={`w-8 h-8 sm:w-10 sm:h-10 ${
-                        isNotClickable ? "cursor-not-allowed" : "cursor-pointer"
-                      } mx-auto rounded-full flex items-center justify-center transition-all duration-300 ${
+                      className={`w-8 h-8 sm:w-10 sm:h-10 mx-auto rounded-full flex items-center justify-center transition-all duration-300
+                      ${isNotClickable ? "cursor-not-allowed" : "cursor-pointer"}
+                      ${
                         isErrorState
-                          ? "bg-red-100 border-2 border-red-500"
+                          ? isDarkMode
+                            ? "bg-red-500 border-2 border-red-500"
+                            : "bg-red-100 border-2 border-red-500"
                           : currentStep >= index
-                          ? "bg-white border-2 border-[#B17457] text-[#B17457]"
+                          ? isDarkMode
+                            ? "bg-[#B17457] border-2 border-[#B17457] text-white"
+                            : "bg-white border-2 border-[#B17457] text-[#B17457]"
+                          : isDarkMode
+                          ? "bg-gray-700 text-gray-400"
                           : "bg-[#D9D9D9] text-gray-600"
-                      }`}
+                      }
+                    `}
                     >
                       {stepsCompleted[index] && currentStep > index ? (
                         <CheckCircle
-                          color={isErrorState ? "#EF4444" : "#B17457"}
+                          color={
+                            isErrorState
+                              ? "#EF4444"
+                              : isDarkMode
+                              ? "#FFFFFF"
+                              : "#B17457"
+                          }
                           size={16}
                           className="sm:w-6 sm:h-6"
                         />
                       ) : isErrorState ? (
                         <AlertCircle
-                          color="#EF4444"
+                          color={isDarkMode ? "#FFFFFF" : "#EF4444"}
                           size={16}
                           className="sm:w-6 sm:h-6"
                         />
                       ) : (
                         React.cloneElement(stepIcons[index], {
-                          color: currentStep >= index ? "#B17457" : "#4A4947",
+                          color:
+                            currentStep >= index
+                              ? isDarkMode
+                                ? "#FFFFFF"
+                                : "#B17457"
+                              : isDarkMode
+                              ? "#A0A0A0"
+                              : "#4A4947",
                           size: window.innerWidth < 640 ? 16 : 20,
                         })
                       )}
                     </div>
+
                     <div
                       className={`text-xs sm:text-sm mt-1 ${
                         isErrorState ? "text-red-500 font-medium" : ""
@@ -958,7 +1155,7 @@ const NotesGenerate = () => {
             </div>
           </div>
 
-          <div className="bg-white shadow-md rounded-lg p-4 sm:p-6 min-h-[300px] w-full max-w-[65rem] mt-15 sm:mt-10">
+          <div className={`${isDarkMode ? "bg-[#252320]" : "bg-white" } shadow-md rounded-lg p-4 sm:p-6 min-h-[300px] w-full max-w-[65rem] mt-15 sm:mt-10`}>
             <div className="flex flex-col gap-4 h-auto sm:h-[40rem]">
               {currentStep === 0 && step1Component()}
               {currentStep === 1 && step2Component()}
@@ -1016,7 +1213,7 @@ const NotesGenerate = () => {
                   <div className="w-full flex justify-between sm:w-auto sm:justify-end gap-2 sm:gap-4">
                     <button
                       onClick={handleSubmit}
-                      className="cursor-pointer h-10 sm:h-10 px-3 sm:px-4 border rounded-lg bg-white text-black transition-colors flex items-center gap-2 border-[#B17457] hover:bg-gray-100 text-sm"
+                      className={`cursor-pointer h-10 sm:h-10 px-3 sm:px-4 border rounded-lg transition-colors flex items-center gap-2 text-sm ${isDarkMode ? "" : "bg-white text-black border-[#B17457] hover:bg-gray-100"}`}
                     >
                       <Redo size={16} className="w-4 h-4" />
                       <span>Regenerate</span>
@@ -1032,6 +1229,7 @@ const NotesGenerate = () => {
                           subject_name: "",
                           user_instructions: "",
                           note_type: "concise",
+                          education_level: "beginner",
                           include_examples: "yes",
                           include_images: "no",
                         });
