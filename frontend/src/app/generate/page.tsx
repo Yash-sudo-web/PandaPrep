@@ -752,13 +752,9 @@ const NotesGenerate = () => {
     return (
       <div>
         <div className="pb-5 px-4 flex justify-between items-center border-b border-gray-300">
-          <div className="flex items-center gap-2 text-4xl">
-            <BookOpen size={40} className="text-[#B17457]" />
-            <div
-              className={`text-center text-2xl sm:text-5xl text-[#4A4947]  ${montserrat600.className}`}
-            >
-              Generate Notes
-            </div>
+          <div className={`${montserrat500.className} text-2xl sm:text-4xl flex gap-2 items-center`}>
+            <BookOpen size={24} className="text-[#B17457] sm:w-10 sm:h-10" />
+            <p>Generate Notes</p>
           </div>
 
           <div className="flex items-center gap-3">
