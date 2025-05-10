@@ -5,6 +5,7 @@ import userHistoryRoutes from "./routes/user-history.route.js";
 import contactLogRoutes from "./routes/contact-logs.route.js";
 import healthCheckRoutes from "./routes/health-check.route.js";
 import razorpayPaymentRoutes from "./routes/razorpay.route.js";
+import chatWithNotesRoutes from "./routes/chatWithNotes.route.js";
 
 import cors from "cors"
 const app = express();
@@ -20,6 +21,7 @@ app.use("/api/pipeline", notesRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/userHistory", userHistoryRoutes);
 app.use("/api", contactLogRoutes);
+app.use("/api/chat", chatWithNotesRoutes);
 app.use("/api/payment", razorpayPaymentRoutes)
 app.use("/", healthCheckRoutes)
 
