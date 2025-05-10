@@ -77,3 +77,35 @@ export const deletePDFFromCloudinary = async (publicId) => {
         return null;
     }
 }
+
+/**
+ * Deletes PDF files older than 30 days from Cloudinary.
+ **/
+export const deleteOldPDFsFromCloudinary = async () => {
+    const THIRTY_DAYS_AGO = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    let nextCursor = null;
+
+    try {
+        do {
+            const result = await cloudinary.api.resources({
+                type: "upload",
+                resource_type: "raw",
+                prefix: "pdfs/",
+                max_results: 500,
+                next_cursor: nextCursor,
+            });
+
+            for (const file of result.resources) {
+                const createdAt = new Date(file.created_at);
+                if (createdAt < THIRTY_DAYS_AGO) {
+                    console.log(`Deleting old file: ${file.public_id} (Created at: ${createdAt})`);
+                    await deletePDFFromCloudinary(file.public_id);
+                }
+            }
+
+            nextCursor = result.next_cursor;
+        } while (nextCursor);
+    } catch (error) {
+        console.error("Error deleting old PDFs from Cloudinary:", error);
+    }
+};

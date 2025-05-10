@@ -9,6 +9,7 @@ class NotesGeneratorAgent {
     const { 
       note_type = 'detailed',
       include_examples = 'No',
+      education_level = 'intermediate', // Added education_level parameter
       user_instructions = ''
     } = params;
   
@@ -38,17 +39,48 @@ class NotesGeneratorAgent {
       length: 'Aim for medium length (300-500 words per major topic)',
       structure: '- Use ## for main topics\n- Use a mix of paragraphs and bullet points'
     };
+    
+    // Education level configuration - NEW
+    const educationLevelConfig = {
+      'beginner': {
+        complexity: 'Use simple language and explain all technical terms',
+        assumptions: 'Assume no prior knowledge of the subject',
+        explanations: 'Provide thorough explanations with everyday analogies',
+        vocabulary: 'Use basic vocabulary with clear definitions for all technical terms',
+        examples: 'Include very simple, concrete examples that relate to common experiences'
+      },
+      'intermediate': {
+        complexity: 'Use moderately technical language with some specialized terminology',
+        assumptions: 'Assume basic familiarity with the subject\'s fundamentals',
+        explanations: 'Provide clear explanations that build on foundational knowledge',
+        vocabulary: 'Use field-appropriate vocabulary with brief explanations for advanced terms',
+        examples: 'Include practical examples that demonstrate application of concepts'
+      },
+      'advanced': {
+        complexity: 'Use sophisticated, technical language appropriate for specialists',
+        assumptions: 'Assume strong prior knowledge of the subject and related areas',
+        explanations: 'Focus on nuanced understanding and critical analysis',
+        vocabulary: 'Use specialized terminology without explaining basic concepts',
+        examples: 'Include complex, nuanced examples that illustrate advanced applications'
+      }
+    }[education_level] || {
+      complexity: 'Use balanced language with appropriate technical terms',
+      assumptions: 'Assume moderate familiarity with the subject',
+      explanations: 'Provide clear explanations with appropriate depth',
+      vocabulary: 'Use contextually appropriate vocabulary with explanations as needed',
+      examples: 'Include helpful examples that clarify concepts'
+    };
   
     // Example handling
     let examplesConfig = '';
     if (include_examples === 'Yes') {
-      examplesConfig = 'Include relevant examples to illustrate concepts';
+      examplesConfig = `Include relevant examples to illustrate concepts. ${educationLevelConfig.examples}`;
     } else {
       examplesConfig = 'Focus on theoretical concepts without examples';
     }
   
     return `
-  You are an expert educational content generator creating high-quality study notes. Your task is to generate ${note_type} notes following these specifications:
+  You are an expert educational content generator creating high-quality study notes. Your task is to generate ${note_type} notes targeted at ${education_level}-level students, following these specifications:
   
   CONTENT GUIDELINES:
   1. ${noteTypeConfig.format}
@@ -57,9 +89,15 @@ class NotesGeneratorAgent {
   4. Highlight key definitions, theorems, and important concepts in **bold**
   5. Include relevant formulas with clear explanations where appropriate
   6. ${noteTypeConfig.length}
-  7. Use clear, academic language accessible to students
+  7. Use clear, academic language accessible to ${education_level}-level students
   8. Address user-specific instructions: "${user_instructions}"
   9. If note type is a QnA format, ensure ALL content is presented as questions and answers with theoretical explanations included within the answers
+  
+  EDUCATION LEVEL GUIDELINES (${education_level}):
+  1. Content complexity: ${educationLevelConfig.complexity}
+  2. Knowledge assumptions: ${educationLevelConfig.assumptions}
+  3. Explanation depth: ${educationLevelConfig.explanations}
+  4. Vocabulary usage: ${educationLevelConfig.vocabulary}
   
   FORMATTING INSTRUCTIONS:
   1. Use proper markdown formatting throughout
@@ -84,7 +122,7 @@ class NotesGeneratorAgent {
   4. Use tables for comparative information when useful
   5. Make sure headings follow a logical hierarchy
   
-  Your output should be comprehensive, well-structured study material that directly addresses the topics provided. Generate ONLY the final notes content, properly formatted in markdown.
+  Your output should be comprehensive, well-structured study material at the ${education_level} level that directly addresses the topics provided. Generate ONLY the final notes content, properly formatted in markdown.
   `;
   }
   

@@ -3,6 +3,8 @@ import http from 'http';
 import connectDB from './db/index.js';
 import { app } from './app.js';
 import { initializeWebSocketServer } from './websocket/server.js';
+import { deleteOldPDFsFromCloudinary } from './utils/cloudinary-file-upload.util.js';
+import cron from 'node-cron';
 
 dotenv.config({
   path: './.env',
@@ -13,6 +15,11 @@ const server = http.createServer(app);
 
 // Initialize WebSocket server with the HTTP server
 const wss = initializeWebSocketServer(server);
+
+cron.schedule("0 0 * * *", async () => {
+  console.log("Running scheduled cleanup of old PDFs...");
+  await deleteOldPDFsFromCloudinary();
+});
 
 connectDB()
   .then(() => {

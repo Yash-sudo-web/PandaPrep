@@ -1,31 +1,25 @@
 "use client";
 
 import Navbar from "@/components/global/navbar";
-import { ContainerScroll } from "@/components/global/container-scroll-animation";
-import { Button } from "@/components/ui/button";
-import { Funnel_Display } from "next/font/google";
-import { TextGenerateEffect } from "@/components/global/text-effect";
+
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
-
-import { Featuregrid } from "@/components/global/feature-grid";
+import { FeatureSection } from "@/components/global/features";
 import { useRouter } from "next/navigation";
+import {
+  montserrat600,
+  montserrat700,
+  montserrat800,
+  indieFlower,
+} from "@/lib/font-utils";
+import { ArrowUpRight } from "lucide-react";
 import { Faq } from "@/components/global/faq";
-
-const words = `Stressed about exams? Relax. Drop a topic, and let AI do its magic. `;
-
-const funnel_display = Funnel_Display({
-  subsets: ["latin"],
-  weight: "400",
-});
+import heroBulbLight from "../../public/assets/hero-bulb-light.png";
+import heroBulbDark from "../../public/assets/hero-bulb-dark.png";
+import Image from "next/image";
 
 export default function Home() {
-  const [openIndex, setOpenIndex] = useState<number | null>(null);
   const router = useRouter();
-  const toggleFAQ = (index: number) => {
-    setOpenIndex(openIndex === index ? null : index);
-  };
-
   const { theme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
@@ -35,89 +29,70 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="overflow-x-hidden bg-white dark:bg-neutral-950">
+    <main
+      className={`overflow-x-hidden ${isDarkMode ? "bg-[#1E1D1B]" : "bg-[#FAF7F0]"
+        } `}
+    >
       <Navbar />
-      <section
-        className={`h-[155vh] w-screen rounded-md relative flex flex-col items-center antialiased ${
-          isDarkMode ? "bg-neutral-950" : "bg-white"
-        }`}
-      >
-        <div
-          className={`absolute inset-0 h-full w-full items-center px-5 py-24 ${
-            isDarkMode
-              ? "bg-[radial-gradient(circle,rgba(19,78,43,1)_0%,rgba(10,10,10,1)_100%)]"
-              : "bg-[radial-gradient(circle,rgba(184,230,200,1)_0%,rgba(255,255,255,1)_100%)]"
-          }`}
-        ></div>
-
-        <div className="relative z-10 flex flex-col w-full max-w-6xl mx-auto px-4 mt-8 md:mt-[-50px]">
-          <ContainerScroll
-            titleComponent={
-              <div className="flex items-center flex-col mt-4 md:mt-[-50px]">
-                <Button
-                  onClick={() => router.push("/auth")}
-                  size={"lg"}
-                  className="cursor-pointer p-6 sm:p-8 mb-6 text-xl sm:text-2xl w-3/4 sm:w-fit border-t-2 rounded-full border-green-600 bg-green-200 hover:bg-white dark:hover:bg-neutral-800 group transition-all flex items-center justify-center gap-4 hover:shadow-xl hover:shadow-green-500 duration-500 z-20 relative"
-                >
-                  <span
-                    className={`bg-clip-text text-transparent bg-gradient-to-r from-green-700 to-green-600 text-center ${funnel_display.className}`}
-                  >
-                    Start For Free Today
-                  </span>
-                </Button>
-
-                <h1
-                  className={`text-4xl sm:text-5xl md:text-[5.2rem] bg-clip-text text-transparent bg-gradient-to-b ${
-                    isDarkMode
-                      ? "from-neutral-300 to-green-400"
-                      : "from-neutral-500 to-green-600"
-                  } font-sans font-semibold ${
-                    funnel_display.className
-                  } text-center`}
-                >
-                  From Chaos to Clarity
-                </h1>
-              </div>
-            }
+      <div className="flex flex-col items-center justify-center min-h-screen px-4 py-8 md:py-0">
+        <p
+          className={`${indieFlower.className} text-[2rem] md:text-[3.125rem] ${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
+            } text-center`}
+        >
+          From Chaos to Clarity
+        </p>
+        <p
+          className={`${montserrat600.className
+            } text-[1rem] md:text-[1.25rem] ${isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]"
+            } text-center px-2`}
+        >
+          Stop stressing over messy notes — Our AI helps you focus, learn
+          faster, <br className="hidden md:block" /> and retain more with every
+          study session.
+        </p>
+        <div className="w-full max-w-[45rem] px-4 mt-4">
+          <Image
+            src={isDarkMode ? heroBulbDark : heroBulbLight}
+            alt="hero-bulb"
+            className="w-full h-auto"
           />
         </div>
-      </section>
 
-      {/* <InfiniteMovingCards
-        className="ml-32 mt-96 pt-20"
-        items={clients}
-        direction="right"
-        speed="slow"
-      /> */}
-      <div></div>
-      <div
-        className={`border-none w-full flex justify-center pt-10 px-4 sm:px-8 md:px-16 lg:px-32 ${
-          isDarkMode ? "bg-neutral-950 text-white" : "bg-white text-black"
-        }`}
-      >
-        <section className="w-full flex justify-center text-center max-w-screen-xl">
-          <TextGenerateEffect
-            className={`mb-10 text-center ${
-              isDarkMode ? "text-white bg-neutral-950" : "text-black bg-white"
-            }`}
-            words={words}
-          />
-        </section>
+        <div className="flex flex-col items-center justify-center mt-6 md:mt-10">
+          <button
+            onClick={() => router.push("/auth")}
+            className={`
+    ${isDarkMode
+                ? "bg-[#1E1D1B] border border-[#D29C7B] text-[#FAF7F0] hover:bg-[#9e765e] hover:border-[#D29C7B] hover:text-[#1E1D1B]"
+                : "bg-[#FAF7F0] border-2 border-[#B17457] text-[#B17457] hover:bg-[#B17457] hover:border-[#B17457] hover:text-[#FAF7F0]"
+              }
+    font-bold text-[1rem] md:text-[1.25rem] rounded-[15px] w-[180px] md:w-[215px] h-[45px] md:h-[55px] 
+    shrink-0 transition duration-300 ease-in-out ${montserrat700.className
+              } flex items-center justify-center gap-1 cursor-pointer
+  `}
+          >
+            <p>Get Started</p>
+            <ArrowUpRight strokeWidth={3} />
+          </button>
+        </div>
       </div>
 
       <div
-        className={`w-full flex justify-center pt-5 px-4 sm:px-8 md:px-16 lg:px-32 ${
-          isDarkMode ? "bg-neutral-950 text-white" : "bg-white text-black"
-        }`}
+        className={`flex justify-center ${isDarkMode
+            ? "bg-neutral-950 text-white"
+            : "bg-[#FAF7F0] text-[#4A4947]"
+          }`}
       >
-        <section className="w-full max-w-screen-xl mb-10 ">
-          <Featuregrid />
+        <section className="w-full">
+          <FeatureSection />
         </section>
       </div>
 
-      <section>
-        <Faq />
-      </section>
+      <div className="flex justify-center px-4 sm:px-8 md:px-16 lg:px-32">
+        <section className="w-full">
+          <Faq />
+        </section>
+      </div>
     </main>
   );
 }

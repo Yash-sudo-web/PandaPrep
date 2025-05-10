@@ -4,30 +4,29 @@ import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { MenuIcon, X } from "lucide-react";
-import { Funnel_Display } from "next/font/google";
+import { Moon, Sun, ChevronDown, ChevronUp, Lock, Menu, X } from "lucide-react";
 import { getAuth, onAuthStateChanged, signOut, User } from "firebase/auth";
 import { useTheme } from "next-themes";
+import { motion, AnimatePresence } from "framer-motion";
 import app from "@/firebase/firebaseconfig";
-import { ThemeToggle } from "./mode-selector";
-import { ChevronDown, ChevronUp } from "lucide-react";
 import { deleteCookie } from "@/lib/utils";
-
-const funnel_display = Funnel_Display({
-  subsets: ["latin"],
-  weight: "400",
-});
+import { useRef } from "react";
+import { montserrat500, montserrat700 } from "@/lib/font-utils";
 
 const Navbar = () => {
   const auth = getAuth(app);
   const router = useRouter();
-  const { theme, resolvedTheme } = useTheme();
+
+  const { setTheme, resolvedTheme } = useTheme();
+  const isDark = resolvedTheme === "dark";
+  const [mounted, setMounted] = useState(false);
+
   const [user, setUser] = useState<User | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-
-  const isDark = resolvedTheme === "dark";
-
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dropdownRef, setDropdownRef] = useState<HTMLElement | null>(null);
+  const [servicesDropdown, setServicesDropdown] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -35,6 +34,38 @@ const Navbar = () => {
     });
     return () => unsubscribe();
   }, [auth]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef && dropdownRef.contains(event.target as Node)) {
+        return;
+      }
+      setServicesDropdown(false);
+      setDropdownOpen(false);
+    };
+
+    document.addEventListener("click", handleClickOutside);
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [dropdownRef]);
+
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsMobile(window.innerWidth < 1100);
+    };
+
+    checkScreenSize();
+
+    window.addEventListener('resize', checkScreenSize);
+    
+    // Cleanup
+    return () => window.removeEventListener('resize', checkScreenSize);
+  }, []);
+
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [router, isMobile]);
 
   const handleSignOut = async () => {
     try {
@@ -47,136 +78,439 @@ const Navbar = () => {
     }
   };
 
-  const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  return (
-    <header
-      className={`fixed right-0 left-0 top-0 py-4 px-4 backdrop-blur-lg z-[100] flex items-center border-b-[1px] justify-between ${
-        !mounted
-          ? "bg-transparent"
-          : isDark
-          ? "bg-neutral-950 border-neutral-950 text-white"
-          : "bg-white border-white text-green-700"
-      } ${funnel_display.className}`}
-    >
-      <aside className="flex items-center gap-2">
-        <Link href="/">
-          <p className="text-3xl md:text-5xl bg-gradient-to-tr from-green-600 to-green-700 bg-clip-text text-transparent dark:from-green-600 dark:to-green-700">
-            PandaPrep
-          </p>
-        </Link>
-      </aside>
+  // Close dropdown when mobile menu opens
+  useEffect(() => {
+    if (menuOpen) {
+      setDropdownOpen(false);
+      setServicesDropdown(false);
+    }
+  }, [menuOpen]);
 
-      <div className="relative">
-        <nav
-          className={`fixed md:relative left-0 top-0 w-full md:w-full h-screen md:h-auto bg-white dark:bg-neutral-950 md:bg-transparent md:dark:bg-transparent transition-transform duration-300 ease-in-out transform ${
-            mounted
-              ? menuOpen
-                ? "translate-x-0"
-                : "-translate-x-full"
-              : "hidden"
-          } md:translate-x-0 md:flex md:items-center md:gap-10 p-6 md:p-0 z-50 shadow-lg md:shadow-none`}
-        >
-          <button
-            onClick={() => setMenuOpen(false)}
-            className="absolute top-4 right-4 md:hidden"
-          >
-            <X size={24} className="text-gray-800 dark:text-gray-200" />
-          </button>
-          <ul className="flex flex-col md:flex-row items-center gap-6 md:gap-11 list-none">
-            <li>
-              <Link
-                href="/generate"
-                className="flex text-lg text-green-600 ml-3.5"
-              >
-                Notes Generation
-              </Link>
-            </li>
-            <li>
-              <Link href="/pricing" className="text-lg text-green-600 ">
-                Subscription
-              </Link>
-            </li>
-            <li>
-              <Link href="/history" className="text-lg text-green-600 mr-3.5">
-                History
-              </Link>
-            </li>
-          </ul>
-        </nav>
+  // Prevent body scroll when mobile menu is open
+  useEffect(() => {
+    if (menuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+    
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [menuOpen]);
+
+  return (
+    <div className={`py-[0.5rem] px-6 my-6 mx-2 lg:mx-10 rounded-[1.5rem] border flex justify-between items-center fixed top-0 left-0 right-0 z-50 ${isDark ? "bg-[#3A3935] border-[#504E49]" : "bg-[#D8D2C2] border-[#C9C3B3]"}`}>
+      <div
+        onClick={() => router.push("/")}
+        className={`${montserrat700.className} text-[1.5rem] lg:text-[2rem] cursor-pointer ${isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}
+      >
+        PandaPrepAI
       </div>
 
-      <aside className="flex items-center gap-4 relative">
-        <ThemeToggle />
-        {user ? (
+      <div className="hidden lg:flex gap-12 items-center relative mr-6">
+        <div className="relative">
+          <button
+            onClick={() => setServicesDropdown(!servicesDropdown)}
+            className={`${montserrat500.className} text-[1.5rem] flex items-center gap-2 cursor-pointer ${isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}
+          >
+            <span>Services</span>
+            {servicesDropdown ? (
+              <ChevronUp size={24} strokeWidth={2} className={isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"} />
+            ) : (
+              <ChevronDown size={24} strokeWidth={2} className={isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"} />
+            )}
+          </button>
+
+          <AnimatePresence>
+            {servicesDropdown && (
+              <motion.div
+                ref={setDropdownRef}
+                initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className={`absolute top-[3rem] right-0 backdrop-blur-md border rounded-2xl shadow-2xl py-3 w-72 z-50 flex flex-col overflow-hidden ${
+                  isDark 
+                    ? "bg-[#3A3935]/70 border-[#504E49]" 
+                    : "bg-white/70 border-[#C9C3B3]"
+                }`}
+              >
+                <Link
+                  href="/generate"
+                  className={`px-5 py-3 hover:bg-opacity-20 text-[1.25rem] transition-all duration-200 hover:pl-6 ${
+                    isDark 
+                      ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black" 
+                      : "text-[#4A4947] hover:bg-[#f0eee9]"
+                  }`}
+                >
+                  Notes Generator
+                </Link>
+                <div className={`border-t mx-4 ${isDark ? "border-[#504E49]" : "border-[#C9C3B3]"}`} />
+                <div
+                  className={`group relative flex justify-between px-5 py-3 text-[1.25rem] transition-all duration-200 hover:pl-6 cursor-not-allowed ${
+                    isDark 
+                      ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black" 
+                      : "text-[#4A4947] hover:bg-[#f0eee9]"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 blur-[0.5px]">
+                    Notes Summarizer
+                  </div>
+
+                  <div className="absolute invisible group-hover:visible bg-black/80 text-white text-sm rounded-md py-1 px-2 bottom-full mb-1 right-0 whitespace-nowrap">
+                    Coming soon
+                  </div>
+                </div>
+
+                <div className={`border-t mx-4 ${isDark ? "border-[#504E49]" : "border-[#C9C3B3]"}`} />
+                <div
+                  className={`group relative flex justify-between px-5 py-3 text-[1.25rem] transition-all duration-200 hover:pl-6 cursor-not-allowed ${
+                    isDark 
+                      ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black" 
+                      : "text-[#4A4947] hover:bg-[#f0eee9]"
+                  }`}
+                >
+                  <div className="flex items-center gap-2 blur-[0.5px]">
+                    Chat with PDFs
+                  </div>
+ 
+                  <div className="absolute invisible group-hover:visible bg-black/80 text-white text-sm rounded-md py-1 px-2 bottom-full mb-1 right-0 whitespace-nowrap">
+                    Coming soon
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <div
+          onClick={() => router.push("/pricing")}
+          className={`${montserrat500.className} text-[1.5rem] cursor-pointer ${isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}
+        >
+          Pricing
+        </div>
+
+        <div
+          onClick={() => router.push("/history")}
+          className={`${montserrat500.className} text-[1.5rem] cursor-pointer ${isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}
+        >
+          History
+        </div>
+
+        <div className="flex items-center gap-6">
+          {mounted && (
+            <button
+              onClick={() => (isDark ? setTheme("light") : setTheme("dark"))}
+              className={`flex items-center justify-center w-10 h-10 rounded-[0.625rem] border-2 relative overflow-hidden cursor-pointer ${
+                isDark ? "border-[#D0CCC4]" : "border-[#4A4947]"
+              }`}
+            >
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.div
+                  key={isDark ? "moon" : "sun"}
+                  initial={{ rotate: -90, opacity: 0 }}
+                  animate={{ rotate: 0, opacity: 1 }}
+                  exit={{ rotate: 90, opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="absolute"
+                >
+                  {isDark ? (
+                    <Moon size={20} color="#D0CCC4" strokeWidth={3} />
+                  ) : (
+                    <Sun size={20} color="#4A4947" strokeWidth={3} />
+                  )}
+                </motion.div>
+              </AnimatePresence>
+            </button>
+          )}
+          <div className="flex items-center gap-6">
+            {user ? (
+              <div className="relative">
+                <button
+                  onClick={() => setDropdownOpen(!dropdownOpen)}
+                  className="flex items-center gap-1 cursor-pointer"
+                >
+                  <Image
+                    src={user.photoURL || "/default-avatar.png"}
+                    alt="User Avatar"
+                    width={40}
+                    height={40}
+                    className="rounded-full"
+                  />
+                  {dropdownOpen ? (
+                    <ChevronUp size={16} className={isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"} />
+                  ) : (
+                    <ChevronDown size={16} className={isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"} />
+                  )}
+                </button>
+
+                <AnimatePresence>
+                  {dropdownOpen && (
+                    <motion.div
+                      ref={setDropdownRef}
+                      initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                      transition={{ duration: 0.2 }}
+                      className={`absolute top-[3.5rem] right-0 backdrop-blur-md border rounded-2xl shadow-2xl py-3 w-60 z-50 flex flex-col overflow-hidden ${
+                        isDark 
+                          ? "bg-[#3A3935]/70 border-[#504E49]" 
+                          : "bg-white/70 border-[#C9C3B3]"
+                      }`}
+                    >
+                      <Link
+                        href="/profile"
+                        className={`px-5 py-3 text-[1.25rem] transition-all duration-200 hover:pl-6 ${
+                          isDark 
+                            ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black" 
+                            : "text-[#4A4947] hover:bg-[#f0eee9]"
+                        }`}
+                      >
+                        Profile
+                      </Link>
+                      <div className={`border-t mx-4 ${isDark ? "border-[#504E49]" : "border-[#C9C3B3]"}`} />
+                      <button
+                        onClick={handleSignOut}
+                        className={`text-left w-full px-5 py-3 text-red-600 text-[1.25rem] cursor-pointer transition-all duration-200 hover:pl-6 ${
+                          isDark ? "hover:bg-red-900/30" : "hover:bg-red-50"
+                        }`}
+                      >
+                        Sign Out
+                      </button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            ) : (
+              <button
+                onClick={() => router.push("/auth")}
+                className={`border cursor-pointer rounded-xl px-4 py-2 text-[1.1rem] ${montserrat500.className} ${
+                  isDark ? "text-[#D0CCC4] border-[#D0CCC4]" : "text-[#4A4947] border-[#4A4947]"
+                }`}
+              >
+                Login / Sign In
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="flex lg:hidden items-center gap-3">
+        {mounted && (
+          <button
+            onClick={() => (isDark ? setTheme("light") : setTheme("dark"))}
+            className={`flex items-center justify-center w-9 h-9 rounded-[0.5rem] border-2 relative overflow-hidden cursor-pointer ${
+              isDark ? "border-[#D0CCC4]" : "border-[#4A4947]"
+            }`}
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.div
+                key={isDark ? "moon" : "sun"}
+                initial={{ rotate: -90, opacity: 0 }}
+                animate={{ rotate: 0, opacity: 1 }}
+                exit={{ rotate: 90, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="absolute"
+              >
+                {isDark ? (
+                  <Moon size={18} color="#D0CCC4" strokeWidth={3} />
+                ) : (
+                  <Sun size={18} color="#4A4947" strokeWidth={3} />
+                )}
+              </motion.div>
+            </AnimatePresence>
+          </button>
+        )}
+
+        {user && (
           <div className="relative">
             <button
               onClick={() => setDropdownOpen(!dropdownOpen)}
-              className="flex items-center gap-2"
+              className="flex items-center cursor-pointer"
             >
               <Image
                 src={user.photoURL || "/default-avatar.png"}
                 alt="User Avatar"
-                width={40}
-                height={40}
+                width={36}
+                height={36}
                 className="rounded-full"
               />
-              <span className="font-medium text-green-700 dark:text-green-600 hidden md:inline">
-                {user.displayName}
-              </span>
-              {dropdownOpen ? (
-                <ChevronUp size={16} />
-              ) : (
-                <ChevronDown size={16} />
-              )}
             </button>
 
-            {dropdownOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-neutral-950 shadow-lg rounded-lg p-2 border border-gray-300 dark:border-neutral-700">
-                <Link
-                  href="/profile"
-                  className="block w-full text-left px-4 py-2 text-green-700 dark:text-green-400 hover:bg-green-50 dark:hover:bg-neutral-900 rounded-lg"
+            <AnimatePresence>
+              {dropdownOpen && (
+                <motion.div
+                  ref={setDropdownRef}
+                  initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className={`absolute top-[3.5rem] right-0 backdrop-blur-md border rounded-2xl shadow-2xl py-3 w-60 z-50 flex flex-col overflow-hidden ${
+                    isDark 
+                      ? "bg-[#3A3935]/70 border-[#504E49]" 
+                      : "bg-white/70 border-[#C9C3B3]"
+                  }`}
                 >
-                  Profile
-                </Link>
-                <button
-                  onClick={handleSignOut}
-                  className="block w-full text-left px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-neutral-950 rounded-lg"
-                >
-                  Sign Out
-                </button>
-              </div>
-            )}
+                  <Link
+                    href="/profile"
+                    className={`px-5 py-3 text-[1.25rem] transition-all duration-200 hover:pl-6 ${
+                      isDark 
+                        ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black" 
+                        : "text-[#4A4947] hover:bg-[#f0eee9]"
+                    }`}
+                  >
+                    Profile
+                  </Link>
+                  <div className={`border-t mx-4 ${isDark ? "border-[#504E49]" : "border-[#C9C3B3]"}`} />
+                  <button
+                    onClick={handleSignOut}
+                    className={`text-left w-full px-5 py-3 text-red-600 text-[1.25rem] cursor-pointer transition-all duration-200 hover:pl-6 ${
+                      isDark ? "hover:bg-red-900/30" : "hover:bg-red-50"
+                    }`}
+                  >
+                    Sign Out
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-        ) : (
-          <button
-            onClick={() => router.push("/auth")}
-            className="relative inline-flex h-10 overflow-hidden rounded-full p-[2px] focus:outline-none focus:ring-2 focus:ring-slate-400 dark:focus:ring-gray-600 focus:ring-offset-2 focus:ring-offset-slate-50 dark:focus:ring-offset-gray-900"
-          >
-            <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#C8F7C5_0%,#2E7D32_50%,#C8F7C5_100%)]" />
-            {mounted && (
-              <span
-                className={`inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full 
-        px-3 py-1 text-sm font-medium backdrop-blur-3xl transition-colors
-        ${
-          isDark ? "bg-neutral-950 text-green-500" : "bg-white text-green-700"
-        }`}
-              >
-                Login / Sign In
-              </span>
-            )}
-          </button>
         )}
 
-        <button onClick={() => setMenuOpen(true)} className="md:hidden">
-          <MenuIcon className="text-green-600 dark:text-green-400" />
+        <button
+          onClick={() => setMenuOpen(!menuOpen)}
+          className={`flex items-center justify-center w-9 h-9 rounded-[0.5rem] border-2 relative overflow-hidden cursor-pointer ${
+            isDark ? "border-[#D0CCC4]" : "border-[#4A4947]"
+          }`}
+        >
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={menuOpen ? "close" : "menu"}
+              initial={{ rotate: -90, opacity: 0 }}
+              animate={{ rotate: 0, opacity: 1 }}
+              exit={{ rotate: 90, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="absolute"
+            >
+              {menuOpen ? (
+                <X size={18} className={isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"} strokeWidth={3} />
+              ) : (
+                <Menu size={18} className={isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"} strokeWidth={3} />
+              )}
+            </motion.div>
+          </AnimatePresence>
         </button>
-      </aside>
-    </header>
+      </div>
+
+      {/* Mobile Menu Overlay */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.3 }}
+            className={`fixed inset-0 top-[5.5rem] backdrop-blur-sm z-40 flex flex-col md:hidden ${
+              isDark ? "bg-[#3A3935]/95" : "bg-[#D8D2C2]/95"
+            }`}
+          >
+            <div className="flex flex-col items-center pt-8 pb-6 px-6 gap-6 overflow-y-auto">
+              <div className="w-full">
+                <button
+                  onClick={() => setServicesDropdown(!servicesDropdown)}
+                  className={`${montserrat500.className} w-full py-4 text-[1.5rem] flex items-center justify-between cursor-pointer border-b ${
+                    isDark 
+                      ? "text-[#D0CCC4] border-[#504E49]/50" 
+                      : "text-[#4A4947] border-[#4A4947]/30"
+                  }`}
+                >
+                  <span>Services</span>
+                  {servicesDropdown ? (
+                    <ChevronUp size={24} strokeWidth={2} className={isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"} />
+                  ) : (
+                    <ChevronDown size={24} strokeWidth={2} className={isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"} />
+                  )}
+                </button>
+                
+                <AnimatePresence>
+                  {servicesDropdown && (
+                    <motion.div
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="overflow-hidden"
+                    >
+                      <div className="flex flex-col pl-4 py-2">
+                        <Link
+                          href="/generate"
+                          className={`py-3 text-[1.25rem] ${isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}
+                        >
+                          Notes Generator
+                        </Link>
+                        <div className={`group relative flex justify-between py-3 text-[1.25rem] cursor-not-allowed ${
+                          isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"
+                        }`}>
+                          <div className="flex items-center gap-2 blur-[0.5px]">
+                            Notes Summarizer
+                          </div>
+                        </div>
+                        <div className={`group relative flex justify-between py-3 text-[1.25rem] cursor-not-allowed ${
+                          isDark ? "text-[#D0CCC4]" : "text-[#4A4947]"
+                        }`}>
+                          <div className="flex items-center gap-2 blur-[0.5px]">
+                            Chat with PDFs
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+              
+              <Link
+                href="/pricing"
+                className={`${montserrat500.className} w-full py-4 text-[1.5rem] border-b ${
+                  isDark 
+                    ? "text-[#D0CCC4] border-[#504E49]/50" 
+                    : "text-[#4A4947] border-[#4A4947]/30"
+                }`}
+              >
+                Pricing
+              </Link>
+              
+              <Link
+                href="/history"
+                className={`${montserrat500.className} w-full py-4 text-[1.5rem] border-b ${
+                  isDark 
+                    ? "text-[#D0CCC4] border-[#504E49]/50" 
+                    : "text-[#4A4947] border-[#4A4947]/30"
+                }`}
+              >
+                History
+              </Link>
+              
+              {!user && (
+                <Link 
+                  href="/auth"
+                  className={`mt-4 w-full text-center border-2 rounded-xl px-4 py-3 text-[1.2rem] ${
+                    isDark 
+                      ? "text-[#D0CCC4] border-[#D0CCC4]" 
+                      : "text-[#4A4947] border-[#4A4947]"
+                  }`}
+                >
+                  Login / Sign In
+                </Link>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 };
 
