@@ -8,15 +8,14 @@ import { Eye, Info, Search, Trash2 } from "lucide-react";
 import axios from "axios";
 import { BASE_URL } from "@/lib/constant";
 import { useTheme } from "next-themes";
-import { ThemeToggle } from "@/components/global/mode-selector";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { montserrat500, montserrat600 } from "@/lib/font-utils";
-
-
 
 const History = () => {
   const router = useRouter();
   const auth = getAuth();
+  const { theme, resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
 
   const [user, setUser] = useState<any>(null);
   const [idToken, setIdToken] = useState<string | null>(null);
@@ -31,15 +30,12 @@ const History = () => {
   const [selectedNotes, setSelectedNotes] = useState<number[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [allSelected, setAllSelected] = useState(false);
-  const { theme, resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
 
   const isDarkMode = mounted && resolvedTheme === "dark";
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -128,12 +124,13 @@ const History = () => {
   );
 
   if (!mounted) return <div className="min-h-screen" />;
+  
   return (
     <main
       className={cn(
         "min-h-screen flex flex-col items-center overflow-x-hidden",
         isDarkMode
-          ? "bg-neutral-950 text-white"
+          ? "bg-[#1E1D1B] text-[#FAF7F0]"
           : "bg-[#FAF7F0] text-[#4A4947]"
       )}
     >
@@ -146,7 +143,7 @@ const History = () => {
               className={cn(
                 "text-2xl sm:text-3xl md:text-5xl text-center",
                 montserrat600.className,
-                isDarkMode ? "text-[#B17457]" : "text-[#4A4947]"
+                isDarkMode ? "text-[#D29C7B]" : "text-[#4A4947]"
               )}
             >
               History
@@ -157,7 +154,7 @@ const History = () => {
               <Search
                 className={cn(
                   "h-5 w-5",
-                  isDarkMode ? "text-gray-300" : "text-[#4A4947]"
+                  isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
                 )}
               />
             </div>
@@ -170,7 +167,7 @@ const History = () => {
                 "w-full pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2",
                 montserrat500.className,
                 isDarkMode
-                  ? "border-white bg-neutral-800 bg-opacity-60 text-white placeholder:text-gray-300 focus:ring-[#B17457]"
+                  ? "border-[#D29C7B] bg-neutral-900 bg-opacity-60 text-[#FAF7F0] placeholder:text-[#D0CCC4] focus:ring-[#D29C7B]"
                   : "border-[#B17457] bg-white bg-opacity-80 text-[#4A4947] placeholder:text-gray-500 focus:ring-[#B17457]"
               )}
             />
@@ -181,7 +178,7 @@ const History = () => {
           <div
             className={cn(
               "text-sm mb-4 flex items-center gap-2 w-full",
-              isDarkMode ? "text-gray-300" : "text-[#4A4947]"
+              isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
             )}
           >
             {selectedNotes.length > 0 ? (
@@ -203,13 +200,13 @@ const History = () => {
                 </p>
                 <div className="relative inline-block group">
                   <Info
-                    className={cn("h-4 w-4 cursor-help", isDarkMode ? "text-gray-300" : "text-[#4A4947]")}
+                    className={cn("h-4 w-4 cursor-help", isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]")}
                     aria-label="Information about note retention"
                   />
                   <div className={cn(
                     "absolute z-10 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-2 w-56 rounded shadow-lg text-xs",
                     montserrat500.className,
-                    isDarkMode ? "bg-gray-800 text-gray-200 border border-gray-700" : "bg-white text-[#4A4947] border border-[#B17457]"
+                    isDarkMode ? "bg-neutral-800 text-[#D0CCC4] border border-[#D29C7B]" : "bg-white text-[#4A4947] border border-[#B17457]"
                   )}>
                    Notes older than 30 days will be deleted automatically.
                   </div>
@@ -225,7 +222,7 @@ const History = () => {
               className={cn(
                 "h-5 w-5 focus:ring-2 cursor-pointer",
                 isDarkMode
-                  ? "text-[#B17457] focus:ring-[#B17457]"
+                  ? "text-[#D29C7B] focus:ring-[#D29C7B]"
                   : "text-[#B17457] focus:ring-[#B17457]"
               )}
               checked={allSelected}
@@ -237,7 +234,7 @@ const History = () => {
               className={cn(
                 "cursor-pointer",
                 montserrat500.className,
-                isDarkMode ? "text-gray-300" : "text-[#4A4947]"
+                isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
               )}
             >
               {!allSelected ? `Select All` : `Deselect All`}
@@ -252,7 +249,7 @@ const History = () => {
                   className={cn(
                     "flex flex-col sm:flex-row items-start sm:items-center justify-between p-3 sm:p-4 border rounded-lg shadow-md transition-colors",
                     isDarkMode
-                      ? "border-gray-700 bg-neutral-900 hover:bg-gray-800"
+                      ? "border-[#D29C7B] bg-neutral-900 hover:bg-neutral-800"
                       : "border-[#B17457] bg-white hover:bg-gray-50"
                   )}
                 >
@@ -261,7 +258,7 @@ const History = () => {
                       className={cn(
                         "text-base sm:text-lg font-semibold",
                         montserrat600.className,
-                        isDarkMode ? "text-white" : "text-[#4A4947]"
+                        isDarkMode ? "text-[#FAF7F0]" : "text-[#4A4947]"
                       )}
                     >
                       {note.subject_name}
@@ -270,7 +267,7 @@ const History = () => {
                       className={cn(
                         "text-xs sm:text-sm mt-1",
                         montserrat500.className,
-                        isDarkMode ? "text-gray-400" : "text-gray-600"
+                        isDarkMode ? "text-[#D0CCC4]" : "text-gray-600"
                       )}
                     >
                       {new Date(note.createdAt).toLocaleString()}
@@ -284,7 +281,7 @@ const History = () => {
                     >
                       <Eye
                         className="cursor-pointer"
-                        color={isDarkMode ? "#9ca3af" : "#676E7B"}
+                        color={isDarkMode ? "#D0CCC4" : "#676E7B"}
                       />
                     </button>
                     <input
@@ -292,7 +289,7 @@ const History = () => {
                       className={cn(
                         "h-5 w-5 focus:ring-2 cursor-pointer",
                         isDarkMode
-                          ? "text-[#B17457] focus:ring-[#B17457]"
+                          ? "text-[#D29C7B] focus:ring-[#D29C7B]"
                           : "text-[#B17457] focus:ring-[#B17457]"
                       )}
                       checked={selectedNotes.includes(note.id)}
@@ -306,7 +303,7 @@ const History = () => {
                 className={cn(
                   "text-center py-8",
                   montserrat500.className,
-                  isDarkMode ? "text-gray-400" : "text-gray-600"
+                  isDarkMode ? "text-[#D0CCC4]" : "text-gray-600"
                 )}
               >
                 No notes found matching your search.

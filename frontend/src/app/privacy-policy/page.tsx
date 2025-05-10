@@ -20,7 +20,7 @@ const PrivacyPolicy = () => {
     setMounted(true);
   }, []);
 
-  const isDarkMode = mounted && resolvedTheme === "dark";
+  const isDark = mounted && resolvedTheme === "dark";
 
   return (
     <>
@@ -30,15 +30,15 @@ const PrivacyPolicy = () => {
         className={cn(
           "px-4 py-10 sm:px-10 lg:px-32 transition-colors duration-300 h-full",
           funnel_display.className,
-          isDarkMode ? "bg-black text-white" : "bg-[#FAF7F0] text-[#4A4947]"
+          isDark ? "bg-[#1E1D1B] text-white" : "bg-[#FAF7F0] text-[#4A4947]"
         )}
       >
         <section className="max-w-7xl mx-auto mb-20">
-          <h1 className="text-center mt-16 mb-10 text-4xl text-[#4A4947]">
+          <h1 className={`text-center mt-16 mb-10 text-4xl ${isDark?"text-[#B17457]":"text-[#4A4947]"}`}>
             Privacy Policy
           </h1>
 
-          <p className="text-sm text-center text-gray-500 mb-10">
+          <p className={`text-sm text-center mb-10 ${isDark? "text-[#D0CCC4]":"text-gray-500 "}`}>
             Last updated on Apr 14 2025
           </p>
 
