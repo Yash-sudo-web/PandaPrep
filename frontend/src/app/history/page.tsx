@@ -87,7 +87,7 @@ const History = () => {
 
   const handleDeleteNote = async (ids: number[]) => {
     try {
-      const email = getCookie("email");
+      const email = user?.email || getCookie("email");
       if (!idToken || !email) return;
       await axios.post(
         `${BASE_URL}/userHistory/notes/delete`,
