@@ -76,7 +76,7 @@ export function FeatureSection() {
     }
   };
 
-  const showDecorativePandas = windowWidth >= 1485;
+  const showDecorativePandas = windowWidth >= 1450;
 
   return (
     <div
@@ -177,12 +177,12 @@ export function FeatureSection() {
           </div>
 
           {showDecorativePandas && (
-            <div className="absolute right-[-80px] bottom-[-10px] z-10">
+            <div className="absolute right-[-100px] bottom-[-40px] z-10">
               <Image
                 src={isDarkMode ? carouselPanda2Dark : carouselPanda2Light}
                 alt="Decorative panda illustration"
-                width={137}
-                height={137}
+                width={175}
+                height={175}
               />
             </div>
           )}
