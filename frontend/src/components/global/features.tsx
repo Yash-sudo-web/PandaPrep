@@ -80,19 +80,15 @@ export function FeatureSection() {
 
   return (
     <div
-      className={`w-full pb-16 ${
-        isDarkMode ? "bg-[#1E1D1B]" : "bg-[#FAF7F0]"
-      } overflow-x-hidden px-4 sm:px-8 md:px-12 lg:px-20 ${
-        montserrat600.className
-      }`}
+      className={`w-full pb-4 sm:pb-8 md:pb-16 ${isDarkMode ? "bg-[#1E1D1B]" : "bg-[#FAF7F0]"
+        } overflow-x-hidden px-1 xs:px-2 sm:px-8 md:px-12 lg:px-20 ${montserrat600.className
+        }`}
     >
       <div className="flex flex-col items-center justify-center">
         <h2
-          className={`${
-            montserrat700.className
-          } text-2xl sm:text-3xl md:text-4xl lg:text-5xl ${
-            isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
-          }  mb-6 md:mb-12 text-center`}
+          className={`${montserrat700.className
+            } text-lg xs:text-xl sm:text-3xl md:text-4xl lg:text-5xl ${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
+            } mb-2 sm:mb-4 md:mb-12 text-center`}
         >
           Your Ultimate Learning Toolkit
         </h2>
@@ -115,39 +111,36 @@ export function FeatureSection() {
               style={{ transform: `translateX(-${currentSlide * 100}%)` }}
             >
               {cards.map((card, index) => (
-                <div key={index} className="min-w-full px-1 sm:px-2">
-                  <div className="border border-[#B17457] rounded-xl flex flex-col md:flex-row w-full h-auto md:h-[400px] p-3 sm:p-4 md:p-0">
-                    <div className="flex items-center justify-center w-full md:w-2/5 mb-4 md:mb-0">
+                <div key={index} className="min-w-full px-0 xs:px-1 sm:px-2">
+                  <div className="border border-[#B17457] rounded-lg xs:rounded-xl flex flex-col md:flex-row w-full h-auto md:h-[400px] p-1 xs:p-2 sm:p-4 md:p-0">
+                    <div className="flex items-center justify-center w-full md:w-2/5 mb-1 xs:mb-2 sm:mb-4 md:mb-0">
                       <Image
                         src={card.image}
                         alt={`Feature illustration for ${card.title}`}
-                        className="h-[150px] w-[150px] sm:h-[180px] sm:w-[180px] md:h-[250px] md:w-[250px] lg:h-[300px] lg:w-[300px] rounded-3xl"
+                        className="h-[80px] w-[80px] xs:h-[100px] xs:w-[100px] sm:h-[150px] sm:w-[150px] md:h-[250px] md:w-[250px] lg:h-[300px] lg:w-[300px] rounded-2xl xs:rounded-3xl"
                       />
                     </div>
-                    <div className="text-center flex flex-col items-center justify-center w-full md:w-3/5 px-2 md:px-4 lg:px-6">
+                    <div className="text-center flex flex-col items-center justify-center w-full md:w-3/5 px-0.5 xs:px-1 sm:px-2 md:px-4 lg:px-6">
                       <div
-                        className={`${montserrat600.className} ${
-                          isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
-                        } text-xl sm:text-2xl md:text-3xl lg:text-4xl font-semibold`}
+                        className={`${montserrat600.className} ${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
+                          } text-base xs:text-lg sm:text-2xl md:text-3xl lg:text-4xl font-semibold`}
                       >
                         {card.title}
                       </div>
                       <div
-                        className={`${montserrat600.className} ${
-                          isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]"
-                        } text-xs sm:text-sm md:text-base lg:text-lg pt-2`}
+                        className={`${montserrat600.className} ${isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]"
+                          } text-xs sm:text-sm md:text-base lg:text-lg pt-0.5 xs:pt-1 sm:pt-2`}
                       >
                         {card.description}
                       </div>
                       {index === 0 ? (
                         <button
                           onClick={() => router.push("/generate")}
-                          className={`mt-3 md:mt-4 px-3 md:px-4 py-1 md:py-2 rounded-lg text-sm md:text-base cursor-pointer transition
-                          ${
-                            isDarkMode
+                          className={`mt-1 xs:mt-2 sm:mt-3 md:mt-4 px-2 xs:px-3 md:px-4 py-0.5 xs:py-1 md:py-2 rounded text-xs xs:text-sm md:text-base cursor-pointer transition
+                          ${isDarkMode
                               ? "bg-[#B17457] hover:bg-[#a76348] text-white"
                               : "bg-[#B17457] hover:bg-[#a76348] text-white"
-                          }
+                            }
                         `}
                         >
                           Try Now
@@ -155,9 +148,9 @@ export function FeatureSection() {
                       ) : (
                         <button
                           disabled
-                          className={`mt-3 md:mt-4 px-3 md:px-4 py-1 md:py-2 rounded-lg text-sm md:text-base cursor-not-allowed
-      ${isDarkMode ? "bg-gray-600 text-gray-300" : "bg-gray-400 text-white"}
-    `}
+                          className={`mt-1 xs:mt-2 sm:mt-3 md:mt-4 px-2 xs:px-3 md:px-4 py-0.5 xs:py-1 md:py-2 rounded text-xs xs:text-sm md:text-base cursor-not-allowed
+                            ${isDarkMode ? "bg-gray-600 text-gray-300" : "bg-gray-400 text-white"}
+                          `}
                         >
                           Coming Soon
                         </button>
@@ -169,16 +162,15 @@ export function FeatureSection() {
             </div>
           </div>
 
-          <div className="flex justify-center mt-4 md:mt-8 space-x-2">
+          <div className="flex justify-center mt-1 xs:mt-2 sm:mt-4 md:mt-8 space-x-1 xs:space-x-2">
             {cards.map((_, index) => (
               <button
                 key={index}
                 onClick={() => handleManualSlideChange(index)}
-                className={`w-2 md:w-3 h-2 md:h-3 rounded-full transition-all ${
-                  currentSlide === index
-                    ? "bg-[#B17457] w-4 md:w-6"
+                className={`w-1 xs:w-1.5 sm:w-2 md:w-3 h-1 xs:h-1.5 sm:h-2 md:h-3 rounded-full transition-all ${currentSlide === index
+                    ? "bg-[#B17457] w-2 xs:w-3 sm:w-4 md:w-6"
                     : "bg-gray-300"
-                }`}
+                  }`}
                 aria-label={`Go to slide ${index + 1}`}
               />
             ))}
