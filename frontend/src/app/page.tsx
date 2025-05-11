@@ -88,7 +88,7 @@ export default function Home() {
         </section>
       </div>
 
-      <div className="flex justify-center px-4 sm:px-8 md:px-16 lg:px-32">
+      <div className="flex justify-center px-4 pb-24 sm:px-8 md:px-16 lg:px-32">
         <section className="w-full">
           <Faq />
         </section>
