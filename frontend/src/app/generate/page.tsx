@@ -1030,11 +1030,51 @@ const NotesGenerate = () => {
                 </div>
               )
             ) : generationComplete && markdownContent ? (
-              <iframe
-                src={`${downloadId}#zoom=80&toolbar=0&navpanes=0`}
-                className="w-full h-full border-0 rounded-lg"
-                title="PDF Viewer"
-              />
+              <div className="w-full h-full relative">
+                <iframe
+                  src={`${
+                    downloadId
+                      ? `${downloadId}#zoom=80&toolbar=0&navpanes=0`
+                      : null
+                  }`}
+                  className="w-full h-full border-0 rounded-lg"
+                  title="PDF Viewer"
+                />
+                {downloadId && (
+                  <button
+                    onClick={() => {
+                      if (downloadId) {
+                        window.open(downloadId, "_blank");
+                      }
+                    }}
+                    className={`absolute top-2 right-4 cursor-pointer sm:right-8 p-2 rounded-full ${
+                      isDarkMode
+                        ? "bg-[#333230] hover:bg-[#444340]"
+                        : "bg-white hover:bg-gray-100"
+                    } shadow-md transition-colors z-10 flex items-center justify-center`}
+                    aria-label="Open PDF in new tab"
+                    title="Open in new tab"
+                  >
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      className={
+                        isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
+                      }
+                    >
+                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+                      <polyline points="15 3 21 3 21 9" />
+                      <line x1="10" y1="14" x2="21" y2="3" />
+                    </svg>
+                  </button>
+                )}
+              </div>
             ) : (
               <div className="text-center">
                 <p
@@ -1066,7 +1106,11 @@ const NotesGenerate = () => {
         </div>
         <div className="flex flex-col items-center px-4 sm:px-6 pb-6 sm:pb-10 w-full">
           <div className="relative h-6 mb-8 sm:mb-16 w-full sm:w-4/5">
-            <div className={`absolute top-1/2 -translate-y-1/2 w-full h-3 sm:h-4 rounded-2xl ${isDarkMode ? "bg-[#364052]" : "bg-[#D9D9D9]"}`} />
+            <div
+              className={`absolute top-1/2 -translate-y-1/2 w-full h-3 sm:h-4 rounded-2xl ${
+                isDarkMode ? "bg-[#364052]" : "bg-[#D9D9D9]"
+              }`}
+            />
             <div
               className="absolute top-1/2 -translate-y-1/2 h-3 sm:h-4 rounded-2xl bg-[#B17457] transition-all duration-300"
               style={{ width: `${progressPercent}%` }}
@@ -1093,7 +1137,9 @@ const NotesGenerate = () => {
                   >
                     <div
                       className={`w-8 h-8 sm:w-10 sm:h-10 mx-auto rounded-full flex items-center justify-center transition-all duration-300
-                      ${isNotClickable ? "cursor-not-allowed" : "cursor-pointer"}
+                      ${
+                        isNotClickable ? "cursor-not-allowed" : "cursor-pointer"
+                      }
                       ${
                         isErrorState
                           ? isDarkMode
@@ -1155,7 +1201,11 @@ const NotesGenerate = () => {
             </div>
           </div>
 
-          <div className={`${isDarkMode ? "bg-[#252320]" : "bg-white" } shadow-md rounded-lg p-4 sm:p-6 min-h-[300px] w-full max-w-[65rem] mt-15 sm:mt-10`}>
+          <div
+            className={`${
+              isDarkMode ? "bg-[#252320]" : "bg-white"
+            } shadow-md rounded-lg p-4 sm:p-6 min-h-[300px] w-full max-w-[65rem] mt-15 sm:mt-10`}
+          >
             <div className="flex flex-col gap-4 h-auto sm:h-[40rem]">
               {currentStep === 0 && step1Component()}
               {currentStep === 1 && step2Component()}
@@ -1213,7 +1263,11 @@ const NotesGenerate = () => {
                   <div className="w-full flex justify-between sm:w-auto sm:justify-end gap-2 sm:gap-4">
                     <button
                       onClick={handleSubmit}
-                      className={`cursor-pointer h-10 sm:h-10 px-3 sm:px-4 border rounded-lg transition-colors flex items-center gap-2 text-sm ${isDarkMode ? "" : "bg-white text-black border-[#B17457] hover:bg-gray-100"}`}
+                      className={`cursor-pointer h-10 sm:h-10 px-3 sm:px-4 border rounded-lg transition-colors flex items-center gap-2 text-sm ${
+                        isDarkMode
+                          ? ""
+                          : "bg-white text-black border-[#B17457] hover:bg-gray-100"
+                      }`}
                     >
                       <Redo size={16} className="w-4 h-4" />
                       <span>Regenerate</span>
