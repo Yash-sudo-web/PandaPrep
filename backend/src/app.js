@@ -11,8 +11,7 @@ import cors from "cors"
 const app = express();
 
 app.use(cors({
-    origin: ["https://pandaprepai.tech", "http://localhost:3000"],
-    credentials: true
+  origin: "*"
 }));
 
 app.use(express.json({limit: "16kb"}));
