@@ -20,6 +20,9 @@ const config = {
     },
     extend: {
       colors: {
+        cream: '#FAF7F0',
+        charcoal: '#4A4947',
+        terracotta: '#B17457',
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',

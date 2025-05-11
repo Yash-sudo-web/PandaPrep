@@ -2,7 +2,7 @@ export const clients = [...new Array(10)].map((client, index) => ({
   href: `/${index + 1}.png`,
 }))
 
-export const BASE_URL = `${process.env.NEXT_PUBLIC_PROD_BASE_URL}api` || "http://localhost:8000/api";
+export const BASE_URL = "http://localhost:8000/api";
 
 export const faqs = [
   {
@@ -61,16 +61,16 @@ export const PLANS = [
   {
     title: "Scale",
     description: "Ideal for universities, schools, and institutions that need bulk access to our resources at the best value.",
-    price: "₹1500",
+    price: "Custom",
     cost: 1500,
     credits: 450,
     features: [
-      "Credits - 450",
+      "Get in touch for a custom plan",
+      "Credits - Custom",
       "Access to all features",
-      "₹3.34/credit",
       "1 credit per detailed pdf",
-      "50% cheaper per credit than Starter plan"
     ],
-    limitations: [],
+    limitations: [
+    ],
   },
 ];

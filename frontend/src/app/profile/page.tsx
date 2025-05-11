@@ -2,9 +2,9 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useTheme } from "next-themes";
-import { Funnel_Display } from "next/font/google";
 import { Country } from "country-state-city";
 import Navbar from "@/components/global/navbar";
+import { montserrat500 } from "@/lib/font-utils";
 import { ChevronDown, Save, Loader2, CreditCard } from "lucide-react";
 import {
   getAuth,
@@ -19,10 +19,6 @@ import { BASE_URL } from "@/lib/constant";
 import Image from "next/image";
 import { toast } from "sonner";
 
-const funnel_display = Funnel_Display({
-  subsets: ["latin"],
-  weight: "400",
-});
 
 interface CountryOption {
   label: string;
@@ -132,7 +128,7 @@ const Profile = () => {
           Authorization: `Bearer ${idToken}`,
         },
       });
-      console.log(response.data);
+
       setUser(response.data);
       setFormData({
         fullName: response.data.fullName || "",
@@ -224,7 +220,7 @@ const Profile = () => {
         className={`min-h-screen flex items-center justify-center ${isDarkMode
           ? "bg-neutral-950 text-green-600"
           : "bg-white text-gray-900"
-          } ${funnel_display.className}`}
+          } ${montserrat500.className}`}
       >
         <Loader2 className="w-8 h-8 animate-spin" />
         <span className="ml-2">Loading profile...</span>
@@ -233,12 +229,12 @@ const Profile = () => {
   }
 
   return (
-    <div
-      className={`min-h-screen ${isDarkMode ? "text-green-600" : "text-gray-900"
-        } ${funnel_display.className} ${isDarkMode
-          ? "bg-gradient-to-r from-neutral-950 to-green-950 text-white"
-          : "bg-[radial-gradient(circle_at_center,_#d1fae5,_white)] text-gray-800"
-        } pb-20`}
+    <main
+      className={`min-h-screen ${montserrat500.className} ${
+        isDarkMode
+          ? "bg-[#1E1D1B] text-[#D0CCC4]"
+          : "bg-[#FAF7F0] text-[#4A4947]"
+      } transition-colors duration-300 pb-20`}
     >
       <Navbar />
 
@@ -246,13 +242,15 @@ const Profile = () => {
         <div className="relative">
           <div className={`h-40 sm:h-56 rounded-lg overflow-hidden`}></div>
 
-          <div className={`rounded-lg ${isDarkMode ? "bg-neutral-900" : "bg-gray-50"
-            } border ${isDarkMode ? "border-neutral-800" : "border-gray-200"
-            } p-4 flex flex-col sm:flex-row items-center justify-between absolute bottom-0 left-0 transform translate-y-1/2 sm:translate-y-1/3 px-4 sm:px-8 w-full`}>
+          <div
+            className={`rounded-lg ${
+              isDarkMode ? "bg-[#252320]" : "bg-[#FAF7F0]"
+            } border ${
+              isDarkMode ? "border-[#333230]" : "border-[#B17457]"
+            } p-4 flex flex-col sm:flex-row items-center justify-between absolute bottom-0 left-0 transform translate-y-1/2 sm:translate-y-1/3 px-4 sm:px-8 w-full transition-colors duration-300 shadow-lg`}
+          >
             <div className="relative">
-              <div
-                className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden `}
-              >
+              <div className={`w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden`}>
                 {user?.photoURL ? (
                   <Image
                     src={user.photoURL}
@@ -263,8 +261,9 @@ const Profile = () => {
                   />
                 ) : (
                   <div
-                    className={`w-full h-full flex items-center justify-center align-items:center text-2xl font-bold ${isDarkMode ? "bg-green-800" : "bg-green-600"
-                      } text-white`}
+                    className={`w-full h-full flex items-center justify-center text-2xl font-bold ${
+                      isDarkMode ? "bg-[#D29C7B]" : "bg-[#B17457]"
+                    } text-white transition-colors duration-300`}
                   >
                     {formData.fullName?.charAt(0) ||
                       user?.displayName?.charAt(0) ||
@@ -277,10 +276,10 @@ const Profile = () => {
             <div className="mt-4 sm:mt-0 sm:ml-4 flex-grow">
               <div className="flex flex-col sm:flex-row justify-between items-center w-full">
                 <div>
-                  <h1 className="text-xl sm:text-2xl font-bold">
+                  <h1 className={`text-xl sm:text-2xl font-bold ${montserrat500.className} ${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"} transition-colors duration-300`}>
                     {formData.fullName || user?.displayName || "User"}
                   </h1>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                  <p className={`text-sm ${isDarkMode ? "text-[#A9A29A]" : "text-gray-500"} transition-colors duration-300`}>
                     {user?.email}
                   </p>
                 </div>
@@ -293,10 +292,11 @@ const Profile = () => {
                     }
                   }}
                   disabled={saving}
-                  className={`mt-2 sm:mt-0 px-6 py-2 rounded-md flex items-center ${isDarkMode
-                    ? "bg-green-700 hover:bg-green-800"
-                    : "bg-green-600 hover:bg-green-700"
-                    } text-white transition-colors`}
+                  className={`mt-2 cursor-pointer sm:mt-0 px-6 py-2 border-2 rounded-md flex items-center transition-colors duration-300 ${
+                    isDarkMode
+                      ? "border-[#D29C7B] text-[#D29C7B] hover:bg-[#D29C7B] hover:text-[#1E1D1B]"
+                      : "border-[#B17457] text-[#B17457] hover:bg-[#B17457] hover:text-[#FAF7F0]"
+                  }`}
                 >
                   {saving ? (
                     <>
@@ -323,26 +323,37 @@ const Profile = () => {
 
         {/* Credits Section */}
         <div className="mt-24 sm:mt-28 mb-8">
-          <div className={`p-6 rounded-lg ${isDarkMode ? "bg-neutral-900" : "bg-gray-50"
-            } border ${isDarkMode ? "border-neutral-800" : "border-gray-200"
-            }`}>
+          <div
+            className={`p-6 rounded-lg border shadow-md transition-colors duration-300 ${
+              isDarkMode
+                ? "bg-[#252320] border-[#333230]"
+                : "bg-[#FAF7F0] border-[#B17457]"
+            }`}
+          >
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
               <div>
-                <h2 className="text-lg font-medium mb-2 flex items-center">
-                  <CreditCard className="mr-2" size={20} />
+                <h2 className={`text-lg font-medium mb-2 flex items-center ${montserrat500.className} ${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"} transition-colors duration-300`}>
+                  <CreditCard className={`mr-2 ${isDarkMode ? "text-[#D29C7B]" : ""}`} size={20} />
                   Available Credits
                 </h2>
-                <p className={`text-3xl font-bold ${isDarkMode ? "text-green-500" : "text-green-600"
-                  }`}>
-                  {user?.subscription?.credits || 0} <span>{user?.subscription?.plan === "free" && "(Trial Credits)"}</span>
+                <p
+                  className={`text-3xl font-bold transition-colors duration-300 ${
+                    isDarkMode ? "text-[#D29C7B]" : "text-[#4A4947]"
+                  }`}
+                >
+                  {user?.subscription?.credits || 0}{" "}
+                  <span className={`${isDarkMode ? "text-[#A9A29A]" : ""} text-lg`}>
+                    {user?.subscription?.plan === "free" && "(Trial Credits)"}
+                  </span>
                 </p>
               </div>
               <button
                 onClick={navigateToSubscription}
-                className={`mt-4 sm:mt-0 px-6 py-2 rounded-md flex items-center ${isDarkMode
-                  ? "bg-green-700 hover:bg-green-800"
-                  : "bg-green-600 hover:bg-green-700"
-                  } text-white transition-colors`}
+                className={`mt-4 sm:mt-0 px-6 py-2 rounded-md border-2 flex items-center transition-colors duration-300 ${
+                  isDarkMode
+                    ? "border-[#D29C7B] text-[#D29C7B] hover:bg-[#D29C7B] hover:text-[#1E1D1B]"
+                    : "border-[#B17457] text-[#B17457] hover:bg-[#B17457] hover:text-[#FAF7F0]"
+                } cursor-pointer`}
               >
                 Top Up Credits
               </button>
@@ -353,7 +364,7 @@ const Profile = () => {
         <div className="mt-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-medium mb-2">
+              <label className={`block text-sm font-medium mb-2 ${isDarkMode ? "text-[#A9A29A]" : ""} transition-colors duration-300`}>
                 Full Name
               </label>
               <input
@@ -362,52 +373,56 @@ const Profile = () => {
                 value={formData.fullName || user?.displayName || ""}
                 readOnly
                 placeholder="Your Full Name"
-                className={`w-full p-3 rounded-md cursor-not-allowed ${!editMode ? "opacity-70" : ""} ${isDarkMode
-                  ? "bg-neutral-900 border border-neutral-800 text-gray-500"
-                  : "bg-gray-100 border border-gray-300 text-gray-500"
-                  } focus:outline-none transition-colors`}
+                className={`w-full p-3 rounded-md cursor-not-allowed transition-colors duration-300 ${
+                  !editMode ? "opacity-70" : ""
+                } ${
+                  isDarkMode
+                    ? "bg-[#333230] border border-[#444340] text-[#A9A29A]"
+                    : "bg-gray-100 border border-gray-300 text-gray-500"
+                } focus:outline-none`}
               />
             </div>
 
             <div className="relative">
-              <label className="block text-sm font-medium mb-2">Gender</label>
+              <label className={`block text-sm font-medium mb-2 ${isDarkMode ? "text-[#A9A29A]" : ""} transition-colors duration-300`}>
+                Gender
+              </label>
               <div
                 onClick={() => toggleDropdown("gender")}
-                className={`w-full p-3 rounded-md flex justify-between items-center ${editMode ? "cursor-pointer" : "cursor-not-allowed"
-                  } ${isDarkMode
-                    ? `bg-neutral-900 border border-neutral-800 ${!editMode ? "opacity-70" : ""}`
+                className={`w-full p-3 rounded-md flex justify-between items-center transition-colors duration-300 ${
+                  editMode ? "cursor-pointer" : "cursor-not-allowed"
+                } ${
+                  isDarkMode
+                    ? `bg-[#333230] border border-[#444340] ${!editMode ? "opacity-70" : ""}`
                     : `${editMode ? "bg-white" : "bg-gray-100"} border border-gray-300`
-                  }`}
+                }`}
               >
-                <span className={formData.gender ? "" : "text-gray-500"}>
+                <span className={`${formData.gender ? "" : "text-gray-500"} ${isDarkMode && formData.gender ? "text-[#D0CCC4]" : ""}`}>
                   {formData.gender || "Select Gender"}
                 </span>
                 <ChevronDown
                   size={18}
-                  className={`text-gray-500 ${!editMode ? "opacity-50" : ""}`}
+                  className={`${isDarkMode ? "text-[#A9A29A]" : "text-gray-500"} ${!editMode ? "opacity-50" : ""}`}
                 />
               </div>
 
               {showDropdown.gender && editMode && (
                 <div
-                  className={`absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-md shadow-lg ${isDarkMode
-                    ? "bg-neutral-900 border border-neutral-800"
-                    : "bg-white border border-gray-200"
-                    }`}
+                  className={`absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-md shadow-lg transition-colors duration-300 ${
+                    isDarkMode
+                      ? "bg-[#333230] border border-[#444340]"
+                      : "bg-white border border-gray-200"
+                  }`}
                 >
                   {genders.map((option) => (
                     <div
                       key={option}
                       onClick={() => handleDropdownSelect("gender", option)}
-                      className={`px-4 py-2 cursor-pointer ${isDarkMode
-                        ? "hover:bg-neutral-800"
-                        : "hover:bg-gray-100"
-                        } ${formData.gender === option
-                          ? isDarkMode
-                            ? "bg-neutral-800"
-                            : "bg-gray-100"
-                          : ""
-                        }`}
+                      className={`px-4 py-2 cursor-pointer transition-colors duration-300 ${
+                        isDarkMode
+                          ? `hover:bg-[#444340] text-[#D0CCC4] ${formData.gender === option ? "bg-[#444340]" : ""}`
+                          : `hover:bg-gray-100 ${formData.gender === option ? "bg-gray-100" : ""}`
+                      }`}
                     >
                       {option}
                     </div>
@@ -418,48 +433,47 @@ const Profile = () => {
 
             <div className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="relative">
-                <label className="block text-sm font-medium mb-2">
+                <label className={`block text-sm font-medium mb-2 ${isDarkMode ? "text-[#A9A29A]" : ""} transition-colors duration-300`}>
                   Country
                 </label>
                 <div
                   onClick={() => toggleDropdown("country")}
-                  className={`w-full p-3 rounded-md flex justify-between items-center ${editMode ? "cursor-pointer" : "cursor-not-allowed"
-                    } ${isDarkMode
-                      ? `bg-neutral-900 border border-neutral-800 ${!editMode ? "opacity-70" : ""}`
+                  className={`w-full p-3 rounded-md flex justify-between items-center transition-colors duration-300 ${
+                    editMode ? "cursor-pointer" : "cursor-not-allowed"
+                  } ${
+                    isDarkMode
+                      ? `bg-[#333230] border border-[#444340] ${!editMode ? "opacity-70" : ""}`
                       : `${editMode ? "bg-white" : "bg-gray-100"} border border-gray-300`
-                    }`}
+                  }`}
                 >
-                  <span className={formData.country ? "" : "text-gray-500"}>
+                  <span className={`${formData.country ? "" : "text-gray-500"} ${isDarkMode && formData.country ? "text-[#D0CCC4]" : ""}`}>
                     {formData.country || "Select Country"}
                   </span>
                   <ChevronDown
                     size={18}
-                    className={`text-gray-500 ${!editMode ? "opacity-50" : ""}`}
+                    className={`${isDarkMode ? "text-[#A9A29A]" : "text-gray-500"} ${!editMode ? "opacity-50" : ""}`}
                   />
                 </div>
 
                 {showDropdown.country && editMode && (
                   <div
-                    className={`absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-md shadow-lg ${isDarkMode
-                      ? "bg-neutral-900 border border-neutral-800"
-                      : "bg-white border border-gray-200"
-                      }`}
+                    className={`absolute z-10 mt-1 w-full max-h-60 overflow-auto rounded-md shadow-lg transition-colors duration-300 ${
+                      isDarkMode
+                        ? "bg-[#333230] border border-[#444340]"
+                        : "bg-white border border-gray-200"
+                    }`}
                   >
-                    {countries.map((country: CountryOption) => (
+                    {countries.map((country) => (
                       <div
                         key={country.value}
                         onClick={() =>
                           handleDropdownSelect("country", country.label)
                         }
-                        className={`px-4 py-2 cursor-pointer ${isDarkMode
-                          ? "hover:bg-neutral-800"
-                          : "hover:bg-gray-100"
-                          } ${formData.country === country.label
-                            ? isDarkMode
-                              ? "bg-neutral-800"
-                              : "bg-gray-100"
-                            : ""
-                          }`}
+                        className={`px-4 py-2 cursor-pointer transition-colors duration-300 ${
+                          isDarkMode
+                            ? `hover:bg-[#444340] text-[#D0CCC4] ${formData.country === country.label ? "bg-[#444340]" : ""}`
+                            : `hover:bg-gray-100 ${formData.country === country.label ? "bg-gray-100" : ""}`
+                        }`}
                       >
                         {country.label}
                       </div>
@@ -469,7 +483,7 @@ const Profile = () => {
               </div>
 
               <div className="relative">
-                <label className="block text-sm font-medium mb-2">
+                <label className={`block text-sm font-medium mb-2 ${isDarkMode ? "text-[#A9A29A]" : ""} transition-colors duration-300`}>
                   Billing Address
                 </label>
                 <input
@@ -479,18 +493,19 @@ const Profile = () => {
                   onChange={handleInputChange}
                   placeholder="Enter your billing address"
                   disabled={!editMode}
-                  className={`w-full p-3 rounded-md ${isDarkMode
-                    ? `bg-neutral-900 border border-neutral-800 text-gray-500 ${!editMode ? "opacity-70 cursor-not-allowed" : ""}`
-                    : `${editMode ? "bg-white" : "bg-gray-100"} border border-gray-300 ${editMode ? "text-gray-900" : "text-gray-500"} ${!editMode ? "cursor-not-allowed" : ""}`
-                    } focus:outline-none transition-colors`}
+                  className={`w-full p-3 rounded-md transition-colors duration-300 ${
+                    isDarkMode
+                      ? `bg-[#333230] border border-[#444340] ${editMode ? "text-[#D0CCC4]" : "text-[#A9A29A]"} ${!editMode ? "opacity-70 cursor-not-allowed" : ""}`
+                      : `${editMode ? "bg-white" : "bg-gray-100"} border border-gray-300 ${editMode ? "text-gray-900" : "text-gray-500"} ${!editMode ? "cursor-not-allowed" : ""}`
+                  } focus:outline-none`}
                 />
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </main>
   );
-};
+}
 
 export default Profile;

@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Funnel_Display } from "next/font/google";
 import axios from "axios";
 import { Toaster, toast } from "sonner";
-
+import { cn } from "@/lib/utils";
 
 const funnel_display = Funnel_Display({
     subsets: ["latin"],
@@ -61,16 +61,16 @@ const CustomerDetailsDialog = React.forwardRef<CustomerDetailsDialogRef, Custome
 
         const [formValid, setFormValid] = useState(false);
 
-        const validateName = (name:string) => {
+        const validateName = (name: string) => {
             return name.trim().length >= 2;
         };
 
-        const validateEmail = (email:string) => {
+        const validateEmail = (email: string) => {
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             return emailRegex.test(email);
         };
 
-        const validateContact = (contact:any) => {
+        const validateContact = (contact: any) => {
             const contactRegex = /^\d{10}$/;
             return contactRegex.test(contact);
         };
@@ -270,7 +270,9 @@ const CustomerDetailsDialog = React.forwardRef<CustomerDetailsDialogRef, Custome
                         }
                     },
                     prefill: customerDetails,
-                    theme: { color:"#2E7D32" },
+                    theme: { 
+                        color: isDarkMode ? "#16814e" : "#B17457" 
+                    },
                     modal: {
                         ondismiss: () => {
                             toast.warning("Payment process timed out. Please try again.");
@@ -290,17 +292,22 @@ const CustomerDetailsDialog = React.forwardRef<CustomerDetailsDialogRef, Custome
             openDialog,
         }));
 
-
+        // Updated theme classes to match pricing page theme
         const themeClasses = {
-            dialog: isDarkMode ? "border border-green-600 bg-neutral-900" : "border-3 border-green-200 bg-white",
-            title: isDarkMode ? "text-green-600" : "text-green-600",
-            description: isDarkMode ? "text-slate-300" : "text-slate-600",
-            label: isDarkMode ? "text-green-600" : "text-green-600",
+            dialog: isDarkMode 
+                ? "border border-green-600 bg-neutral-900" 
+                : "border border-[#B17457] bg-white",
+            title: isDarkMode ? "text-green-500" : "text-[#B17457]",
+            description: isDarkMode ? "text-gray-300" : "text-neutral-600",
+            label: isDarkMode ? "text-green-500" : "text-[#B17457]",
+            input: isDarkMode 
+                ? "bg-neutral-800 border-green-700 focus:border-green-500" 
+                : "bg-white border-[#B17457] focus:border-[#B17457]",
             button: isDarkMode
-                ? "bg-green-800 text-white hover:text-green-600 hover:bg-white cursor-pointer"
-                : "bg-green-700 border border-green-600 hover:bg-green-200 hover:text-black text-white cursor-pointer",
-            error: "text-red-500 text-xs mt-1",
-            inputError: "border-red-500",
+                ? "bg-green-600 hover:bg-green-700 text-white"
+                : "bg-white border-2 border-[#B17457] text-[#B17457] hover:bg-[#B17457] hover:text-[#FAF7F0]",
+            error: isDarkMode ? "text-red-400" : "text-red-500",
+            inputError: isDarkMode ? "border-red-400" : "border-red-500",
         };
 
         return (
@@ -308,19 +315,40 @@ const CustomerDetailsDialog = React.forwardRef<CustomerDetailsDialogRef, Custome
                 <Toaster richColors position="top-right" closeButton={true} />
                 <Dialog open={open} onOpenChange={setOpen}>
                     <DialogContent
-                        className={`sm:max-w-md ${themeClasses.dialog} ${funnel_display.className}`}
+                        className={cn(
+                            "sm:max-w-md",
+                            themeClasses.dialog,
+                            funnel_display.className
+                        )}
                     >
                         <DialogHeader>
-                            <DialogTitle className={`${themeClasses.title} text-xl font-semibold ${funnel_display.className}`}>
+                            <DialogTitle 
+                                className={cn(
+                                    "text-xl font-bold",
+                                    themeClasses.title,
+                                    funnel_display.className
+                                )}
+                            >
                                 Customer Information
                             </DialogTitle>
-                            <DialogDescription className={`${themeClasses.description} ${funnel_display.className}`}>
+                            <DialogDescription 
+                                className={cn(
+                                    themeClasses.description,
+                                    funnel_display.className
+                                )}
+                            >
                                 Please provide your details for the payment process.
                             </DialogDescription>
                         </DialogHeader>
-                        <div className={`grid gap-4 py-4 ${funnel_display.className}`}>
+                        <div className={cn("grid gap-4 py-4", funnel_display.className)}>
                             <div className="flex flex-col gap-2">
-                                <Label htmlFor="name" className={` ${themeClasses.label} ${funnel_display.className}`}>
+                                <Label 
+                                    htmlFor="name" 
+                                    className={cn(
+                                        themeClasses.label,
+                                        funnel_display.className
+                                    )}
+                                >
                                     Name
                                 </Label>
                                 <div className="col-span-3">
@@ -331,13 +359,28 @@ const CustomerDetailsDialog = React.forwardRef<CustomerDetailsDialogRef, Custome
                                         onChange={handleChange}
                                         onBlur={handleBlur}
                                         placeholder="Enter your name"
-                                        className={`w-full ${funnel_display.className} ${errors.name ? themeClasses.inputError : ''}`}
+                                        className={cn(
+                                            "w-full",
+                                            themeClasses.input,
+                                            errors.name && themeClasses.inputError,
+                                            funnel_display.className
+                                        )}
                                     />
-                                    {errors.name && <p className={themeClasses.error}>{errors.name}</p>}
+                                    {errors.name && (
+                                        <p className={cn("text-xs mt-1", themeClasses.error)}>
+                                            {errors.name}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                             <div className="flex flex-col gap-2">
-                                <Label htmlFor="email" className={` ${themeClasses.label} ${funnel_display.className}`}>
+                                <Label 
+                                    htmlFor="email" 
+                                    className={cn(
+                                        themeClasses.label,
+                                        funnel_display.className
+                                    )}
+                                >
                                     Email
                                 </Label>
                                 <div className="col-span-3">
@@ -349,13 +392,28 @@ const CustomerDetailsDialog = React.forwardRef<CustomerDetailsDialogRef, Custome
                                         onChange={handleChange}
                                         onBlur={handleBlur}
                                         placeholder="Enter your email"
-                                        className={`w-full ${funnel_display.className} ${errors.email ? themeClasses.inputError : ''}`}
+                                        className={cn(
+                                            "w-full",
+                                            themeClasses.input,
+                                            errors.email && themeClasses.inputError,
+                                            funnel_display.className
+                                        )}
                                     />
-                                    {errors.email && <p className={themeClasses.error}>{errors.email}</p>}
+                                    {errors.email && (
+                                        <p className={cn("text-xs mt-1", themeClasses.error)}>
+                                            {errors.email}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                             <div className="flex flex-col gap-2">
-                                <Label htmlFor="contact" className={`${themeClasses.label} ${funnel_display.className}`}>
+                                <Label 
+                                    htmlFor="contact" 
+                                    className={cn(
+                                        themeClasses.label,
+                                        funnel_display.className
+                                    )}
+                                >
                                     Contact
                                 </Label>
                                 <div className="col-span-3">
@@ -366,9 +424,18 @@ const CustomerDetailsDialog = React.forwardRef<CustomerDetailsDialogRef, Custome
                                         onChange={handleChange}
                                         onBlur={handleBlur}
                                         placeholder="Enter your contact number"
-                                        className={`w-full ${funnel_display.className} ${errors.contact ? themeClasses.inputError : ''}`}
+                                        className={cn(
+                                            "w-full",
+                                            themeClasses.input,
+                                            errors.contact && themeClasses.inputError,
+                                            funnel_display.className
+                                        )}
                                     />
-                                    {errors.contact && <p className={themeClasses.error}>{errors.contact}</p>}
+                                    {errors.contact && (
+                                        <p className={cn("text-xs mt-1", themeClasses.error)}>
+                                            {errors.contact}
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -376,7 +443,11 @@ const CustomerDetailsDialog = React.forwardRef<CustomerDetailsDialogRef, Custome
                             <Button 
                                 type="button" 
                                 onClick={handleProceed} 
-                                className={`${themeClasses.button} ${funnel_display.className}`}
+                                className={cn(
+                                    themeClasses.button,
+                                    "px-6 py-3 rounded-xl text-sm font-bold transition-colors cursor-pointer",
+                                    funnel_display.className
+                                )}
                                 disabled={!formValid}
                             >
                                 Proceed to Payment
