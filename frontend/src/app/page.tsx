@@ -34,7 +34,7 @@ export default function Home() {
         } `}
     >
       <Navbar />
-      <div className="flex flex-col items-center justify-center min-h-screen px-4 py-8 md:py-0">
+      <div className="flex flex-col items-center justify-center h-[30rem] sm:min-h-screen px-4 py-8 md:py-0 sm:pt-0 pt-28">
         <p
           className={`${indieFlower.className} text-[2rem] md:text-[3.125rem] ${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
             } text-center`}

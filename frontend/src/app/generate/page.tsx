@@ -707,10 +707,10 @@ const NotesGenerate = () => {
 
                   {isDisabled && (
                     <>
-                      <span className="absolute right-1 sm:right-3 top-1/2 -translate-y-1/2">
+                      <span className="absolute right-[-2] sm:right-3 top-1/2 -translate-y-1/2">
                         <Lock
-                          size={17}
-                          className={isDarkMode ? "text-[#A9A29A]" : ""}
+                          size={14}
+                          className={`${isDarkMode ? "text-[#A9A29A]" : ""} sm:w-6 sm:h-6`}
                         />
                       </span>
                       <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white p-2 rounded text-xs w-32 sm:w-40 opacity-0 group-hover:opacity-100 transition-opacity hidden group-hover:block pointer-events-none">
@@ -1221,7 +1221,7 @@ const NotesGenerate = () => {
             >
               {currentStep !== 0 && currentStep !== 3 && (
                 <button
-                  className="cursor-pointer px-2 sm:px-4 py-1 sm:py-2 border border-[#B17457] rounded-lg transition-colors flex items-center gap-1 sm:gap-2 hover:bg-gray-100"
+                  className={`${isDarkMode ? "hover:bg-[#1E1D1B]" : "hover:bg-gray-100" } cursor-pointer px-2 sm:px-4 py-1 sm:py-2 border border-[#B17457] rounded-lg transition-colors flex items-center gap-1 sm:gap-2 `}
                   onClick={() =>
                     setCurrentStep((prev) => Math.max(prev - 1, 0))
                   }

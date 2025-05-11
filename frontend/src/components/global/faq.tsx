@@ -9,7 +9,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { faqs } from "@/lib/constant";
-import { montserrat600, montserrat500 } from "@/lib/font-utils";
+import { montserrat700, montserrat500 } from "@/lib/font-utils";
 
 export function Faq() {
   const { theme, resolvedTheme } = useTheme();
@@ -26,9 +26,9 @@ export function Faq() {
       className={`w-full ${isDarkMode ? "bg-[#1E1D1B]" : "bg-[#FAF7F0]"} py-10`}
     >
       <div
-        className={`w-full text-4xl sm:text-5xl text-center mb-6 sm:mb-10 ${
+        className={`w-full text-xl sm:text-5xl text-center mb-6 sm:mb-10 ${
           isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
-        } ${montserrat600.className}`}
+        } ${montserrat700.className}`}
       >
         <p>Frequently Asked Questions</p>
       </div>
