@@ -30,6 +30,7 @@ export async function getUserNotesHistoryController(req, res) {
       {
         _id: 1,
         subject_name: 1,
+        display_name: 1,
         note_type: 1,
         format: 1,
         status: 1,
@@ -250,6 +251,57 @@ export async function deleteUserNoteController(req, res) {
     res.status(500).json({
       success: false,
       error: 'Failed to delete note requests',
+      details: process.env.NODE_ENV !== 'production' ? error.stack : undefined,
+    });
+  }
+}
+
+/**
+ * Updates the display name of a specific note request
+ * @param {Request} req - Express request object
+ * @param {Response} res - Express response object
+ */
+export async function updateNoteDisplayNameController(req, res) {
+  const { _id, display_name } = req.body;
+
+  if (!_id || !display_name) {
+    return res.status(400).json({
+      success: false,
+      error: 'Missing required fields: _id and display_name',
+    });
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(_id)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid ObjectId format for _id',
+    });
+  }
+
+  try {
+    const updatedNote = await NotesRequestModel.findByIdAndUpdate(
+      _id,
+      { display_name },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedNote) {
+      return res.status(404).json({
+        success: false,
+        error: 'Note request not found',
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Display name updated successfully',
+      data: updatedNote,
+    });
+  } catch (error) {
+    console.error(`Error updating display_name for note request ${_id}:`, error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to update display name',
       details: process.env.NODE_ENV !== 'production' ? error.stack : undefined,
     });
   }

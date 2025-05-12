@@ -3,7 +3,8 @@ import {
     getUserNotesHistoryController, 
     getSingleNoteHistoryController,
     getUserNotesStatsController,
-    deleteUserNoteController
+    deleteUserNoteController,
+    updateNoteDisplayNameController
   } from '../controllers/user-history.controller.js';
 import { verifyFirebaseToken } from '../middlewares/auth-verify.middleware.js';
   
@@ -20,5 +21,8 @@ router.get('/:email/notes-stats', verifyFirebaseToken, getUserNotesStatsControll
   
 // Delete a note
 router.post('/notes/delete', verifyFirebaseToken, deleteUserNoteController);
+
+// Rename notes
+router.post('/notes/rename', verifyFirebaseToken, updateNoteDisplayNameController);
 
 export default router;

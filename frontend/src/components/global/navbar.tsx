@@ -399,7 +399,7 @@ const Navbar = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className={`fixed inset-0 top-[5.5rem] backdrop-blur-sm z-40 flex flex-col md:hidden ${isDarkMode ? "bg-[#3A3935]/95" : "bg-[#D8D2C2]/95"
+            className={`fixed inset-0 top-[5.5rem] backdrop-blur-sm z-40 flex flex-col ${isMobile ? "" : "lg:hidden" }${isDarkMode ? "bg-[#3A3935]/95" : "bg-[#D8D2C2]/95"
               }`}
           >
             <div className="flex flex-col items-center pt-8 pb-6 px-6 gap-6 overflow-y-auto">

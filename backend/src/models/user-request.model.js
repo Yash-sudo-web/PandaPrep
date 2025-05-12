@@ -13,7 +13,12 @@ const UserRequestSchema = new mongoose.Schema({
     trim: true,
     maxlength: [100, 'Subject name cannot be more than 100 characters']
   },
-  
+  display_name: {
+    type: String,
+    required: [true, 'Display name is required'],
+    trim: true,
+    maxlength: [100, 'Display name cannot be more than 100 characters']
+  },
   // Syllabus content
   syllabus: {
     type: String,
