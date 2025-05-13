@@ -114,6 +114,7 @@ export async function generateNotesController(req, res) {
     const request = await NotesRequestModel.create({
       _userID: userDoc._id,
       subject_name,
+      display_name: subject_name,
       syllabus,
       note_type,
       include_examples,

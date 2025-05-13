@@ -143,7 +143,7 @@ class NotesGeneratorAgent {
       
       const llm = new ChatGroq({
         groqApiKey: process.env.GROQ_API_KEY,
-        model:"meta-llama/llama-4-maverick-17b-128e-instruct", 
+        model:"llama3-70b-8192", 
         streaming: true, // Enable streaming
       });
       

@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/global/navbar";
 import { cn, getCookie } from "@/lib/utils";
-import { Eye, Info, Search, Trash2 } from "lucide-react";
+import { Eye, Info, Search, Trash2, Pencil, Save, X } from "lucide-react";
 import axios from "axios";
 import { BASE_URL } from "@/lib/constant";
 import { useTheme } from "next-themes";
@@ -22,12 +22,14 @@ const History = () => {
   const [notes, setNotes] = useState<
     {
       id: number;
-      subject_name: string;
+      display_name: string;
       createdAt: string;
       secure_url: string;
     }[]
   >([]);
   const [selectedNotes, setSelectedNotes] = useState<number[]>([]);
+  const [editNoteId, setEditNoteId] = useState<number | null>(null);
+  const [editDisplayName, setEditDisplayName] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
   const [allSelected, setAllSelected] = useState(false);
 
@@ -85,9 +87,35 @@ const History = () => {
     }
   };
 
+  const handleRenameNote = async (id: number) => {
+    try {
+      const email = user?.email || getCookie("email");
+      if (!idToken || !email || !editDisplayName.trim()) return;
+
+      await axios.post(
+        `${BASE_URL}/userHistory/notes/rename`,
+        {
+          _id: id,
+          display_name: editDisplayName.trim(),
+        },
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+        }
+      );
+      setEditNoteId(null);
+      setEditDisplayName("");
+      handleGetAllNotes();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
   const handleDeleteNote = async (ids: number[]) => {
     try {
-      const email = getCookie("email");
+      const email = user?.email || getCookie("email");
       if (!idToken || !email) return;
       await axios.post(
         `${BASE_URL}/userHistory/notes/delete`,
@@ -120,11 +148,11 @@ const History = () => {
   }, [selectedNotes, notes]);
 
   const filteredNotes = notes.filter((note) =>
-    note.subject_name.toLowerCase().includes(searchQuery.toLowerCase())
+    note.display_name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (!mounted) return <div className="min-h-screen" />;
-  
+
   return (
     <main
       className={cn(
@@ -183,7 +211,9 @@ const History = () => {
           >
             {selectedNotes.length > 0 ? (
               <>
-                <p className={montserrat500.className}>{selectedNotes.length} selected</p>
+                <p className={montserrat500.className}>
+                  {selectedNotes.length} selected
+                </p>
                 <button
                   onClick={() => handleDeleteNote(selectedNotes)}
                   className="text-red-500 cursor-pointer hover:text-red-400 transition-colors"
@@ -193,22 +223,34 @@ const History = () => {
                 </button>
               </>
             ) : (
-              <div className={cn("flex items-center gap-1", montserrat500.className)}>
+              <div
+                className={cn(
+                  "flex items-center gap-1",
+                  montserrat500.className
+                )}
+              >
                 <p>
                   You have {notes.length} generated{" "}
                   {notes.length === 1 ? "note" : "notes"} in PandaPrep.
                 </p>
                 <div className="relative inline-block group">
                   <Info
-                    className={cn("h-4 w-4 cursor-help", isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]")}
+                    className={cn(
+                      "h-4 w-4 cursor-help",
+                      isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
+                    )}
                     aria-label="Information about note retention"
                   />
-                  <div className={cn(
-                    "absolute z-10 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-2 w-56 rounded shadow-lg text-xs",
-                    montserrat500.className,
-                    isDarkMode ? "bg-neutral-800 text-[#D0CCC4] border border-[#D29C7B]" : "bg-white text-[#4A4947] border border-[#B17457]"
-                  )}>
-                   Notes older than 30 days will be deleted automatically.
+                  <div
+                    className={cn(
+                      "absolute z-10 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-2 w-56 rounded shadow-lg text-xs",
+                      montserrat500.className,
+                      isDarkMode
+                        ? "bg-neutral-800 text-[#D0CCC4] border border-[#D29C7B]"
+                        : "bg-white text-[#4A4947] border border-[#B17457]"
+                    )}
+                  >
+                    Notes older than 30 days will be deleted automatically.
                   </div>
                 </div>
               </div>
@@ -241,7 +283,10 @@ const History = () => {
             </label>
           </div>
 
-          <div className="space-y-4 w-full overflow-y-auto px-1 pb-8" style={{ maxHeight: "calc(100vh - 280px)" }}>
+          <div
+            className="space-y-4 w-full overflow-y-auto px-1 pb-8"
+            style={{ maxHeight: "calc(100vh - 280px)" }}
+          >
             {filteredNotes.length > 0 ? (
               filteredNotes.map((note) => (
                 <div
@@ -254,15 +299,33 @@ const History = () => {
                   )}
                 >
                   <div className="mb-2 sm:mb-0">
-                    <h2
-                      className={cn(
-                        "text-base sm:text-lg font-semibold",
-                        montserrat600.className,
-                        isDarkMode ? "text-[#FAF7F0]" : "text-[#4A4947]"
-                      )}
-                    >
-                      {note.subject_name}
-                    </h2>
+                    {editNoteId === note.id ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={editDisplayName}
+                          onChange={(e) => setEditDisplayName(e.target.value)}
+                          className={cn(
+                            "text-sm px-2 py-1 border rounded focus:outline-none",
+                            montserrat500.className,
+                            isDarkMode
+                              ? "bg-neutral-800 border-[#D29C7B] text-[#FAF7F0]"
+                              : "bg-white border-[#B17457] text-[#4A4947]"
+                          )}
+                        />
+                      </div>
+                    ) : (
+                      <h2
+                        className={cn(
+                          "text-base sm:text-lg font-semibold",
+                          montserrat600.className,
+                          isDarkMode ? "text-[#FAF7F0]" : "text-[#4A4947]"
+                        )}
+                      >
+                        {note.display_name}
+                      </h2>
+                    )}
+
                     <p
                       className={cn(
                         "text-xs sm:text-sm mt-1",
@@ -274,6 +337,48 @@ const History = () => {
                     </p>
                   </div>
                   <div className="flex gap-4 items-center self-end sm:self-auto">
+                    {editNoteId === note.id ? (
+                      <>
+                        <button
+                          className="p-1 rounded-full hover:bg-opacity-20 transition-colors"
+                          onClick={() => handleRenameNote(note.id)}
+                          aria-label="Save renamed note"
+                        >
+                          <Save
+                            className="cursor-pointer"
+                            color={isDarkMode ? "#D0CCC4" : "#676E7B"}
+                          />
+                        </button>
+                        <button
+                          className="p-1 rounded-full hover:bg-opacity-20 transition-colors"
+                          onClick={() => {
+                            setEditNoteId(null);
+                            setEditDisplayName("");
+                          }}
+                          aria-label="Cancel rename"
+                        >
+                          <X
+                            className="cursor-pointer"
+                            color={isDarkMode ? "#D0CCC4" : "#676E7B"}
+                          />
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        className="p-1 rounded-full hover:bg-opacity-20 transition-colors"
+                        onClick={() => {
+                          setEditNoteId(note.id);
+                          setEditDisplayName(note.display_name);
+                        }}
+                        aria-label="Rename note"
+                      >
+                        <Pencil
+                          className="cursor-pointer"
+                          color={isDarkMode ? "#D0CCC4" : "#676E7B"}
+                        />
+                      </button>
+                    )}
+
                     <button
                       className="p-1 rounded-full hover:bg-opacity-20 transition-colors"
                       onClick={() => window.open(note.secure_url, "_blank")}
