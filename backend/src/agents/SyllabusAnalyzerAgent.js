@@ -18,12 +18,12 @@ class SyllabusAnalyzerAgent {
       const noteTypeGuidance = {
         'concise': {
           contentDepth: 'minimal, focusing only on key points and core concepts',
-          expectedLength: 'shorter notes with concise bullet points',
+          expectedLength: 'short notes with concise bullet points',
           contentStrategy: 'group more topics together when they are fundamentally related'
         },
         'detailed': {
           contentDepth: 'comprehensive, covering concepts thoroughly with in-depth explanations',
-          expectedLength: 'longer, more comprehensive notes with complete explanations',
+          expectedLength: 'long, detailed and comprehensive notes with complete explanations',
           contentStrategy: 'divide complex topics into smaller chunks to ensure thorough coverage'
         },
         'qa': {
