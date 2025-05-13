@@ -137,7 +137,7 @@ class SyllabusAnalyzerAgent {
       
       while (retries <= MAX_RETRIES) {
         try {
-          const response = await llm.call([
+          const response = await llm.invoke([
             { role: "system", content: systemPrompt },
             { role: "user", content: `Syllabus:\n${syllabus}` }
           ]);
