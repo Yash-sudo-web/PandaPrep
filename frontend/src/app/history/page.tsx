@@ -23,6 +23,7 @@ const History = () => {
     {
       id: number;
       display_name: string;
+      subject_name: string;
       createdAt: string;
       secure_url: string;
     }[]
@@ -147,8 +148,16 @@ const History = () => {
     setAllSelected(selectedNotes.length === notes.length && notes.length > 0);
   }, [selectedNotes, notes]);
 
+  // Get display name or fall back to subject_name if display_name is missing
+  const getNoteName = (note: {
+    display_name: string;
+    subject_name: string;
+  }) => {
+    return note.display_name || note.subject_name;
+  };
+
   const filteredNotes = notes.filter((note) =>
-    note.display_name.toLowerCase().includes(searchQuery.toLowerCase())
+    getNoteName(note).toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   if (!mounted) return <div className="min-h-screen" />;
@@ -322,7 +331,7 @@ const History = () => {
                           isDarkMode ? "text-[#FAF7F0]" : "text-[#4A4947]"
                         )}
                       >
-                        {note.display_name}
+                        {getNoteName(note)}
                       </h2>
                     )}
 
@@ -368,7 +377,7 @@ const History = () => {
                         className="p-1 rounded-full hover:bg-opacity-20 transition-colors"
                         onClick={() => {
                           setEditNoteId(note.id);
-                          setEditDisplayName(note.display_name);
+                          setEditDisplayName(getNoteName(note));
                         }}
                         aria-label="Rename note"
                       >
