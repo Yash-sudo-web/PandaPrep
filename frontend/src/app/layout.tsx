@@ -4,6 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/providers/theme-provider"
 import { DM_Sans } from 'next/font/google'
 import Footer from "@/components/global/footer";
+import HealthCheckWrapper from "@/components/global/health-check-wrapper";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -39,7 +40,9 @@ export default function RootLayout({
         defaultTheme="light"
         // enableSystem
         disableTransitionOnChange>
-          {children}
+          <HealthCheckWrapper>
+            {children}
+          </HealthCheckWrapper>
           <Footer />
         </ThemeProvider>
       </body>

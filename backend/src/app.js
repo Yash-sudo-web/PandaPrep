@@ -23,7 +23,7 @@ app.use("/api/userHistory", userHistoryRoutes);
 app.use("/api", contactLogRoutes);
 app.use("/api/chat", chatWithNotesRoutes);
 app.use("/api/payment", razorpayPaymentRoutes)
-app.use("/", healthCheckRoutes)
+app.use("/api", healthCheckRoutes)
 
 
 export { app }
