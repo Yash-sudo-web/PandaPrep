@@ -65,3 +65,23 @@ export const updateUserController = async (req, res) => {
   }
 };
 
+export const updateUserCookieController = async (req, res) => {
+  try {
+    const { email, cookieAcknowledged } = req.body;
+
+    if (!email) return res.status(400).json({ error: 'Email is required' });
+    const userDoc = await UserModel.findOne({
+      email,
+    });
+    if (!userDoc) return res.status(404).json({ error: 'User not found' });
+    const updated = await UserModel.findOneAndUpdate(
+      { email },
+      { cookieAcknowledged },
+      { new: true, upsert: true }
+    );
+    res.status(200).json({ message: 'Cookie updated successfully', data: updated });
+  } catch (error) {
+    console.error('Error updating user cookie:', error);
+    res.status(500).json({ error: 'Failed to update cookie' });
+  }
+}
