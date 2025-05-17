@@ -33,6 +33,8 @@ const History = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [allSelected, setAllSelected] = useState(false);
 
+  const [isTooltipVisible, setIsTooltipVisible] = useState(false);
+
   const isDarkMode = mounted && resolvedTheme === "dark";
 
   useEffect(() => {
@@ -233,21 +235,25 @@ const History = () => {
                   You have {notes.length} generated{" "}
                   {notes.length === 1 ? "note" : "notes"} in PandaPrep.
                 </p>
-                <div className="relative inline-block group">
+                <div className="relative inline-block">
                   <Info
                     className={cn(
                       "h-4 w-4 cursor-help",
                       isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
                     )}
                     aria-label="Information about note retention"
+                    onClick={() => setIsTooltipVisible(!isTooltipVisible)}
+                    onMouseEnter={() => setIsTooltipVisible(true)}
+                    onMouseLeave={() => setIsTooltipVisible(false)}
                   />
                   <div
                     className={cn(
-                      "absolute z-10 invisible group-hover:visible opacity-0 group-hover:opacity-100 transition-opacity duration-300 bottom-full left-1/2 transform -translate-x-1/2 mb-2 p-2 w-56 rounded shadow-lg text-xs",
+                      "absolute z-10 transition-opacity duration-300 bottom-full -left-6 sm:left-1/2 transform -translate-x-1/2 mb-2 p-2 w-36 sm:w-56 rounded shadow-lg text-xs",
                       montserrat500.className,
                       isDarkMode
                         ? "bg-neutral-800 text-[#D0CCC4] border border-[#D29C7B]"
-                        : "bg-white text-[#4A4947] border border-[#B17457]"
+                        : "bg-white text-[#4A4947] border border-[#B17457]",
+                      isTooltipVisible ? "opacity-100 visible" : "opacity-0 invisible"
                     )}
                   >
                     Notes older than 30 days will be deleted automatically.

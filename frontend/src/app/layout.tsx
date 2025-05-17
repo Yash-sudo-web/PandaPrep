@@ -28,15 +28,19 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1448751285805086"
+          crossOrigin="anonymous"></script>
+      </head>
       <body
-       className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       > <ThemeProvider
-            attribute="class"
-            defaultTheme="light"
-            // enableSystem
-            disableTransitionOnChange>
-        {children}
-        <Footer />
+        attribute="class"
+        defaultTheme="light"
+        // enableSystem
+        disableTransitionOnChange>
+          {children}
+          <Footer />
         </ThemeProvider>
       </body>
     </html>
