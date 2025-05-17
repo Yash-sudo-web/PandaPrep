@@ -52,7 +52,6 @@ const CookieConsent = () => {
       setShowPopup(!data.data.cookieAcknowledged);
     } catch (error) {
       console.error("Error fetching cookie status:", error);
-      setShowPopup(true);
     } finally {
       setLoading(false);
     }
