@@ -92,7 +92,7 @@ const CookieConsent = () => {
           : "bg-[#FAF7F0] border-t-2 border-[#B17457] text-[#4A4947]"
       } p-4 shadow-lg z-50`}
     >
-      <div className="container mx-auto flex flex-col md:flex-row items-center justify-between">
+      <div className="container mx-auto flex flex-col px-8 md:flex-row items-center justify-between">
         <div className="mb-4 md:mb-0 pr-4 max-w-3xl">
           <p className="text-sm">
             This website uses cookies to enhance your experience. By continuing
