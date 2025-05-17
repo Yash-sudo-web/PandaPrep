@@ -6,6 +6,8 @@ import { useTheme } from "next-themes";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import { useRouter } from "next/navigation";
 import { BASE_URL } from "@/lib/constant";
+import { auth } from "@/firebase/firebaseconfig";
+
 
 const CookieConsent = () => {
   const [showPopup, setShowPopup] = useState(false);
@@ -14,7 +16,7 @@ const CookieConsent = () => {
   const [mounted, setMounted] = useState(false);
   const [idToken, setIdToken] = useState<string | null>(null);
   const router = useRouter();
-  const auth = getAuth();
+
 
   const isDarkMode = mounted && resolvedTheme === "dark";
 
