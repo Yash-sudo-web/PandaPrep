@@ -50,7 +50,7 @@ const NotesGenerate = () => {
   const [showPreview, setShowPreview] = useState(false);
   const [idToken, setIdToken] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<{
-    [key: string]: boolean;
+    [key: string]: string | boolean;
   }>({});
   const [stepsCompleted, setStepsCompleted] = useState<{
     [key: number]: boolean;
@@ -119,8 +119,15 @@ const NotesGenerate = () => {
   const validateSteps = () => {
     const step1Valid = !!formData.subject_name.trim();
 
-    const step2Valid =
-      !!formData.syllabus.trim() && formData.syllabus.length >= 10;
+    const syllabusLength = formData.syllabus.trim().length;
+    const syllabusValid = syllabusLength >= 10 && syllabusLength <= 2500;
+
+    const instructionsLength = formData.user_instructions.trim().length;
+    const instructionsValid =
+      instructionsLength === 0 ||
+      (instructionsLength >= 10 && instructionsLength <= 500);
+
+    const step2Valid = syllabusValid && instructionsValid;
 
     const step3Valid = true;
 
@@ -131,7 +138,17 @@ const NotesGenerate = () => {
     });
   };
 
+  const getCharacterCount = (fieldKey: string) => {
+    return formData[fieldKey as keyof typeof formData]?.toString().length || 0;
+  };
+
   const handleInputChange = (field: string, value: string) => {
+    if (field === "syllabus" && value.length > 2500) {
+      value = value.slice(0, 2500);
+    } else if (field === "user_instructions" && value.length > 500) {
+      value = value.slice(0, 500);
+    }
+
     setFormData((prev) => ({ ...prev, [field]: value }));
 
     if (validationErrors[field]) {
@@ -218,14 +235,26 @@ const NotesGenerate = () => {
   };
 
   const validateForm = () => {
-    const errors: { [key: string]: boolean } = {};
+    const errors: { [key: string]: string | boolean } = {};
 
     if (!formData.subject_name.trim()) {
       errors.subject_name = true;
     }
 
-    if (!formData.syllabus.trim() || formData.syllabus.length < 10) {
-      errors.syllabus = true;
+    if (!formData.syllabus.trim()) {
+      errors.syllabus = "Syllabus is required";
+    } else if (formData.syllabus.length < 10) {
+      errors.syllabus = `Syllabus must be at least 10 characters (currently ${formData.syllabus.length})`;
+    } else if (formData.syllabus.length > 2500) {
+      errors.syllabus = `Syllabus must be less than 2500 characters (currently ${formData.syllabus.length})`;
+    }
+
+    if (formData.user_instructions.trim()) {
+      if (formData.user_instructions.length < 10) {
+        errors.user_instructions = `Instructions must be at least 10 characters (currently ${formData.user_instructions.length})`;
+      } else if (formData.user_instructions.length > 500) {
+        errors.user_instructions = `Instructions must be less than 500 characters (currently ${formData.user_instructions.length})`;
+      }
     }
 
     setValidationErrors(errors);
@@ -425,6 +454,17 @@ const NotesGenerate = () => {
     setCurrentStep(index);
   };
 
+  const [showTooltip, setShowTooltip] = useState(false);
+  const [showOtherTooltip, setShowOtherTooltip] = useState(false);
+  const toggleTooltip = () => {
+    setShowTooltip(true);
+    setTimeout(() => setShowTooltip(false), 3000);
+  };
+  const toggleOtherTooltip = () => {
+    setShowOtherTooltip((prev) => !prev);
+    setTimeout(() => setShowOtherTooltip(false), 3000);
+  };
+
   const step1Component = () => {
     return (
       <div
@@ -562,13 +602,28 @@ const NotesGenerate = () => {
         </div>
 
         <div className="w-full space-y-4">
-          <p
-            className={`${montserrat500.className} text-2xl ${
-              validationErrors.syllabus ? "text-red-500" : ""
-            }`}
-          >
-            Syllabus or Topic Outline{" "}
-          </p>
+          <div className="flex justify-between items-center">
+            <p
+              className={`${montserrat500.className} text-2xl ${
+                typeof validationErrors.syllabus === "string"
+                  ? "text-red-500"
+                  : ""
+              }`}
+            >
+              Syllabus or Topic Outline{" "}
+            </p>
+            <span
+              className={`text-sm ${
+                getCharacterCount("syllabus") > 2500
+                  ? "text-red-500"
+                  : isDarkMode
+                  ? "text-[#A9A29A]"
+                  : "text-gray-500"
+              }`}
+            >
+              {getCharacterCount("syllabus")}/2500
+            </span>
+          </div>
 
           <div className="relative">
             <AnimatedInput
@@ -587,23 +642,45 @@ const NotesGenerate = () => {
                 isDarkMode ? "bg-[#333230] border-[#444340] text-[#D0CCC4]" : ""
               }`}
             />
-            {validationErrors.syllabus && (
+            {typeof validationErrors.syllabus === "string" && (
               <p className="text-red-500 text-sm mt-1">
-                Syllabus is required and should be at least 10 characters
+                {validationErrors.syllabus}
               </p>
             )}
-            <p
-              className={`${montserrat400.className} text-sm sm:text-base ${
-                isDarkMode ? "text-[#A9A29A]" : "text-[#4A4947]"
-              } mt-1`}
-            >
-              List the main topics you want to be covered in your notes
-            </p>
+            {!validationErrors.syllabus && (
+              <p
+                className={`${montserrat400.className} text-sm sm:text-base ${
+                  isDarkMode ? "text-[#A9A29A]" : "text-[#4A4947]"
+                } mt-1`}
+              >
+                List the main topics you want to be covered in your notes
+                (10-2500 characters)
+              </p>
+            )}
           </div>
 
-          <p className={`${montserrat500.className} pt-5 text-2xl`}>
-            User Instructions (Optional)
-          </p>
+          <div className="flex justify-between items-center pt-5">
+            <p
+              className={`${montserrat500.className} text-2xl ${
+                typeof validationErrors.user_instructions === "string"
+                  ? "text-red-500"
+                  : ""
+              }`}
+            >
+              User Instructions (Optional)
+            </p>
+            <span
+              className={`text-sm ${
+                getCharacterCount("user_instructions") > 500
+                  ? "text-red-500"
+                  : isDarkMode
+                  ? "text-[#A9A29A]"
+                  : "text-gray-500"
+              }`}
+            >
+              {getCharacterCount("user_instructions")}/500
+            </span>
+          </div>
           <div className="relative">
             <AnimatedInput
               textarea={true}
@@ -616,15 +693,56 @@ const NotesGenerate = () => {
                 "E.g., Go in depth on the topic of Normalization",
               ]}
               className={`min-h-[80px] sm:min-h-[120px] ${
+                validationErrors.user_instructions ? "border-red-500" : ""
+              } ${
                 isDarkMode ? "bg-[#333230] border-[#444340] text-[#D0CCC4]" : ""
               }`}
             />
-            <p
-              className={`${montserrat400.className} text-sm sm:text-base ${
-                isDarkMode ? "text-[#A9A29A]" : "text-[#4A4947]"
-              } mt-1`}
+            {typeof validationErrors.user_instructions === "string" && (
+              <p className="text-red-500 text-sm mt-1">
+                {validationErrors.user_instructions}
+              </p>
+            )}
+            {!validationErrors.user_instructions && (
+              <p
+                className={`${montserrat400.className} text-sm sm:text-base ${
+                  isDarkMode ? "text-[#A9A29A]" : "text-[#4A4947]"
+                } mt-1`}
+              >
+                Any specific requirements or focus areas for your notes (if
+                provided, 10-500 characters)
+              </p>
+            )}
+          </div>
+          <div
+            className={`mt-8 mb-16 ${
+              isDarkMode
+                ? "bg-[#252320] border-[#D29C7B]"
+                : "bg-[#F3EFE5] border-[#B17457]"
+            } p-3 rounded-xl border-4 transition-colors duration-300`}
+          >
+            <div
+              className={`${
+                isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
+              } flex gap-1 sm:gap-2 items-center`}
             >
-              Any specific requirements or focus areas for your notes
+              <Lightbulb
+                size={20}
+                className={`sm:w-8 sm:h-8 ${
+                  isDarkMode ? "text-[#D29C7B]" : ""
+                }`}
+              />
+              <p className={`${montserrat500.className} text-lg sm:text-2xl`}>
+                Tip
+              </p>
+            </div>
+            <p
+              className={`${montserrat400.className} text-[12px] sm:text-lg ${
+                isDarkMode ? "text-[#A9A29A]" : ""
+              }`}
+            >
+              If your syllabus is lengthy or split into several units, try
+              generating one unit at a time.
             </p>
           </div>
         </div>
@@ -707,7 +825,10 @@ const NotesGenerate = () => {
 
                   {isDisabled && (
                     <>
-                      <span className="absolute right-[-2] sm:right-3 top-1/2 -translate-y-1/2">
+                      <span
+                        className="absolute right-1 sm:right-3 top-1/2 -translate-y-1/2"
+                        onClick={toggleOtherTooltip}
+                      >
                         <Lock
                           size={14}
                           className={`${
@@ -715,7 +836,14 @@ const NotesGenerate = () => {
                           } sm:w-6 sm:h-6`}
                         />
                       </span>
-                      <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white p-2 rounded text-xs w-32 sm:w-40 opacity-0 group-hover:opacity-100 transition-opacity hidden group-hover:block pointer-events-none">
+
+                      <div
+                        className={`absolute -top-10 left-1/2 -translate-x-1/2 bg-gray-800 text-white p-2 rounded text-xs w-32 sm:w-40 transition-opacity pointer-events-none ${
+                          showOtherTooltip
+                            ? "opacity-100 block"
+                            : "opacity-0 hidden group-hover:opacity-100 group-hover:block"
+                        }`}
+                      >
                         You have 0 credits left!
                       </div>
                     </>
@@ -804,7 +932,7 @@ const NotesGenerate = () => {
               className={`${montserrat500.className} text-base sm:text-xl flex items-center`}
             >
               Include Visuals
-              <span className="ml-2 relative group">
+              <span className="ml-2 relative group" onClick={toggleTooltip}>
                 <svg
                   width="18"
                   height="18"
@@ -814,12 +942,22 @@ const NotesGenerate = () => {
                   strokeWidth="2"
                   strokeLinecap="round"
                   strokeLinejoin="round"
+                  className="cursor-pointer"
                 >
                   <circle cx="12" cy="12" r="10" />
                   <path d="M12 16v-4" />
                   <path d="M12 8h.01" />
                 </svg>
-                <span className="absolute left-0 bottom-full mb-2 bg-gray-800 text-white p-2 rounded text-sm w-48 opacity-0 group-hover:opacity-100 transition-opacity hidden group-hover:block pointer-events-none">
+
+                <span
+                  className={`
+          absolute left-0 bottom-full mb-2 bg-gray-800 text-white p-2 rounded text-sm w-28 sm:w-48
+          transition-opacity duration-200
+          ${showTooltip ? "opacity-100 block" : "opacity-0 hidden"}
+          group-hover:opacity-100 group-hover:block
+          pointer-events-none
+        `}
+                >
                   This is an experimental feature
                 </span>
               </span>
@@ -1126,7 +1264,9 @@ const NotesGenerate = () => {
                   edgeInset + ((100 - edgeInset * 2) / stepCount) * index;
                 const isErrorState =
                   (index === 0 && validationErrors.subject_name) ||
-                  (index === 1 && validationErrors.syllabus);
+                  (index === 1 &&
+                    (validationErrors.syllabus ||
+                      validationErrors.user_instructions));
                 const isNotClickable = index === 3 && !hasAttemptedGeneration;
                 return (
                   <div
@@ -1213,7 +1353,11 @@ const NotesGenerate = () => {
               isDarkMode ? "bg-[#252320]" : "bg-white"
             } shadow-md rounded-lg p-4 sm:p-6 min-h-[300px] w-full max-w-[65rem] mt-15 sm:mt-10`}
           >
-            <div className="flex flex-col gap-4 h-auto sm:h-[40rem]">
+            <div
+              className={`flex flex-col gap-4 h-auto ${
+                currentStep === 1 ? "sm:h-[45rem]" : "sm:h-[40rem]"
+              }`}
+            >
               {currentStep === 0 && step1Component()}
               {currentStep === 1 && step2Component()}
               {currentStep === 2 && step3Component()}

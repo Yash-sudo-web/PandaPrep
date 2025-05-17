@@ -134,15 +134,15 @@ const Navbar = () => {
                 exit={{ opacity: 0, scale: 0.95, y: -10 }}
                 transition={{ duration: 0.2 }}
                 className={`absolute top-[3rem] right-0 backdrop-blur-md border rounded-2xl shadow-2xl py-3 w-72 z-50 flex flex-col overflow-hidden ${isDarkMode
-                    ? "bg-[#3A3935]/70 border-[#504E49]"
-                    : "bg-white/70 border-[#C9C3B3]"
+                  ? "bg-[#3A3935]/70 border-[#504E49]"
+                  : "bg-white/70 border-[#C9C3B3]"
                   }`}
               >
                 <Link
                   href="/generate"
                   className={`px-5 py-3 hover:bg-opacity-20 text-[1.25rem] transition-all duration-200 hover:pl-6 ${isDarkMode
-                      ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black"
-                      : "text-[#4A4947] hover:bg-[#f0eee9]"
+                    ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black"
+                    : "text-[#4A4947] hover:bg-[#f0eee9]"
                     }`}
                 >
                   Notes Generator
@@ -150,8 +150,8 @@ const Navbar = () => {
                 <div className={`border-t mx-4 ${isDarkMode ? "border-[#504E49]" : "border-[#C9C3B3]"}`} />
                 <div
                   className={`group relative flex justify-between px-5 py-3 text-[1.25rem] transition-all duration-200 hover:pl-6 cursor-not-allowed ${isDarkMode
-                      ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black"
-                      : "text-[#4A4947] hover:bg-[#f0eee9]"
+                    ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black"
+                    : "text-[#4A4947] hover:bg-[#f0eee9]"
                     }`}
                 >
                   <div className="flex items-center gap-2 blur-[0.5px]">
@@ -166,8 +166,8 @@ const Navbar = () => {
                 <div className={`border-t mx-4 ${isDarkMode ? "border-[#504E49]" : "border-[#C9C3B3]"}`} />
                 <div
                   className={`group relative flex justify-between px-5 py-3 text-[1.25rem] transition-all duration-200 hover:pl-6 cursor-not-allowed ${isDarkMode
-                      ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black"
-                      : "text-[#4A4947] hover:bg-[#f0eee9]"
+                    ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black"
+                    : "text-[#4A4947] hover:bg-[#f0eee9]"
                     }`}
                 >
                   <div className="flex items-center gap-2 blur-[0.5px]">
@@ -252,15 +252,15 @@ const Navbar = () => {
                       exit={{ opacity: 0, scale: 0.95, y: -10 }}
                       transition={{ duration: 0.2 }}
                       className={`absolute top-[3.5rem] right-0 backdrop-blur-md border rounded-2xl shadow-2xl py-3 w-60 z-50 flex flex-col overflow-hidden ${isDarkMode
-                          ? "bg-[#3A3935]/70 border-[#504E49]"
-                          : "bg-white/70 border-[#C9C3B3]"
+                        ? "bg-[#3A3935]/70 border-[#504E49]"
+                        : "bg-white/70 border-[#C9C3B3]"
                         }`}
                     >
                       <Link
                         href="/profile"
                         className={`px-5 py-3 text-[1.25rem] transition-all duration-200 hover:pl-6 ${isDarkMode
-                            ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black"
-                            : "text-[#4A4947] hover:bg-[#f0eee9]"
+                          ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black"
+                          : "text-[#4A4947] hover:bg-[#f0eee9]"
                           }`}
                       >
                         Profile
@@ -340,15 +340,15 @@ const Navbar = () => {
                   exit={{ opacity: 0, scale: 0.95, y: -10 }}
                   transition={{ duration: 0.2 }}
                   className={`absolute top-[3.5rem] right-0 backdrop-blur-md border rounded-2xl shadow-2xl py-3 w-60 z-50 flex flex-col overflow-hidden ${isDarkMode
-                      ? "bg-[#3A3935]/70 border-[#504E49]"
-                      : "bg-white/70 border-[#C9C3B3]"
+                    ? "bg-[#3A3935]/70 border-[#504E49]"
+                    : "bg-white/70 border-[#C9C3B3]"
                     }`}
                 >
                   <Link
                     href="/profile"
                     className={`px-5 py-3 text-[1.25rem] transition-all duration-200 hover:pl-6 ${isDarkMode
-                        ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black"
-                        : "text-[#4A4947] hover:bg-[#f0eee9]"
+                      ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black"
+                      : "text-[#4A4947] hover:bg-[#f0eee9]"
                       }`}
                   >
                     Profile
@@ -399,7 +399,7 @@ const Navbar = () => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className={`fixed inset-0 top-[5.5rem] backdrop-blur-sm z-40 flex flex-col ${isMobile ? "" : "lg:hidden" }${isDarkMode ? "bg-[#3A3935]/95" : "bg-[#D8D2C2]/95"
+            className={`fixed inset-0 top-[5.5rem] backdrop-blur-sm z-40 flex flex-col ${isMobile ? "" : "lg:hidden"}${isDarkMode ? "bg-[#3A3935]/95" : "bg-[#D8D2C2]/95"
               }`}
           >
             <div className="flex flex-col items-center pt-8 pb-6 px-6 gap-6 overflow-y-auto">
@@ -407,8 +407,8 @@ const Navbar = () => {
                 <button
                   onClick={() => setServicesDropdown(!servicesDropdown)}
                   className={`${montserrat500.className} w-full py-4 text-[1.5rem] flex items-center justify-between cursor-pointer border-b ${isDarkMode
-                      ? "text-[#D0CCC4] border-[#504E49]/50"
-                      : "text-[#4A4947] border-[#4A4947]/30"
+                    ? "text-[#D0CCC4] border-[#504E49]/50"
+                    : "text-[#4A4947] border-[#4A4947]/30"
                     }`}
                 >
                   <span>Services</span>
@@ -435,16 +435,23 @@ const Navbar = () => {
                         >
                           Notes Generator
                         </Link>
-                        <div className={`group relative flex justify-between py-3 text-[1.25rem] cursor-not-allowed ${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
-                          }`}>
+                        <div className={`group relative flex justify-between py-3 text-[1.25rem] cursor-not-allowed ${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}>
                           <div className="flex items-center gap-2 blur-[0.5px]">
                             Notes Summarizer
+                            <span className={`text-xs text-black px-2 py-0.5 rounded-full ${isDarkMode ? "bg-[#D0CCC4]" : "bg-[#FAF7F0] text-[#4A4947]"}`}>
+                              Coming Soon
+                            </span>
+
                           </div>
                         </div>
+
                         <div className={`group relative flex justify-between py-3 text-[1.25rem] cursor-not-allowed ${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
                           }`}>
                           <div className="flex items-center gap-2 blur-[0.5px]">
                             Chat with PDFs
+                            <span className={`text-xs text-black px-2 py-0.5 rounded-full ${isDarkMode ? "bg-[#D0CCC4]" : "bg-[#FAF7F0] text-[#4A4947]"}`}>
+                              Coming Soon
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -456,8 +463,8 @@ const Navbar = () => {
               <Link
                 href="/pricing"
                 className={`${montserrat500.className} w-full py-4 text-[1.5rem] border-b ${isDarkMode
-                    ? "text-[#D0CCC4] border-[#504E49]/50"
-                    : "text-[#4A4947] border-[#4A4947]/30"
+                  ? "text-[#D0CCC4] border-[#504E49]/50"
+                  : "text-[#4A4947] border-[#4A4947]/30"
                   }`}
               >
                 Pricing
@@ -466,8 +473,8 @@ const Navbar = () => {
               <Link
                 href="/history"
                 className={`${montserrat500.className} w-full py-4 text-[1.5rem] border-b ${isDarkMode
-                    ? "text-[#D0CCC4] border-[#504E49]/50"
-                    : "text-[#4A4947] border-[#4A4947]/30"
+                  ? "text-[#D0CCC4] border-[#504E49]/50"
+                  : "text-[#4A4947] border-[#4A4947]/30"
                   }`}
               >
                 History
@@ -477,8 +484,8 @@ const Navbar = () => {
                 <Link
                   href="/auth"
                   className={`mt-4 w-full text-center border-2 rounded-xl px-4 py-3 text-[1.2rem] ${isDarkMode
-                      ? "text-[#D0CCC4] border-[#D0CCC4]"
-                      : "text-[#4A4947] border-[#4A4947]"
+                    ? "text-[#D0CCC4] border-[#D0CCC4]"
+                    : "text-[#4A4947] border-[#4A4947]"
                     }`}
                 >
                   Login / Sign In
