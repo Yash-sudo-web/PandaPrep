@@ -49,8 +49,6 @@ const AuthPage = () => {
     try {
       const response: any = await signInWithPopup(auth, provider);
 
-      const email = response.user.email || " ";
-      setCookie("email", email, 7);
       try {
         const reqBody = {
           uid: response.user.uid,

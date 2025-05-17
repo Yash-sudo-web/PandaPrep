@@ -55,7 +55,6 @@ const UserRequestSchema = new mongoose.Schema(
     user_instructions: {
       type: String,
       trim: true,
-      minlength: [10, 'User instructions is too short'],
       maxlength: [500, 'User instructions cannot be more than 2000 characters'],
       default: '',
     },

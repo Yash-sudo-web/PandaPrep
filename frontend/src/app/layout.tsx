@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/providers/theme-provider"
 import { DM_Sans } from 'next/font/google'
 import Footer from "@/components/global/footer";
 import HealthCheckWrapper from "@/components/global/health-check-wrapper";
+import CookieConsent from "@/components/global/cookie-consent";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -44,6 +45,7 @@ export default function RootLayout({
             {children}
           </HealthCheckWrapper>
           <Footer />
+          <CookieConsent />
         </ThemeProvider>
       </body>
     </html>

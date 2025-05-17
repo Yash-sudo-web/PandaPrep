@@ -27,9 +27,8 @@ const userSchema = new mongoose.Schema({
     subscription: {
         plan: { type: String, default: "free" },
         credits: { type: Number, default: 3 },
-    }
-
-
+    },
+    cookieAcknowledged: { type: Boolean, default: false },
 });
 
 export const UserModel = mongoose.model("User", userSchema);
