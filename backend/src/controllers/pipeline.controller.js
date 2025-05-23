@@ -64,9 +64,12 @@ function validateRequest(body) {
   if (body.include_images && !['yes', 'no'].includes(body.include_images)) {
     error.push("include_images must be 'yes' or 'no'");
   }
-  
-  if (body.education_level && !['beginner', 'intermediate', 'advanced'].includes(body.education_level.toLowerCase())) {
-    error.push("education_level must be one of: beginner, intermediate, advanced");
+
+  if (
+    body.education_level &&
+    !['beginner', 'intermediate', 'advanced'].includes(body.education_level.toLowerCase())
+  ) {
+    error.push('education_level must be one of: beginner, intermediate, advanced');
   }
 
   return {
@@ -104,7 +107,7 @@ export async function generateNotesController(req, res) {
       note_type = 'concise',
       include_examples = 'no',
       include_images = 'no',
-      education_level = 'intermediate', 
+      education_level = 'intermediate',
       user_instructions = '',
     } = req.body;
     const format = req.body.format || 'pdf';
@@ -119,7 +122,7 @@ export async function generateNotesController(req, res) {
       note_type,
       include_examples,
       include_images,
-      education_level, 
+      education_level,
       user_instructions,
       format,
       status: 'pending',
@@ -145,7 +148,12 @@ export async function generateNotesController(req, res) {
       message: 'Notes generation initiated',
       requestId: requestId,
       websocketUrl: `/ws?requestId=${requestId}`,
-      estimatedTimeSeconds: calculateEstimatedTime(syllabus.length, note_type, include_images, education_level), 
+      estimatedTimeSeconds: calculateEstimatedTime(
+        syllabus.length,
+        note_type,
+        include_images,
+        education_level
+      ),
     });
 
     // Start the generation process in the background
@@ -198,12 +206,14 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
       note_type = 'concise',
       include_examples = 'no',
       include_images = 'no',
-      education_level = 'intermediate', 
+      education_level = 'intermediate',
       user_instructions = '',
     } = requestBody;
     const format = requestBody.format || 'pdf';
 
-    console.log(`[${requestId}] Generating ${note_type} notes for ${subject_name} at ${education_level} level`);
+    console.log(
+      `[${requestId}] Generating ${note_type} notes for ${subject_name} at ${education_level} level`
+    );
     broadcastStage(requestId, 'generation_started', {
       subject_name,
       note_type,
@@ -219,7 +229,7 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
       note_type: note_type.toLowerCase(),
       include_examples,
       include_images,
-      education_level, 
+      education_level,
       user_instructions,
     };
 
@@ -309,34 +319,34 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
 
     console.log(`[${requestId}] Processing LaTeX formulas with MathJax...`);
     broadcastStage(requestId, 'processing_latex_formulas', {
-      message: 'Converting mathematical formulas with MathJax'
+      message: 'Converting mathematical formulas with MathJax',
     });
-    
+
     try {
       // First check if there are any formulas to process
       const hasFormulas = combinedMarkdown.includes('$');
-    
+
       if (hasFormulas) {
         console.log(`[${requestId}] Found LaTeX formulas, converting with MathJax...`);
-    
+
         // Process in chunks for very large documents
         if (combinedMarkdown.length > 50000) {
           console.log(`[${requestId}] Large document detected, processing in chunks...`);
-    
+
           // Split by section headers
           const sections = combinedMarkdown.split(/(?=#{1,3}\s)/);
           let processedMarkdown = '';
-    
+
           for (let i = 0; i < sections.length; i++) {
             const section = sections[i];
             const hasLatex = section.includes('$');
-    
+
             broadcastStage(requestId, 'processing_latex_section', {
               current: i + 1,
               total: sections.length,
-              progress: Math.round(((i + 1) / sections.length) * 100)
+              progress: Math.round(((i + 1) / sections.length) * 100),
             });
-    
+
             if (hasLatex) {
               const processedSection = await convertLatexToMathJax(section);
               processedMarkdown += processedSection;
@@ -344,27 +354,27 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
               processedMarkdown += section;
             }
           }
-    
+
           combinedMarkdown = processedMarkdown;
         } else {
           // Process the entire document at once
           combinedMarkdown = await convertLatexToMathJax(combinedMarkdown);
         }
-    
+
         broadcastStage(requestId, 'latex_formulas_processed', {
-          success: true
+          success: true,
         });
       } else {
         console.log(`[${requestId}] No LaTeX formulas found, skipping conversion.`);
         broadcastStage(requestId, 'latex_formulas_skipped', {
-          message: 'No mathematical formulas detected'
+          message: 'No mathematical formulas detected',
         });
       }
     } catch (latexError) {
       console.error(`[${requestId}] LaTeX processing error:`, latexError);
       broadcastStage(requestId, 'latex_processing_warning', {
         error: latexError.message,
-        message: 'Some formulas may not display correctly in the PDF'
+        message: 'Some formulas may not display correctly in the PDF',
       });
     }
 
@@ -416,7 +426,7 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
 
         const uploadResponse = await uploadPDFToCloudinary(_userId, pdfPath, `${filePrefix}.pdf`);
         downloadUrl = uploadResponse.secure_url;
-        if (uploadResponse) {
+        if (uploadResponse && uploadResponse.secure_url) {
           await NotesRequestModel.updateOne(
             { _id: requestIdDb },
             {
@@ -424,12 +434,42 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
               public_id: uploadResponse.public_id,
             }
           );
+        } else {
+          broadcastStage(requestId, 'pdf_generation_failed', {
+          error: pdfError.message,
+        });
         }
 
         broadcastStage(requestId, 'pdf_generation_complete', {
           path: pdfPath,
           downloadId: downloadUrl,
         });
+
+        // Final success message
+        broadcastStage(requestId, 'generation_complete', {
+          filePrefix,
+          format,
+          processingTime: Date.now() - startTime,
+          downloadId: downloadUrl,
+        });
+
+        // Update request status in database
+        await NotesRequestModel.updateOne(
+          { _id: requestIdDb },
+          {
+            status: 'completed',
+            processing_time_ms: Date.now() - startTime,
+            output_file: {
+              filename: `${filePrefix}.${format.toLowerCase() === 'pdf' ? 'pdf' : 'zip'}`,
+              directory: requestIdDb.toString(),
+            },
+            image_count: imageResults.filter((img) => img.success).length,
+            completed_at: new Date(),
+          }
+        );
+        if (note_type === 'detailed') {
+          await UserModel.updateOne({ _id: _userId }, { $inc: { 'subscription.credits': -1 } });
+        }
       } catch (pdfError) {
         console.error(`[${requestId}] PDF generation error:`, pdfError);
         broadcastStage(requestId, 'pdf_generation_failed', {
@@ -439,32 +479,8 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
     } else {
       // Create a ZIP archive for markdown format
       await createZipArchive(requestId, requestOutputDir, filePrefix, downloadUrl);
-    }
-
-    // Final success message
-    broadcastStage(requestId, 'generation_complete', {
-      filePrefix,
-      format,
-      processingTime: Date.now() - startTime,
-      downloadId: downloadUrl,
-    });
-
-    // Update request status in database
-    await NotesRequestModel.updateOne(
-      { _id: requestIdDb },
-      {
-        status: 'completed',
-        processing_time_ms: Date.now() - startTime,
-        output_file: {
-          filename: `${filePrefix}.${format.toLowerCase() === 'pdf' ? 'pdf' : 'zip'}`,
-          directory: requestIdDb.toString(),
-        },
-        image_count: imageResults.filter((img) => img.success).length,
-        completed_at: new Date(),
-      }
-    );
-    if (note_type === 'detailed') {
-      await UserModel.updateOne({ _id: _userId }, { $inc: { 'subscription.credits': -1 } });
+      console.error(`[${requestId}] Generation process error:`, error);
+      broadcastError(requestId, 'Generation process failed', error.message);
     }
   } catch (error) {
     console.error(`[${requestId}] Generation process error:`, error);
@@ -541,7 +557,12 @@ async function createZipArchive(requestId, sourceDir, filePrefix, downloadUrl) {
  * @param {string} educationLevel - Education level for the notes
  * @returns {number} - Estimated time in seconds
  */
-function calculateEstimatedTime(syllabusLength, noteType, includeImages, educationLevel = 'intermediate') {
+function calculateEstimatedTime(
+  syllabusLength,
+  noteType,
+  includeImages,
+  educationLevel = 'intermediate'
+) {
   // Base time
   let baseTime = 30; // 30 seconds baseline
 
@@ -586,7 +607,7 @@ export async function getGenerationStatus(req, res) {
       status: request.status,
       subject: request.subject_name,
       noteType: request.note_type,
-      educationLevel: request.education_level || 'intermediate', 
+      educationLevel: request.education_level || 'intermediate',
       createdAt: request.created_at,
       processingTime: request.processing_time_ms,
       outputFile: request.output_file,

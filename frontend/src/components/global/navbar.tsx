@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Moon, Sun, ChevronDown, ChevronUp, Lock, Menu, X } from "lucide-react";
 import { getAuth, onAuthStateChanged, signOut, User } from "firebase/auth";
 import { useTheme } from "next-themes";
@@ -15,6 +15,7 @@ import { montserrat500, montserrat700 } from "@/lib/font-utils";
 const Navbar = () => {
   const auth = getAuth(app);
   const router = useRouter();
+  const pathname = usePathname();
 
   const { setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -103,7 +104,7 @@ const Navbar = () => {
   }, [menuOpen]);
 
   return (
-    <div className={`py-[0.5rem] px-6 my-6 mx-2 lg:mx-10 rounded-[1.5rem] border flex justify-between items-center fixed top-0 left-0 right-0 z-50 ${isDarkMode ? "bg-[#3A3935] border-[#504E49]" : "bg-[#D8D2C2] border-[#C9C3B3]"}`}>
+    <div className={`py-[0.5rem] px-6 my-6 mx-2 lg:mx-10 rounded-[1.5rem] border flex justify-between items-center ${pathname === "/generate" ? "" : "fixed top-0 left-0 right-0 z-50"} ${isDarkMode ? "bg-[#3A3935] border-[#504E49]" : "bg-[#D8D2C2] border-[#C9C3B3]"}`}>
       <div
         onClick={() => router.push("/")}
         className={`${montserrat700.className} text-[1.25rem] sm:text-[2rem] cursor-pointer ${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}

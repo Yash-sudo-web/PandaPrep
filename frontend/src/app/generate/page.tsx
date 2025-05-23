@@ -1169,11 +1169,11 @@ const NotesGenerate = () => {
 
   return (
     <div>
-      <div className={`${isDarkMode ? "bg-[#1E1D1B]" : "bg-[#F3EFE5]"} pt-20`}>
+      <div className={`${isDarkMode ? "bg-[#1E1D1B]" : "bg-[#F3EFE5]"} pt-1`}>
         <Navbar />
         <div
           className={`text-center text-3xl sm:text-5xl ${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
-            } pt-16 pb-10 ${montserrat600.className}`}
+            } pt-8 pb-10 ${montserrat600.className}`}
         >
           Generate Notes
         </div>

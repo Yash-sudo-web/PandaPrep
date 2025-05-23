@@ -149,7 +149,7 @@ class NotesGeneratorAgent {
       
       let accumulatedContent = '';
       
-      const response = await llm.call([
+      const response = await llm.invoke([
         { role: "system", content: systemPrompt },
         { role: "user", content: promptText }
       ], {

@@ -62,7 +62,7 @@ Return a JSON array where each object contains:
       
       console.log("Generating limited image suggestions for topics:", topics.join(", "));
       
-      const response = await llm.call([
+      const response = await llm.invoke([
         { role: "system", content: this.getSystemPrompt() },
         { role: "user", content: `Please suggest ONLY the most necessary educational images (maximum 3-5 total) for the following topics in my study notes. Focus exclusively on concepts that truly need visual explanation: ${topics.join(", ")}` }
       ]);
