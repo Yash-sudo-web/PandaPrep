@@ -424,7 +424,7 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
 
         clearInterval(intervalId);
 
-        const uploadResponse = await uploadPDFToCloudinary(_userId, pdfPath, `${filePrefix}.pdf`);
+        const uploadResponse = await uploadPDFToCloudinary(_userId, pdfPath, `${filePrefix}.pdf`, 'pdfGeneration');
         downloadUrl = uploadResponse.secure_url;
         if (uploadResponse && uploadResponse.secure_url) {
           await NotesRequestModel.updateOne(
