@@ -147,10 +147,10 @@ class SyllabusAnalyzerAgent {
     static async process(params) {
     const { syllabus } = params;
     const systemPrompt = this.getSystemPrompt(params);
-    const llm = new ChatGroq({
-        groqApiKey: process.env.GROQ_API_KEY,
-        model: "llama3-70b-8192",//"meta-llama/llama-4-maverick-17b-128e-instruct", //"mixtral-8x7b-32768",
-      });
+    // const llm = new ChatGroq({
+    //     groqApiKey: process.env.GROQ_API_KEY,
+    //     model: "llama3-70b-8192",//"meta-llama/llama-4-maverick-17b-128e-instruct", //"mixtral-8x7b-32768",
+    //   });
 
     const client = new ModelClient(endpoint, new AzureKeyCredential(apiKey));
 
