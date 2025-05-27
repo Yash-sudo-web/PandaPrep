@@ -466,7 +466,6 @@ const NotesGenerate = () => {
 
   const [showDisclaimer, setShowDisclaimer] = useState(false);
 
-
   const step1Component = () => {
     return (
       <div
