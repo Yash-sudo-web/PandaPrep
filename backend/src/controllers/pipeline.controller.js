@@ -21,6 +21,7 @@ import {
 } from '../websocket/server.js';
 import axios from 'axios';
 import { cssStyles } from '../constants/md-css.js';
+import { log } from 'console';
 
 dotenv.config();
 
@@ -248,6 +249,7 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
     });
 
     const promptsList = await SyllabusAnalyzerAgent.process(params);
+    console.log(promptsList);
 
     if (!promptsList || promptsList.error) {
       throw new Error(`Failed to analyze syllabus: ${promptsList?.error || 'Invalid response'}`);
@@ -401,23 +403,38 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
           }
         }, 500);
 
-        try {
-          const markdownContent = await fs.promises.readFile(markdownPath, 'utf8');
+        let attempts = 0;
+        let content;
 
-          const data = {
-            markdown: markdownContent,
-            css: cssStyles,
-          };
+        while (attempts < 3 && !content) {
+          try {
+            const markdownContent = await fs.promises.readFile(markdownPath, 'utf8');
 
-          content = await axios.post(process.env.MICROSERVICE_LINK, data, {
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            responseType: 'arraybuffer',
-          });
-        } catch (error) {
-          console.log(error);
+            const data = {
+              markdown: markdownContent,
+              css: cssStyles,
+            };
+
+            content = await axios.post(process.env.MICROSERVICE_LINK, data, {
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+              },
+              responseType: 'arraybuffer',
+            });
+          } catch (error) {
+            console.log(`Attempt ${attempts + 1} failed:`, error);
+          }
+
+          attempts++;
         }
+
+        if (!content) {
+          const pdfError = new Error('Content is undefined after 3 attempts.');
+          broadcastStage(requestId, 'pdf_generation_failed', {
+            error: pdfError.message,
+          });
+        }
+
 
         fs.writeFileSync(pdfPath, content.data);
         await addWatermarkToPdf(pdfPath);
