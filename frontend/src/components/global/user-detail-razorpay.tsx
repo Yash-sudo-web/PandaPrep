@@ -295,16 +295,16 @@ const CustomerDetailsDialog = React.forwardRef<CustomerDetailsDialogRef, Custome
         // Updated theme classes to match pricing page theme
         const themeClasses = {
             dialog: isDarkMode 
-                ? "border border-green-600 bg-neutral-900" 
+                ? "border border-[#2A2826] bg-[#1E1D1B]" 
                 : "border border-[#B17457] bg-white",
-            title: isDarkMode ? "text-green-500" : "text-[#B17457]",
-            description: isDarkMode ? "text-gray-300" : "text-neutral-600",
-            label: isDarkMode ? "text-green-500" : "text-[#B17457]",
+            title: isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]",
+            description: isDarkMode ? "text-[#D0CCC4]" : "text-neutral-600",
+            label: isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]",
             input: isDarkMode 
-                ? "bg-neutral-800 border-green-700 focus:border-green-500" 
+                ? "bg-[#2A2926] border-[#2A2826] focus:border-[#D29C7B]" 
                 : "bg-white border-[#B17457] focus:border-[#B17457]",
             button: isDarkMode
-                ? "bg-green-600 hover:bg-green-700 text-white"
+                ? "bg-[#D29C7B] hover:bg-[#E5A382] text-[#1E1D1B]"
                 : "bg-white border-2 border-[#B17457] text-[#B17457] hover:bg-[#B17457] hover:text-[#FAF7F0]",
             error: isDarkMode ? "text-red-400" : "text-red-500",
             inputError: isDarkMode ? "border-red-400" : "border-red-500",

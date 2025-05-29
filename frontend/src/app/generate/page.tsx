@@ -60,6 +60,13 @@ const NotesGenerate = () => {
     2: false,
   });
   const [hasAttemptedGeneration, setHasAttemptedGeneration] = useState(false);
+  const [queueStatus, setQueueStatus] = useState({
+    position: 0,
+    state: "",
+  });
+  const [estimatedTime, setEstimatedTime] = useState(0);
+  const [isInQueue, setIsInQueue] = useState(false);
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -175,6 +182,11 @@ const NotesGenerate = () => {
         if (data.type === "connected") {
         } else if (data.type === "stage_update") {
           setCurrentStage(data.stage);
+          if (data.stage === "generation_started") {
+  setIsInQueue(false);
+  setQueueStatus({ position: 0, state: "" });
+  setEstimatedTime(0);
+}
 
           if (data.stage === "generation_complete") {
             setGenerationComplete(true);
@@ -262,53 +274,64 @@ const NotesGenerate = () => {
   };
 
   const handleSubmit = async () => {
-    try {
-      if (!validateForm()) {
-        setError("Please fill in all required fields correctly.");
-        return;
-      }
-      setCurrentStep(3);
-      setIsGenerating(true);
-      setShowGenerateButton(false);
-      setError("");
-      setMarkdownContent("");
-      setCurrentStage("initializing");
-      setGenerationComplete(false);
-      setDownloadId("");
-
-      const response = await axios.post(
-        `${BASE_URL}/pipeline/generate-notes`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-          },
-        }
-      );
-
-      if (response.data.success) {
-        if (response.data && response.data.requestId) {
-          setRequestId(response.data.requestId);
-          connectWebSocket(response.data.requestId);
-        }
-      }
-    } catch (error) {
-      console.error("Error generating notes:", error);
-      if (error) {
-        if (axios.isAxiosError(error) && error.response) {
-          setError(error.response.data.error || "Server error occurred");
-        } else {
-          setError("An unexpected error occurred. Please try again.");
-        }
-      } else {
-        setError(
-          "Error generating notes. Please check your connection and try again."
-        );
-      }
-      setIsGenerating(false);
-      setShowGenerateButton(true);
+  try {
+    if (!validateForm()) {
+      setError("Please fill in all required fields correctly.");
+      return;
     }
-  };
+    setCurrentStep(3);
+    setIsGenerating(true);
+    setShowGenerateButton(false);
+    setError("");
+    setMarkdownContent("");
+    setCurrentStage("initializing");
+    setGenerationComplete(false);
+    setDownloadId("");
+    setQueueStatus({ position: 0, state: "" });
+    setEstimatedTime(0);
+    setIsInQueue(false);
+
+    const response = await axios.post(
+      `${BASE_URL}/pipeline/generate-notes`,
+      formData,
+      {
+        headers: {
+          Authorization: `Bearer ${idToken}`,
+        },
+      }
+    );
+
+    if (response.data.success) {
+      // Check if user is in queue
+      if (response.data.queueStatus && response.data.queueStatus.state === 'prioritized') {
+        setQueueStatus(response.data.queueStatus);
+        setEstimatedTime(response.data.estimatedTimeSeconds);
+        setIsInQueue(true);
+        setCurrentStage("queued");
+      }
+      
+      if (response.data && response.data.requestId) {
+        setRequestId(response.data.requestId);
+        connectWebSocket(response.data.requestId);
+      }
+    }
+  } catch (error) {
+    console.error("Error generating notes:", error);
+    if (error) {
+      if (axios.isAxiosError(error) && error.response) {
+        setError(error.response.data.error || "Server error occurred");
+      } else {
+        setError("An unexpected error occurred. Please try again.");
+      }
+    } else {
+      setError(
+        "Error generating notes. Please check your connection and try again."
+      );
+    }
+    setIsGenerating(false);
+    setShowGenerateButton(true);
+  }
+};
 
   const downloadGeneratedNotes = () => {
     if (downloadId) {
@@ -364,68 +387,72 @@ const NotesGenerate = () => {
   }, [auth, router]);
 
   const renderGenerationStatus = () => {
-    if (!isGenerating && !generationComplete) return null;
+  if (!isGenerating && !generationComplete) return null;
 
-    let statusMessage = "";
-    let statusColor = isDarkMode
-      ? "border-green-900"
-      : "bg-green-50 border-green-200";
-    let statusTextColor = isDarkMode ? "text-white" : "text-green-700";
+  let statusMessage = "";
+  let statusColor = isDarkMode
+    ? "border-green-900"
+    : "bg-green-50 border-green-200";
+  let statusTextColor = isDarkMode ? "text-white" : "text-green-700";
 
-    if (error) {
-      statusColor = isDarkMode ? "border-red-900" : "bg-red-50 border-red-200";
-      statusTextColor = isDarkMode ? "text-white" : "text-red-700";
-      statusMessage = error;
-    } else {
-      switch (currentStage) {
-        case "initializing":
-          statusMessage = "Initializing generation process...";
-          break;
-        case "generation_started":
-          statusMessage = "Starting note generation...";
-          break;
-        case "analyzing_syllabus":
-          statusMessage = "Analyzing syllabus content...";
-          break;
-        case "syllabus_analyzed":
-          statusMessage = "Syllabus analysis complete!";
-          break;
-        case "generating_image_suggestions":
-          statusMessage = "Generating image suggestions...";
-          break;
-        case "downloading_images":
-          statusMessage = "Finding and downloading images...";
-          break;
-        case "integrating_images":
-          statusMessage = "Integrating images into notes...";
-          break;
-        case "generating_pdf":
-          statusMessage = "Creating PDF document...";
-          break;
-        case "pdf_generation_complete":
-          statusMessage = "PDF generation complete!";
-          break;
-        case "generation_complete":
-          statusMessage = "Notes successfully generated!";
-          break;
-        default:
-          statusMessage = `Processing: ${currentStage.replace(/_/g, " ")}`;
-      }
+  if (error) {
+    statusColor = isDarkMode ? "border-red-900" : "bg-red-50 border-red-200";
+    statusTextColor = isDarkMode ? "text-white" : "text-red-700";
+    statusMessage = error;
+  } else {
+    switch (currentStage) {
+      case "initializing":
+        statusMessage = "Initializing generation process...";
+        break;
+      case "queued":
+        statusMessage = "Request queued for processing...";
+        break;
+      case "generation_started":
+        statusMessage = "Starting note generation...";
+        break;
+      case "analyzing_syllabus":
+        statusMessage = "Analyzing syllabus content...";
+        break;
+      case "syllabus_analyzed":
+        statusMessage = "Syllabus analysis complete!";
+        break;
+      case "generating_image_suggestions":
+        statusMessage = "Generating image suggestions...";
+        break;
+      case "downloading_images":
+        statusMessage = "Finding and downloading images...";
+        break;
+      case "integrating_images":
+        statusMessage = "Integrating images into notes...";
+        break;
+      case "generating_pdf":
+        statusMessage = "Creating PDF document...";
+        break;
+      case "pdf_generation_complete":
+        statusMessage = "PDF generation complete!";
+        break;
+      case "generation_complete":
+        statusMessage = "Notes successfully generated!";
+        break;
+      default:
+        statusMessage = `Processing: ${currentStage.replace(/_/g, " ")}`;
     }
+  }
 
-    return (
-      <div
-        className={`p-2 sm:p-3 ${statusColor} border rounded-md flex items-center gap-2 sm:gap-3`}
-      >
-        {isGenerating && (
-          <Loader2 className="animate-spin w-4 h-4 sm:w-5 sm:h-5" />
-        )}
-        <p className={`${statusTextColor} text-sm sm:text-base`}>
-          {statusMessage}
-        </p>
-      </div>
-    );
-  };
+  return (
+    <div
+      className={`p-2 sm:p-3 ${statusColor} border rounded-md flex items-center gap-2 sm:gap-3`}
+    >
+      {isGenerating && !isInQueue && (
+        <Loader2 className="animate-spin w-4 h-4 sm:w-5 sm:h-5" />
+      )}
+      <p className={`${statusTextColor} text-sm sm:text-base`}>
+        {statusMessage}
+      </p>
+    </div>
+  );
+};
+
 
   const steps = ["Subject", "Content", "Format", "Result"];
   const stepIcons = [
@@ -1006,15 +1033,18 @@ const NotesGenerate = () => {
       );
     }
 
-    const title = isGenerating
-      ? "Your Notes are being generated"
-      : "Your Notes are Ready!";
-
-    const message = isGenerating
-      ? "Please wait while we prepare your notes..."
-      : generationComplete
-        ? "Here's a preview of what we've created"
-        : "";
+    let title, message;
+    
+    if (isInQueue && currentStage !== "generation_started") {
+      title = "You're in Queue";
+      message = `We're facing high load due to exam season. You can either wait or close this tab and check back later in the history section.`;
+    } else if (isGenerating) {
+      title = "Your Notes are being generated";
+      message = "Please wait while we prepare your notes...";
+    } else {
+      title = "Your Notes are Ready!";
+      message = generationComplete ? "Here's a preview of what we've created" : "";
+    }
 
     return (
       <div
@@ -1095,7 +1125,7 @@ const NotesGenerate = () => {
               <h2 className={`${montserrat500.className} text-2xl`}>{title}</h2>
               <p
                 className={`${montserrat400.className} text-sm mt-2 ${isDarkMode ? "text-[#A9A29A]" : ""
-                  }`}
+                  } ${isInQueue && currentStage !== "generation_started" ? "text-orange-500" : ""}`}
               >
                 {message}
               </p>
@@ -1130,7 +1160,10 @@ const NotesGenerate = () => {
                     className={`${montserrat500.className} ${isDarkMode ? "text-[#A9A29A]" : "text-gray-500"
                       }`}
                   >
-                    Generating your notes...
+                    {isInQueue && currentStage !== "generation_started" 
+                      ? "Waiting in queue..." 
+                      : "Generating your notes..."
+                    }
                   </p>
                 </div>
               )
@@ -1365,7 +1398,7 @@ const NotesGenerate = () => {
                     {renderGenerationStatus()}
                   </div>
 
-                  <div className="w-full flex justify-between sm:w-auto sm:justify-end gap-2 sm:gap-4">
+                  {(generationComplete && markdownContent && downloadId) && (<div className="w-full flex justify-between sm:w-auto sm:justify-end gap-2 sm:gap-4">
                     <button
                       onClick={handleSubmit}
                       className={`cursor-pointer h-10 sm:h-10 px-3 sm:px-4 border rounded-lg transition-colors flex items-center gap-2 text-sm ${isDarkMode
@@ -1397,7 +1430,7 @@ const NotesGenerate = () => {
                       <span>Create New Notes</span>
                       <Sparkles size={16} className="w-4 h-4" />
                     </button>
-                  </div>
+                  </div>)}
                 </div>
               )}
             </div>
