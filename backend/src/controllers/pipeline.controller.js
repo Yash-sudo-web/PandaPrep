@@ -12,6 +12,7 @@ import { UserModel } from '../models/user.model.js';
 import { uploadPDFToCloudinary } from '../utils/cloudinary-file-upload.util.js';
 import { addWatermarkToPdf } from '../utils/pdf-watermark-addition.util.js';
 import { convertLatexToMathJax } from '../utils/latex-to-image.util.js';
+import { addToQueue, getQueueStatus } from '../utils/queueConfig.js';
 
 import {
   createRequestId,
@@ -127,11 +128,12 @@ export async function generateNotesController(req, res) {
       format,
       status: 'pending',
       created_at: new Date(),
+      requestId: requestId,
     });
 
     if (request.note_type === 'detailed' || request.include_images === 'yes') {
       if (userDoc.subscription.credits <= 0) {
-        request.updateOne({
+        await request.updateOne({
           status: 'failed',
           error_message: 'Insufficient credits for this request',
         });
@@ -142,11 +144,22 @@ export async function generateNotesController(req, res) {
       }
     }
 
-    // Return the requestId to the client for WebSocket connection
+    // Add the job to the queue - REMOVED generateNotes function parameter
+    const job = await addToQueue(requestId, {
+      requestBody: req.body,
+      requestIdDb: request._id,
+      userId: request._userID
+    });
+
+    const queueStatus = await getQueueStatus(job.id);
+
+    // Return the requestId and job information to the client
     res.status(202).json({
       success: true,
-      message: 'Notes generation initiated',
+      message: 'Notes generation queued',
       requestId: requestId,
+      jobId: job.id,
+      queueStatus: queueStatus,
       websocketUrl: `/ws?requestId=${requestId}`,
       estimatedTimeSeconds: calculateEstimatedTime(
         syllabus.length,
@@ -156,25 +169,6 @@ export async function generateNotesController(req, res) {
       ),
     });
 
-    // Start the generation process in the background
-    process.nextTick(() => {
-      generateNotes(requestId, req.body, request._id, request._userID).catch((err) => {
-        console.error(`[${requestId}] Background process error:`, err);
-        broadcastError(requestId, 'Generation process failed', err.message);
-
-        // Update request status
-        NotesRequestModel.updateOne(
-          { _id: request._id },
-          {
-            status: 'failed',
-            error_message: err.message,
-            processing_time_ms: Date.now() - startTime,
-          }
-        ).catch((updateErr) => {
-          console.error(`[${requestId}] Failed to update request status:`, updateErr);
-        });
-      });
-    });
   } catch (error) {
     console.error(`[${requestId}] Controller error:`, error);
     res.status(500).json({
@@ -187,10 +181,13 @@ export async function generateNotesController(req, res) {
 
 /**
  * Main function to generate notes (runs in background)
+ * EXPORTED so it can be imported by the worker
  * @param {string} requestId - Unique ID for this request
  * @param {Object} requestBody - The original request body
+ * @param {string} requestIdDb - Database ID for the request
+ * @param {string} _userId - User ID
  */
-async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
+export async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
   const startTime = Date.now();
   let markdownPath = null;
   let pdfPath = null;
@@ -479,8 +476,6 @@ async function generateNotes(requestId, requestBody, requestIdDb, _userId) {
     } else {
       // Create a ZIP archive for markdown format
       await createZipArchive(requestId, requestOutputDir, filePrefix, downloadUrl);
-      console.error(`[${requestId}] Generation process error:`, error);
-      broadcastError(requestId, 'Generation process failed', error.message);
     }
   } catch (error) {
     console.error(`[${requestId}] Generation process error:`, error);
@@ -589,11 +584,10 @@ function calculateEstimatedTime(
  * @param {Response} res - Express response object
  */
 export async function getGenerationStatus(req, res) {
-  const { requestId } = req.params;
-
   try {
-    const request = await NotesRequestModel.findOne({ _id: requestId });
-
+    const { requestId } = req.params;
+    const request = await NotesRequestModel.findOne({ requestId });
+    
     if (!request) {
       return res.status(404).json({
         success: false,
@@ -601,26 +595,26 @@ export async function getGenerationStatus(req, res) {
       });
     }
 
-    res.status(200).json({
+    // Get queue status if job ID exists
+    let queueInfo = null;
+    if (request.jobId) {
+      queueInfo = await getQueueStatus(request.jobId);
+    }
+
+    res.json({
       success: true,
-      requestId: request.request_id,
       status: request.status,
-      subject: request.subject_name,
-      noteType: request.note_type,
-      educationLevel: request.education_level || 'intermediate',
-      createdAt: request.created_at,
-      processingTime: request.processing_time_ms,
-      outputFile: request.output_file,
       error: request.error_message,
-      websocketUrl: `/ws?requestId=${requestId}`,
-      downloadId: request.status === 'completed' && request.output_file ? requestId : null,
+      progress: request.progress,
+      queuePosition: queueInfo?.position || 0,
+      queueState: queueInfo?.state || 'unknown',
+      downloadUrl: request.download_url,
     });
   } catch (error) {
-    console.error(`Error fetching status for request ${requestId}:`, error);
+    console.error('Error getting generation status:', error);
     res.status(500).json({
       success: false,
-      error: 'Failed to retrieve generation status',
-      details: process.env.NODE_ENV !== 'production' ? error.stack : undefined,
+      error: 'Failed to get generation status',
     });
   }
 }
