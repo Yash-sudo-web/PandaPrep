@@ -33,15 +33,17 @@ queueEvents.on('active', ({ jobId, prev }) => {
 });
 
 queueEvents.on('completed', ({ jobId, returnvalue }) => {
-  if (activeJobs > 0) {
-    activeJobs--;
+  activeJobs--;
+  if (activeJobs < 0) {
+    activeJobs = 0;
   }
   console.log(`Job ${jobId} completed. Active jobs: ${activeJobs}`);
 });
 
 queueEvents.on('failed', ({ jobId, failedReason }) => {
-  if (activeJobs > 0) {
-    activeJobs--;
+  activeJobs--;
+  if (activeJobs < 0) {
+    activeJobs = 0;
   }
   console.log(`Job ${jobId} failed: ${failedReason}. Active jobs: ${activeJobs}`);
 });
@@ -88,7 +90,7 @@ worker.on('active', (job) => {
 
 worker.on('completed', (job) => {
   const { requestId } = job.data;
-  broadcastStage(requestId, 'COMPLETED', {
+  broadcastStage(requestId, 'generation_completed', {
     message: 'Notes generation completed',
   });
 });

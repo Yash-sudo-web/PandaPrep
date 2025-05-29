@@ -1398,7 +1398,7 @@ const NotesGenerate = () => {
                     {renderGenerationStatus()}
                   </div>
 
-                  <div className="w-full flex justify-between sm:w-auto sm:justify-end gap-2 sm:gap-4">
+                  {(generationComplete && markdownContent && downloadId) && (<div className="w-full flex justify-between sm:w-auto sm:justify-end gap-2 sm:gap-4">
                     <button
                       onClick={handleSubmit}
                       className={`cursor-pointer h-10 sm:h-10 px-3 sm:px-4 border rounded-lg transition-colors flex items-center gap-2 text-sm ${isDarkMode
@@ -1430,7 +1430,7 @@ const NotesGenerate = () => {
                       <span>Create New Notes</span>
                       <Sparkles size={16} className="w-4 h-4" />
                     </button>
-                  </div>
+                  </div>)}
                 </div>
               )}
             </div>
