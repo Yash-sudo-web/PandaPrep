@@ -26,26 +26,78 @@ export const queueEvents = new QueueEvents('notes-generation', { connection });
 let activeJobs = 0;
 const MAX_CONCURRENT_JOBS = 1;
 
+let flushTimeout = null;
+let lastJobProcessedAt = null;
+let hasQueueBeenEmpty = false;
+
+async function checkAndScheduleFlush() {
+  try {
+    const jobCounts = await notesQueue.getJobCounts();
+    const totalJobs = jobCounts.active + jobCounts.waiting + jobCounts.delayed + jobCounts.prioritized;
+    
+    if (totalJobs === 0 && activeJobs === 0) {
+      if (!hasQueueBeenEmpty) {
+        hasQueueBeenEmpty = true;
+        lastJobProcessedAt = Date.now();
+        
+        // Schedule flush after a delay
+        if (flushTimeout) {
+          clearTimeout(flushTimeout);
+        }
+        
+        flushTimeout = setTimeout(async () => {
+          // Double-check queue is still empty
+          const recheck = await notesQueue.getJobCounts();
+          const recheckTotal = recheck.active + recheck.waiting + recheck.prioritized + recheck.delayed;
+          
+          if (recheckTotal === 0 && activeJobs === 0) {
+            console.log('Queue confirmed empty, flushing Redis DB...');
+            await connection.flushall();
+            console.log('Redis DB flushed successfully');
+          }
+          hasQueueBeenEmpty = false;
+        }, 10000); // 10 second delay
+      }
+    } else {
+      // Queue has jobs, cancel any pending flush
+      hasQueueBeenEmpty = false;
+      if (flushTimeout) {
+        clearTimeout(flushTimeout);
+        flushTimeout = null;
+      }
+    }
+  } catch (error) {
+    console.error('Error in flush check:', error);
+  }
+}
+
 // Set up global event listeners for the queue
 queueEvents.on('active', ({ jobId, prev }) => {
   activeJobs++;
   console.log(`Job ${jobId} is now active. Active jobs: ${activeJobs}`);
 });
 
-queueEvents.on('completed', ({ jobId, returnvalue }) => {
+queueEvents.on('completed', async ({ jobId, returnvalue }) => {
   activeJobs--;
   if (activeJobs < 0) {
     activeJobs = 0;
   }
   console.log(`Job ${jobId} completed. Active jobs: ${activeJobs}`);
+  await checkAndScheduleFlush();
 });
 
-queueEvents.on('failed', ({ jobId, failedReason }) => {
+queueEvents.on('failed', async ({ jobId, failedReason }) => {
   activeJobs--;
   if (activeJobs < 0) {
     activeJobs = 0;
   }
   console.log(`Job ${jobId} failed: ${failedReason}. Active jobs: ${activeJobs}`);
+  await checkAndScheduleFlush();
+});
+
+// Also check when new jobs are added (to cancel flush if needed)
+queueEvents.on('added', async ({ jobId }) => {
+  await checkAndScheduleFlush();
 });
 
 // Initialize the worker - REMOVED the function parameter
@@ -90,7 +142,7 @@ worker.on('active', (job) => {
 
 worker.on('completed', (job) => {
   const { requestId } = job.data;
-  broadcastStage(requestId, 'generation_completed', {
+  broadcastStage(requestId, 'generation_complete', {
     message: 'Notes generation completed',
   });
 });
@@ -107,7 +159,7 @@ worker.on('failed', (job, err) => {
 export async function addToQueue(requestId, data) {
   try {
     const jobsCount = await notesQueue.getJobCounts();
-    const position = jobsCount.waiting + (activeJobs >= MAX_CONCURRENT_JOBS ? 1 : 0);
+    const position = jobsCount.waiting + jobsCount.prioritized + (activeJobs >= MAX_CONCURRENT_JOBS ? 1 : 0);
 
     // Add the job to the queue - only pass serializable data
     const job = await notesQueue.add(
@@ -190,6 +242,9 @@ setInterval(
 
 // Handle graceful shutdown
 process.on('SIGINT', async () => {
+  if (flushTimeout) {
+    clearTimeout(flushTimeout);
+  }
   console.log('Shutting down queue and worker...');
   await worker.close();
   await notesQueue.close();
