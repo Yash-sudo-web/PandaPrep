@@ -32,13 +32,13 @@ export const PLANS = [
   {
     title: "Starter",
     description: "Perfect for those just getting started with our product. Try it out and explore all the features risk-free!",
-    price: "₹99",
-    cost: 99,
+    price: "₹49",
+    cost: 49,
     credits: 15,
     features: [
       "Credits - 15",
       "Access to all features",
-      "₹6.67/credit",
+      "₹3.33/credit",
       "1 credit per detailed pdf"
     ],
     limitations: [],
@@ -46,13 +46,13 @@ export const PLANS = [
   {
     title: "Growth",
     description: "If you've gotten the hang of our notes and want to stock up on cheat sheets for your exams, this is for you!",
-    price: "₹499",
-    cost: 499,
+    price: "₹249",
+    cost: 249,
     credits: 100,
     features: [
       "Credits - 100",
       "Access to all features",
-      "₹4.99/credit",
+      "₹2.49/credit",
       "1 credit per detailed pdf",
       "25% cheaper per credit than Starter plan"
     ],

@@ -7,6 +7,19 @@ const UserRequestSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'UserModel',
     },
+    // Request tracking IDs
+    requestId: {
+      type: String,
+      required: true,
+      unique: true,
+      index: true,
+    },
+    jobId: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
     // Basic information
     subject_name: {
       type: String,
