@@ -9,83 +9,89 @@ const modelName = process.env.AZURE_MODEL_NAME;
 const apiKey = process.env.AZURE_API_KEY;
 
 class SyllabusAnalyzerAgent {
-    static getSystemPrompt(params) {
-      const { 
-        subject_name, 
-        syllabus, 
-        note_type = 'detailed', 
-        include_examples = 'No',
-        education_level = 'intermediate',
-        user_instructions = '' 
-      } = params;
-  
-      // Note type characteristics - IMPROVED with clearer grouping rules
-      const noteTypeGuidance = {
-        'concise': {
-          contentDepth: 'minimal, focusing only on key points and core concepts',
-          expectedLength: 'short notes with concise bullet points',
-          contentStrategy: 'group multiple related topics together to create efficient overviews',
-          topicGrouping: 'MULTIPLE topics per prompt - combine 3-5 related topics when possible',
-          detailLevel: 'high-level summaries with essential information only'
-        },
-        'detailed': {
-          contentDepth: 'comprehensive, covering concepts thoroughly with in-depth explanations',
-          expectedLength: 'long, detailed and comprehensive notes with complete explanations',
-          contentStrategy: 'focus on topics to allow for maximum depth and detail',
-          topicGrouping: '2-3 topics per prompt to ensure adequate depth without overwhelming detail',
-          detailLevel: 'exhaustive coverage with theory, applications, and comprehensive explanations'
-        },
-        'qa': {
-          contentDepth: 'focused on creating structured question-answer pairs that thoroughly cover key concepts',
-          expectedLength: 'comprehensive Q&A pairs with detailed answers to important questions',
-          contentStrategy: 'group multiple related topics together per prompt to generate thorough Q&A coverage',
-          topicGrouping: 'MULTIPLE topics per prompt to ensure adequate question generation',
-          detailLevel: 'complete Q&A format with detailed theoretical answers'
-        },
-      }[note_type] || {
-        contentDepth: 'balanced',
-        expectedLength: 'standard notes',
-        contentStrategy: 'use balanced judgment for topic grouping',
-        topicGrouping: '2-3 topics per prompt',
-        detailLevel: 'moderate detail level'
-      };
-      
-      // Education level guidance
-      const educationLevelGuidance = {
-        'beginner': {
-          complexity: 'basic and foundational',
-          vocabulary: 'simple and accessible with minimal jargon',
-          assumptions: 'assume no prior knowledge in the subject area',
-          explanations: 'provide thorough explanations for all concepts with simplified analogies and examples'
-        },
-        'intermediate': {
-          complexity: 'moderate with some advanced concepts',
-          vocabulary: 'field-appropriate terminology with explanations where needed',
-          assumptions: 'assume basic understanding of fundamental concepts',
-          explanations: 'balance between introducing new concepts and building upon existing knowledge'
-        },
-        'advanced': {
-          complexity: 'sophisticated and in-depth',
-          vocabulary: 'specialized terminology and advanced concepts',
-          assumptions: 'assume strong foundation in the subject and related areas',
-          explanations: 'focus on nuanced understanding, critical analysis, and connections between complex ideas'
-        }
-      }[education_level] || {
-        complexity: 'moderate',
-        vocabulary: 'balanced',
-        assumptions: 'assume general understanding',
-        explanations: 'provide adequate context'
-      };
+  static getSystemPrompt(params) {
+    const {
+      subject_name,
+      syllabus,
+      note_type = 'detailed',
+      include_examples = 'No',
+      education_level = 'intermediate',
+      user_instructions = '',
+    } = params;
 
-      // Examples handling
-      let examplesInstruction = '';
-      if (include_examples === 'Yes') {
-        examplesInstruction = 'Include relevant examples, case studies, and practical applications';
-      } else {
-        examplesInstruction = 'Focus on theoretical concepts without examples';
-      }
+    // Note type characteristics - IMPROVED with clearer grouping rules
+    const noteTypeGuidance = {
+      concise: {
+        contentDepth: 'minimal, focusing only on key points and core concepts',
+        expectedLength: 'short notes with concise bullet points',
+        contentStrategy: 'group multiple related topics together to create efficient overviews',
+        topicGrouping: 'MULTIPLE topics per prompt - combine 3-5 related topics when possible',
+        detailLevel: 'high-level summaries with essential information only',
+      },
+      detailed: {
+        contentDepth: 'comprehensive, covering concepts thoroughly with in-depth explanations',
+        expectedLength: 'long, detailed and comprehensive notes with complete explanations',
+        contentStrategy: 'focus on topics to allow for maximum depth and detail',
+        topicGrouping: '2-3 topics per prompt to ensure adequate depth without overwhelming detail',
+        detailLevel:
+          'exhaustive coverage with theory, applications, and comprehensive explanations',
+      },
+      qa: {
+        contentDepth:
+          'focused on creating structured question-answer pairs that thoroughly cover key concepts',
+        expectedLength: 'comprehensive Q&A pairs with detailed answers to important questions',
+        contentStrategy:
+          'group multiple related topics together per prompt to generate thorough Q&A coverage',
+        topicGrouping: 'MULTIPLE topics per prompt to ensure adequate question generation',
+        detailLevel: 'complete Q&A format with detailed theoretical answers',
+      },
+    }[note_type] || {
+      contentDepth: 'balanced',
+      expectedLength: 'standard notes',
+      contentStrategy: 'use balanced judgment for topic grouping',
+      topicGrouping: '2-3 topics per prompt',
+      detailLevel: 'moderate detail level',
+    };
 
-      return `
+    // Education level guidance
+    const educationLevelGuidance = {
+      beginner: {
+        complexity: 'basic and foundational',
+        vocabulary: 'simple and accessible with minimal jargon',
+        assumptions: 'assume no prior knowledge in the subject area',
+        explanations:
+          'provide thorough explanations for all concepts with simplified analogies and examples',
+      },
+      intermediate: {
+        complexity: 'moderate with some advanced concepts',
+        vocabulary: 'field-appropriate terminology with explanations where needed',
+        assumptions: 'assume basic understanding of fundamental concepts',
+        explanations:
+          'balance between introducing new concepts and building upon existing knowledge',
+      },
+      advanced: {
+        complexity: 'sophisticated and in-depth',
+        vocabulary: 'specialized terminology and advanced concepts',
+        assumptions: 'assume strong foundation in the subject and related areas',
+        explanations:
+          'focus on nuanced understanding, critical analysis, and connections between complex ideas',
+      },
+    }[education_level] || {
+      complexity: 'moderate',
+      vocabulary: 'balanced',
+      assumptions: 'assume general understanding',
+      explanations: 'provide adequate context',
+    };
+
+    // Examples handling
+    let examplesInstruction = '';
+    if (include_examples === 'Yes') {
+      examplesInstruction = 'Include relevant examples, case studies, and practical applications';
+    } else {
+      examplesInstruction = 'Focus on theoretical concepts without examples';
+    }
+
+    return `
 
   // validation guardrails
   IMPORTANT: 
@@ -114,11 +120,13 @@ class SyllabusAnalyzerAgent {
   6. Consider user instructions: "${user_instructions}"
   
   FOR ${note_type.toUpperCase()} NOTES SPECIFICALLY:
-  - ${note_type === 'detailed' ? 
-      'Prioritize DEPTH over breadth - each topic should get comprehensive treatment' : 
-      note_type === 'concise' ? 
-      'Prioritize BREADTH over depth - efficiently cover multiple topics together' :
-      'Balance depth and breadth with thorough Q&A coverage'}
+  - ${
+    note_type === 'detailed'
+      ? 'Prioritize DEPTH over breadth - each topic should get comprehensive treatment'
+      : note_type === 'concise'
+        ? 'Prioritize BREADTH over depth - efficiently cover multiple topics together'
+        : 'Balance depth and breadth with thorough Q&A coverage'
+  }
   
   EDUCATION LEVEL CONSIDERATIONS (${education_level}):
   - Content complexity: ${educationLevelGuidance.complexity}
@@ -142,50 +150,83 @@ class SyllabusAnalyzerAgent {
   
   Your goal is to ensure the entire syllabus is covered efficiently while maintaining logical topic groupings and respecting the ${note_type} note format requirements and ${education_level} education level.
   `;
-    }
-  
-    static async process(params) {
-    const { syllabus } = params;
-    const systemPrompt = this.getSystemPrompt(params);
-    // const llm = new ChatGroq({
-    //     groqApiKey: process.env.GROQ_API_KEY,
-    //     model: "llama3-70b-8192",//"meta-llama/llama-4-maverick-17b-128e-instruct", //"mixtral-8x7b-32768",
-    //   });
-
-    const client = new ModelClient(endpoint, new AzureKeyCredential(apiKey));
-
-    try {
-      const response = await client.path("/chat/completions").post({
-        body: {
-          model: modelName,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: `Syllabus:\n${syllabus}` },
-          ],
-          max_tokens: 4192,
-          temperature: 0.8,
-          top_p: 0.1,
-          presence_penalty: 0,
-          frequency_penalty: 0,
-        },
-      });
-
-      if (response.status !== "200") {
-        throw new Error(JSON.stringify(response.body?.error));
-      }
-
-      const parsed = this.parseResponse(response.body.choices[0].message.content);
-      return parsed;
-    } catch (error) {
-      console.error("Azure call failed:", error.message);
-      return {
-        error: true,
-        message: "Failed to get response from Azure model",
-        details: error.message,
-      };
-    }
   }
 
+  static async process(params) {
+    const { syllabus } = params;
+    const systemPrompt = this.getSystemPrompt(params);
+    const client = new ModelClient(endpoint, new AzureKeyCredential(apiKey));
+
+    const MAX_RETRIES = 3;
+    let retries = 0;
+    let parsedResponse = null;
+
+    while (retries <= MAX_RETRIES) {
+      try {
+        const response = await client.path('/chat/completions').post({
+          body: {
+            model: modelName,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: `Syllabus:\n${syllabus}` },
+            ],
+            max_tokens: 4192,
+            temperature: 0.8,
+            top_p: 0.1,
+            presence_penalty: 0,
+            frequency_penalty: 0,
+          },
+        });
+
+        if (response.status !== '200') {
+          throw new Error(JSON.stringify(response.body?.error));
+        }
+
+        parsedResponse = this.parseResponse(response.body.choices[0].message.content);
+
+        // If we got a valid response (not an error object), break out of the loop
+        if (!parsedResponse.error) {
+          break;
+        }
+
+        // If we're here, parsing failed but didn't throw an exception
+        retries++;
+        if (retries <= MAX_RETRIES) {
+          const backoffTime = Math.pow(2, retries) * 1000; // Exponential backoff: 2s, 4s, 8s
+          console.log(
+            `Failed to generate valid JSON (attempt ${retries}/${MAX_RETRIES}). Retrying in ${backoffTime / 1000}s...`
+          );
+          await new Promise((resolve) => setTimeout(resolve, backoffTime));
+        }
+      } catch (error) {
+        retries++;
+        if (retries <= MAX_RETRIES) {
+          const backoffTime = Math.pow(2, retries) * 1000;
+          console.log(
+            `Error during LLM call (attempt ${retries}/${MAX_RETRIES}): ${error.message}. Retrying in ${backoffTime / 1000}s...`
+          );
+          await new Promise((resolve) => setTimeout(resolve, backoffTime));
+        } else {
+          console.error(`Maximum retries (${MAX_RETRIES}) exceeded. Giving up.`);
+          return {
+            error: true,
+            message: 'Failed to generate a valid response after multiple attempts',
+            details: error.message,
+          };
+        }
+      }
+    }
+
+    if (retries > MAX_RETRIES) {
+      return {
+        error: true,
+        message: 'Failed to generate valid JSON after maximum retry attempts',
+        rawContent: parsedResponse?.rawContent || 'No content available',
+      };
+    }
+
+    return parsedResponse;
+  }
   static parseResponse(content) {
     try {
       const jsonMatch =
@@ -195,10 +236,10 @@ class SyllabusAnalyzerAgent {
       const jsonContent = jsonMatch ? jsonMatch[1] : content;
       return JSON.parse(jsonContent);
     } catch (error) {
-      console.error("Failed to parse response:", error);
+      console.error('Failed to parse response:', error);
       return {
         error: true,
-        message: "Failed to parse response into valid prompt format",
+        message: 'Failed to parse response into valid prompt format',
         rawContent: content,
       };
     }
