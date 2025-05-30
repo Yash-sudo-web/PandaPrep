@@ -23,6 +23,7 @@ import {
 import axios from 'axios';
 import { cssStyles } from '../constants/md-css.js';
 import { log } from 'console';
+import { sendNotesReadyEmail } from '../utils/email.util.js';
 
 dotenv.config();
 
@@ -483,6 +484,19 @@ export async function generateNotes(requestId, requestBody, requestIdDb, _userId
         if (note_type === 'detailed') {
           await UserModel.updateOne({ _id: _userId }, { $inc: { 'subscription.credits': -1 } });
         }
+
+        const user = await UserModel.findById(_userId);
+
+        const res = await sendNotesReadyEmail({
+          userEmail: user.email,
+          userName: user.displayName.split(" ")[0] || user.email.split('@')[0],
+          subjectName: subject_name,
+          downloadUrl: downloadUrl
+        });
+        if (res.success) {
+          console.log(`[${requestId}] Email sent successfully to ${user.email}: ${res.messageId}`);
+        }
+
       } catch (pdfError) {
         console.error(`[${requestId}] PDF generation error:`, pdfError);
         broadcastStage(requestId, 'pdf_generation_failed', {
