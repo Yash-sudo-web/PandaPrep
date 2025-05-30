@@ -88,7 +88,11 @@ const UserRequestSchema = new mongoose.Schema(
       enum: ['pending', 'processing', 'completed', 'failed'],
       default: 'pending',
     },
-
+    relativePathToReferenceMaterial: {
+      type: String,
+      default: '',
+      trim: true,
+    },
     // Processing metrics
     processing_time_ms: {
       type: Number,
