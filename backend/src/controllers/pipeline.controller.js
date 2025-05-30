@@ -150,7 +150,7 @@ export async function generateNotesController(req, res) {
     const job = await addToQueue(requestId, {
       requestBody: req.body,
       requestIdDb: request._id,
-      userId: request._userID
+      userId: request._userID,
     });
 
     const queueStatus = await getQueueStatus(job.id);
@@ -170,7 +170,6 @@ export async function generateNotesController(req, res) {
         education_level
       ),
     });
-
   } catch (error) {
     console.error(`[${requestId}] Controller error:`, error);
     res.status(500).json({
@@ -432,13 +431,17 @@ export async function generateNotes(requestId, requestBody, requestIdDb, _userId
           });
         }
 
-
         fs.writeFileSync(pdfPath, content.data);
         await addWatermarkToPdf(pdfPath);
 
         clearInterval(intervalId);
 
-        const uploadResponse = await uploadPDFToCloudinary(_userId, pdfPath, `${filePrefix}.pdf`, 'pdfGeneration');
+        const uploadResponse = await uploadPDFToCloudinary(
+          _userId,
+          pdfPath,
+          `${filePrefix}.pdf`,
+          'pdfGeneration'
+        );
         downloadUrl = uploadResponse.secure_url;
         if (uploadResponse && uploadResponse.secure_url) {
           await NotesRequestModel.updateOne(
@@ -450,8 +453,8 @@ export async function generateNotes(requestId, requestBody, requestIdDb, _userId
           );
         } else {
           broadcastStage(requestId, 'pdf_generation_failed', {
-          error: pdfError.message,
-        });
+            error: pdfError.message,
+          });
         }
 
         broadcastStage(requestId, 'pdf_generation_complete', {
@@ -487,16 +490,20 @@ export async function generateNotes(requestId, requestBody, requestIdDb, _userId
 
         const user = await UserModel.findById(_userId);
 
+        const firstName = user.displayName
+          ? user.displayName.split(' ')[0]
+          : user.email.split('@')[0];
+
         const res = await sendNotesReadyEmail({
           userEmail: user.email,
-          userName: user.displayName.split(" ")[0] || user.email.split('@')[0],
+          userName: firstName,
           subjectName: subject_name,
-          downloadUrl: downloadUrl
+          downloadUrl: downloadUrl,
         });
+
         if (res.success) {
           console.log(`[${requestId}] Email sent successfully to ${user.email}: ${res.messageId}`);
         }
-
       } catch (pdfError) {
         console.error(`[${requestId}] PDF generation error:`, pdfError);
         broadcastStage(requestId, 'pdf_generation_failed', {
@@ -617,7 +624,7 @@ export async function getGenerationStatus(req, res) {
   try {
     const { requestId } = req.params;
     const request = await NotesRequestModel.findOne({ requestId });
-    
+
     if (!request) {
       return res.status(404).json({
         success: false,
