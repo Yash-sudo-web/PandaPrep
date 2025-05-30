@@ -246,7 +246,6 @@ export async function generateNotes(requestId, requestBody, requestIdDb, _userId
     });
 
     const promptsList = await SyllabusAnalyzerAgent.process(params);
-    console.log(promptsList);
 
     if (!promptsList || promptsList.error) {
       throw new Error(`Failed to analyze syllabus: ${promptsList?.error || 'Invalid response'}`);
