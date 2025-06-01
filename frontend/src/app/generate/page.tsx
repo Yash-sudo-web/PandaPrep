@@ -679,10 +679,7 @@ const NotesGenerate = () => {
               </p>
             )}
           </div>
-
-          {/* User Instructions and Context Upload Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-5">
-            {/* User Instructions */}
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <p
@@ -736,7 +733,6 @@ const NotesGenerate = () => {
               </div>
             </div>
 
-            {/* Context Upload */}
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <p className={`${montserrat500.className} text-xl sm:text-2xl`}>
@@ -757,25 +753,6 @@ const NotesGenerate = () => {
                 Upload reference material (PDF) to provide additional context for your notes
               </p>
             </div>
-          </div>
-
-          {/* Education Level Selection */}
-          <div className="w-full py-5 flex flex-col gap-1">
-            <p className={`${montserrat500.className} py-2 text-2xl`}>
-              Education Level
-            </p>
-            <MultiTabSwitch
-              tabs={[
-                { label: "Beginner", value: "beginner" },
-                { label: "Intermediate", value: "intermediate" },
-                { label: "Advanced", value: "advanced" },
-              ]}
-              lgSize
-              handleChange={handleInputChange}
-              field="education_level"
-              userCredits={userCredits}
-              value={formData.education_level}
-            />
           </div>
 
           <div
