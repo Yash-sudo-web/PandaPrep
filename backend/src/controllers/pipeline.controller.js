@@ -112,6 +112,7 @@ export async function generateNotesController(req, res) {
       include_images = 'no',
       education_level = 'intermediate',
       user_instructions = '',
+      relativePathToReferenceMaterial = null,
     } = req.body;
     const format = req.body.format || 'pdf';
     const userDoc = await UserModel.findOne({ email: email });
@@ -127,6 +128,7 @@ export async function generateNotesController(req, res) {
       include_images,
       education_level,
       user_instructions,
+      relativePathToReferenceMaterial,
       format,
       status: 'pending',
       created_at: new Date(),
@@ -206,6 +208,7 @@ export async function generateNotes(requestId, requestBody, requestIdDb, _userId
       include_images = 'no',
       education_level = 'intermediate',
       user_instructions = '',
+      relativePathToReferenceMaterial = null,
     } = requestBody;
     const format = requestBody.format || 'pdf';
 
@@ -229,6 +232,7 @@ export async function generateNotes(requestId, requestBody, requestIdDb, _userId
       include_images,
       education_level,
       user_instructions,
+      relativePathToReferenceMaterial
     };
 
     await NotesRequestModel.updateOne(
