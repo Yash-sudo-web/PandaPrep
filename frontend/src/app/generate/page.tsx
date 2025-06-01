@@ -117,6 +117,7 @@ const NotesGenerate = () => {
     education_level: "beginner",
     include_examples: "yes",
     include_images: "no",
+    relativePathToReferenceMaterial: "https://res.cloudinary.com/dlerie2z1/raw/upload/v1748803333/pdfs/refMaterial/abc/questionpapertcpudp.pdf"
   });
 
   useEffect(() => {
@@ -1423,6 +1424,7 @@ const NotesGenerate = () => {
                           education_level: "beginner",
                           include_examples: "yes",
                           include_images: "no",
+                          relativePathToReferenceMaterial: "https://res.cloudinary.com/dlerie2z1/raw/upload/v1748803333/pdfs/refMaterial/abc/questionpapertcpudp.pdf"
                         });
                         setMarkdownContent("");
                       }}

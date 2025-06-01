@@ -1,6 +1,7 @@
 import { Queue, Worker, QueueEvents } from 'bullmq';
 import IORedis from 'ioredis';
 import { broadcastStage } from '../websocket/server.js';
+import { generateNotes } from '../controllers/pipeline.controller.js';
 
 // Initialize Redis connection
 const connection = new IORedis(process.env.REDIS_URL, {
@@ -106,9 +107,6 @@ export const worker = new Worker(
   async (job) => {
     try {
       const { requestId, ...data } = job.data;
-
-      // Import the generateNotes function dynamically
-      const { generateNotes } = await import('../controllers/pipeline.controller.js');
 
       // Update client that their job has started
       broadcastStage(requestId, 'PROCESSING', {
