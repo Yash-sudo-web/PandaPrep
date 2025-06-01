@@ -32,6 +32,7 @@ import {
 
 import AnimatedInput from "@/components/global/input";
 import { Switch } from "@/components/ui/switch";
+import PDFUpload from "@/components/global/pdf-upload";
 
 const NotesGenerate = () => {
   const [user, setUser] = useState<User | null>(null);
@@ -117,7 +118,7 @@ const NotesGenerate = () => {
     education_level: "beginner",
     include_examples: "yes",
     include_images: "no",
-    relativePathToReferenceMaterial: "https://res.cloudinary.com/dlerie2z1/raw/upload/v1748803333/pdfs/refMaterial/abc/questionpapertcpudp.pdf"
+    relativePathToReferenceMaterial: ""
   });
 
   useEffect(() => {
@@ -162,6 +163,13 @@ const NotesGenerate = () => {
     if (validationErrors[field]) {
       setValidationErrors((prev) => ({ ...prev, [field]: false }));
     }
+  };
+
+  const handlePDFUploadSuccess = (cloudinaryUrl: string) => {
+    setFormData((prev) => ({ 
+      ...prev, 
+      relativePathToReferenceMaterial: cloudinaryUrl 
+    }));
   };
 
   const connectWebSocket = (reqId: string) => {
@@ -559,6 +567,7 @@ const NotesGenerate = () => {
             handleChange={handleInputChange}
             field="education_level"
             userCredits={userCredits}
+            value={formData.education_level}
           />
         </div>
         <div
@@ -671,56 +680,104 @@ const NotesGenerate = () => {
             )}
           </div>
 
-          <div className="flex justify-between items-center pt-5">
-            <p
-              className={`${montserrat500.className} text-2xl ${typeof validationErrors.user_instructions === "string"
-                ? "text-red-500"
-                : ""
-                }`}
-            >
-              User Instructions (Optional)
-            </p>
-            <span
-              className={`text-sm ${getCharacterCount("user_instructions") > 500
-                ? "text-red-500"
-                : isDarkMode
-                  ? "text-[#A9A29A]"
-                  : "text-gray-500"
-                }`}
-            >
-              {getCharacterCount("user_instructions")}/500
-            </span>
-          </div>
-          <div className="relative">
-            <AnimatedInput
-              textarea={true}
-              formDataValue={formData.user_instructions}
-              handleInputChange={handleInputChange}
-              fieldKey="user_instructions"
-              placeholders={[
-                "Enter your instructions...",
-                "E.g., Elaborate more on ER diagrams",
-                "E.g., Go in depth on the topic of Normalization",
-              ]}
-              className={`min-h-[80px] sm:min-h-[120px] ${validationErrors.user_instructions ? "border-red-500" : ""
-                } ${isDarkMode ? "bg-[#333230] border-[#444340] text-[#D0CCC4]" : ""
-                }`}
-            />
-            {typeof validationErrors.user_instructions === "string" && (
-              <p className="text-red-500 text-sm mt-1">
-                {validationErrors.user_instructions}
-              </p>
-            )}
-            {!validationErrors.user_instructions && (
+          {/* User Instructions and Context Upload Section */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-5">
+            {/* User Instructions */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <p
+                  className={`${montserrat500.className} text-xl sm:text-2xl ${typeof validationErrors.user_instructions === "string"
+                    ? "text-red-500"
+                    : ""
+                    }`}
+                >
+                  User Instructions (Optional)
+                </p>
+                <span
+                  className={`text-sm ${getCharacterCount("user_instructions") > 500
+                    ? "text-red-500"
+                    : isDarkMode
+                      ? "text-[#A9A29A]"
+                      : "text-gray-500"
+                    }`}
+                >
+                  {getCharacterCount("user_instructions")}/500
+                </span>
+              </div>
+              <div className="relative">
+                <AnimatedInput
+                  textarea={true}
+                  formDataValue={formData.user_instructions}
+                  handleInputChange={handleInputChange}
+                  fieldKey="user_instructions"
+                  placeholders={[
+                    "Enter your instructions...",
+                    "E.g., Elaborate more on ER diagrams",
+                    "E.g., Go in depth on the topic of Normalization",
+                  ]}
+                  className={`min-h-[80px] sm:min-h-[120px] ${validationErrors.user_instructions ? "border-red-500" : ""
+                    } ${isDarkMode ? "bg-[#333230] border-[#444340] text-[#D0CCC4]" : ""
+                    }`}
+                />
+                {typeof validationErrors.user_instructions === "string" && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {validationErrors.user_instructions}
+                  </p>
+                )}
+                {!validationErrors.user_instructions && (
+                  <p
+                    className={`${montserrat400.className} text-sm sm:text-base ${isDarkMode ? "text-[#A9A29A]" : "text-[#4A4947]"
+                      } mt-1`}
+                  >
+                    Any specific requirements or focus areas for your notes (if
+                    provided, 10-500 characters)
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Context Upload */}
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <p className={`${montserrat500.className} text-xl sm:text-2xl`}>
+                  Add Context (Optional)
+                </p>
+              </div>
+              <PDFUpload
+                onUploadSuccess={handlePDFUploadSuccess}
+                isDarkMode={isDarkMode}
+                userId={user?.uid}
+                initialValue={formData.relativePathToReferenceMaterial}
+                className="min-h-[80px] sm:min-h-[120px]"
+              />
               <p
                 className={`${montserrat400.className} text-sm sm:text-base ${isDarkMode ? "text-[#A9A29A]" : "text-[#4A4947]"
-                  } mt-1`}
+                  }`}
               >
-                Any specific requirements or focus areas for your notes (if
-                provided, 10-500 characters)
+                Upload reference material (PDF) to provide additional context for your notes
               </p>
-            )}
+            </div>
           </div>
+
+          {/* Education Level Selection */}
+          <div className="w-full py-5 flex flex-col gap-1">
+            <p className={`${montserrat500.className} py-2 text-2xl`}>
+              Education Level
+            </p>
+            <MultiTabSwitch
+              tabs={[
+                { label: "Beginner", value: "beginner" },
+                { label: "Intermediate", value: "intermediate" },
+                { label: "Advanced", value: "advanced" },
+              ]}
+              lgSize
+              handleChange={handleInputChange}
+              field="education_level"
+              userCredits={userCredits}
+              value={formData.education_level}
+            />
+          </div>
+
           <div
             className={`mt-8 mb-16 ${isDarkMode
               ? "bg-[#252320] border-[#D29C7B]"
@@ -745,7 +802,7 @@ const NotesGenerate = () => {
                 }`}
             >
               If your syllabus is lengthy or split into several units, try
-              generating one unit at a time.
+              generating one unit at a time. Upload relevant PDFs to enhance the quality and accuracy of your generated notes.
             </p>
           </div>
         </div>
@@ -1414,19 +1471,24 @@ const NotesGenerate = () => {
                     <button
                       className="cursor-pointer h-10 w-43 sm:h-10 px-3 sm:px-4 border rounded-lg bg-[#B17457] text-white transition-colors flex items-center gap-2 hover:bg-[#8f523a] text-sm"
                       onClick={() => {
-                        setCurrentStep(0);
-                        setFormData({
-                          email: user?.email,
-                          syllabus: "",
-                          subject_name: "",
-                          user_instructions: "",
-                          note_type: "concise",
-                          education_level: "beginner",
-                          include_examples: "yes",
-                          include_images: "no",
-                          relativePathToReferenceMaterial: "https://res.cloudinary.com/dlerie2z1/raw/upload/v1748803333/pdfs/refMaterial/abc/questionpapertcpudp.pdf"
-                        });
-                        setMarkdownContent("");
+                        if (confirm("Are you sure you want to start over? This will clear all your input including any uploaded PDF.")) {
+                          setCurrentStep(0);
+                          setFormData({
+                            email: user?.email,
+                            syllabus: "",
+                            subject_name: "",
+                            user_instructions: "",
+                            note_type: "concise",
+                            education_level: "beginner",
+                            include_examples: "yes",
+                            include_images: "no",
+                            relativePathToReferenceMaterial: ""
+                          });
+                          setMarkdownContent("");
+                          setGenerationComplete(false);
+                          setDownloadId("");
+                          setHasAttemptedGeneration(false);
+                        }
                       }}
                     >
                       <span>Create New Notes</span>
