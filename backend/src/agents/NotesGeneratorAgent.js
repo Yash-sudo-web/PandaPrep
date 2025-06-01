@@ -3,7 +3,7 @@ import dotenv from 'dotenv';
 import ModelClient from '@azure-rest/ai-inference';
 import { AzureKeyCredential } from '@azure/core-auth';
 import { broadcastMarkdownUpdate, broadcastStage } from '../websocket/server.js';
-import ChatWithNotesAgent from './ChatWithNotesAgent.js'; // Add this import
+import ChatWithNotesAgent from './ChatWithNotesAgent.js';
 
 dotenv.config();
 
@@ -145,19 +145,15 @@ class NotesGeneratorAgent {
 
     try {
       const contextQuery = `${sectionTopic} ${params.subject_name || ''} explanation examples`.trim();
-      const contextResult = await ChatWithNotesAgent.chat(
-        contextQuery,
-        params.documentId,
-        params.vectorStorePath,
-        { 
-          strictness: 'medium', 
-          responseStyle: 'detailed', 
-          retrievalCount: 3 
-        }
-      );
       
-      if (contextResult.success && contextResult.response) {
-        return `\n\nRELEVANT REFERENCE MATERIAL:\n${contextResult.response}\n\n`;
+      // Load the vector store directly using the imported function
+      const vectorStore = await ChatWithNotesAgent.loadVectorStore(params.vectorStorePath);
+      
+      // Retrieve context directly using the imported function
+      const context = await ChatWithNotesAgent.retrieveContext(vectorStore, contextQuery, 3);
+      
+      if (context && context.trim().length > 0) {
+        return `\n\nRELEVANT REFERENCE MATERIAL:\n${context}\n\n`;
       }
     } catch (error) {
       console.warn(`Failed to retrieve context for section "${sectionTopic}":`, error.message);
