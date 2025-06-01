@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 import ModelClient from '@azure-rest/ai-inference';
 import { AzureKeyCredential } from '@azure/core-auth';
 import { broadcastMarkdownUpdate, broadcastStage } from '../websocket/server.js';
+import ChatWithNotesAgent from './ChatWithNotesAgent.js';
 
 dotenv.config();
 
@@ -102,6 +103,7 @@ class NotesGeneratorAgent {
   7. Use clear, academic language accessible to ${education_level}-level students
   8. Address user-specific instructions: "${user_instructions}"
   9. If note type is a QnA format, ensure ALL content is presented as questions and answers with theoretical explanations included within the answers
+  10. When reference material is provided, integrate it naturally into your notes while ensuring accuracy and relevance
   
   EDUCATION LEVEL GUIDELINES (${education_level}):
   1. Content complexity: ${educationLevelConfig.complexity}
@@ -136,14 +138,60 @@ class NotesGeneratorAgent {
   `;
   }
 
+  static async retrieveSectionContext(sectionTopic, params) {
+    if (!params.vectorStorePath || !params.documentId) {
+      return '';
+    }
+
+    try {
+      const contextQuery = `${sectionTopic} ${params.subject_name || ''} explanation examples`.trim();
+      
+      // Load the vector store directly using the imported function
+      const vectorStore = await ChatWithNotesAgent.loadVectorStore(params.vectorStorePath);
+      
+      // Retrieve context directly using the imported function
+      const context = await ChatWithNotesAgent.retrieveContext(vectorStore, contextQuery, 3);
+      
+      if (context && context.trim().length > 0) {
+        return `\n\nRELEVANT REFERENCE MATERIAL:\n${context}\n\n`;
+      }
+    } catch (error) {
+      console.warn(`Failed to retrieve context for section "${sectionTopic}":`, error.message);
+    }
+
+    return '';
+  }
+
   static async generate(prompt, params = {}, requestId = null) {
     const noteType = params.note_type || 'detailed';
     const promptText =
       typeof prompt === 'string' ? prompt : prompt.prompt || JSON.stringify(prompt);
+    
+    // Extract section topic for context retrieval
+    let sectionTopic = '';
+    if (typeof prompt === 'object' && prompt.topics) {
+      sectionTopic = Array.isArray(prompt.topics) ? prompt.topics.join(' ') : prompt.topics;
+    } else if (typeof prompt === 'string') {
+      // Try to extract topic from the prompt string (first line or first 50 characters)
+      const lines = prompt.split('\n');
+      sectionTopic = lines[0].substring(0, 50);
+    }
+
+    // Retrieve context if vector store is available
+    let sectionContext = '';
+    if (params.vectorStorePath && params.documentId && sectionTopic) {
+      sectionContext = await this.retrieveSectionContext(sectionTopic, params);
+    }
+
+    // Combine prompt with context
+    const enhancedPrompt = promptText + sectionContext;
     const systemPrompt = this.getSystemPrompt(params);
 
     if (requestId) {
-      broadcastStage(requestId, 'notes_generation_started', { promptLength: promptText.length });
+      broadcastStage(requestId, 'notes_generation_started', { 
+        promptLength: enhancedPrompt.length,
+        hasContext: sectionContext.length > 0
+      });
     }
 
     let content = '';
@@ -161,7 +209,7 @@ class NotesGeneratorAgent {
         body: {
           messages: [
             { role: 'system', content: systemPrompt },
-            { role: 'user', content: promptText },
+            { role: 'user', content: enhancedPrompt },
           ],
           max_tokens: 2048,
           temperature: 0.8,
@@ -171,6 +219,8 @@ class NotesGeneratorAgent {
           model: modelName,
         },
       });
+
+      console.log("Response generated successfully", response);
 
       if (response.status !== '200') {
         throw response.body.error;
@@ -198,7 +248,7 @@ class NotesGeneratorAgent {
       const response = await llm.invoke(
         [
           { role: 'system', content: systemPrompt },
-          { role: 'user', content: promptText },
+          { role: 'user', content: enhancedPrompt },
         ],
         {
           callbacks: requestId
@@ -223,7 +273,7 @@ class NotesGeneratorAgent {
       }
     }
 
-    console.log(`[Model Used] Source: ${source}, Model: ${model}`);
+    console.log(`[Model Used] Source: ${source}, Model: ${model}, Context: ${sectionContext.length > 0 ? 'Yes' : 'No'}`);
     return this.formatResponse(content);
   }
 
@@ -250,22 +300,25 @@ class NotesGeneratorAgent {
       broadcastStage(requestId, 'notes_generation_overview', {
         totalSections: totalPrompts,
         topics: prompts.map((p) => p.topics || []),
+        hasVectorStore: !!(params.vectorStorePath && params.documentId)
       });
     }
 
     for (let i = 0; i < prompts.length; i++) {
       const prompt = prompts[i];
+      const currentTopics = prompt.topics || [];
 
       if (requestId) {
         broadcastStage(requestId, 'generating_section', {
           sectionIndex: i,
           sectionNumber: i + 1,
           totalSections: totalPrompts,
-          topics: prompt.topics || [],
+          topics: currentTopics,
           progress: Math.round((i / totalPrompts) * 100),
         });
       }
 
+      // Generate notes with context for this specific section
       const content = await this.generate(prompt, params, requestId);
 
       if (requestId) {
@@ -273,13 +326,13 @@ class NotesGeneratorAgent {
           sectionIndex: i,
           sectionNumber: i + 1,
           totalSections: totalPrompts,
-          topics: prompt.topics || [],
+          topics: currentTopics,
           progress: Math.round(((i + 1) / totalPrompts) * 100),
         });
       }
 
       results.push({
-        topics: prompt.topics || [],
+        topics: currentTopics,
         content: content,
         promptUsed: prompt.prompt || 'Custom prompt',
       });

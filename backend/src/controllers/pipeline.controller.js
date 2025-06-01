@@ -24,6 +24,7 @@ import axios from 'axios';
 import { cssStyles } from '../constants/md-css.js';
 import { log } from 'console';
 import { sendNotesReadyEmail } from '../utils/email.util.js';
+import ChatWithNotesAgent from '../agents/ChatWithNotesAgent.js';
 
 dotenv.config();
 
@@ -81,6 +82,20 @@ function validateRequest(body) {
   };
 }
 
+async function downloadPdfFromUrl(pdfUrl, requestId) {
+  const response = await axios.get(pdfUrl, { responseType: 'stream' });
+  const fileName = `reference_${requestId}_${Date.now()}.pdf`;
+  const filePath = path.join(OUTPUT_DIR, fileName);
+  
+  const writer = fs.createWriteStream(filePath);
+  response.data.pipe(writer);
+  
+  return new Promise((resolve, reject) => {
+    writer.on('finish', () => resolve(filePath));
+    writer.on('error', reject);
+  });
+}
+
 /**
  * Initiates the notes generation process and returns a requestId for WebSocket tracking
  * @param {Request} req - Express request object
@@ -112,6 +127,7 @@ export async function generateNotesController(req, res) {
       include_images = 'no',
       education_level = 'intermediate',
       user_instructions = '',
+      relativePathToReferenceMaterial = null,
     } = req.body;
     const format = req.body.format || 'pdf';
     const userDoc = await UserModel.findOne({ email: email });
@@ -127,6 +143,7 @@ export async function generateNotesController(req, res) {
       include_images,
       education_level,
       user_instructions,
+      relativePathToReferenceMaterial,
       format,
       status: 'pending',
       created_at: new Date(),
@@ -197,6 +214,28 @@ export async function generateNotes(requestId, requestBody, requestIdDb, _userId
   let downloadUrl = '';
   let content = '';
 
+  let referencePdfPath = null;
+  let vectorStorePath = null;
+  let documentId = null;
+
+  if (requestBody.relativePathToReferenceMaterial) {
+    try {
+      console.log(`[${requestId}] Downloading reference PDF...`);
+      broadcastStage(requestId, 'downloading_reference_pdf');
+      
+      referencePdfPath = await downloadPdfFromUrl(requestBody.relativePathToReferenceMaterial, requestId);
+      documentId = `ref-${requestId}`;
+      console.log(`[${requestId}] Reference PDF downloaded to ${referencePdfPath}`);
+      
+      console.log(`[${requestId}] Processing reference PDF for context...`);
+      
+      vectorStorePath = await ChatWithNotesAgent.processPdfDocument(referencePdfPath, documentId);
+
+    } catch (error) {
+      console.warn(`[${requestId}] Failed to process reference PDF:`, error.message);
+    }
+  }
+
   try {
     const {
       syllabus,
@@ -206,6 +245,7 @@ export async function generateNotes(requestId, requestBody, requestIdDb, _userId
       include_images = 'no',
       education_level = 'intermediate',
       user_instructions = '',
+      relativePathToReferenceMaterial = null,
     } = requestBody;
     const format = requestBody.format || 'pdf';
 
@@ -229,6 +269,10 @@ export async function generateNotes(requestId, requestBody, requestIdDb, _userId
       include_images,
       education_level,
       user_instructions,
+      relativePathToReferenceMaterial,
+      vectorStorePath,
+      documentId,
+      hasReferenceContext: !!vectorStorePath
     };
 
     await NotesRequestModel.updateOne(
@@ -503,6 +547,10 @@ export async function generateNotes(requestId, requestBody, requestIdDb, _userId
 
         if (res.success) {
           console.log(`[${requestId}] Email sent successfully to ${user.email}: ${res.messageId}`);
+        }
+
+        if (referencePdfPath && fs.existsSync(referencePdfPath)) {
+          fs.unlinkSync(referencePdfPath);
         }
       } catch (pdfError) {
         console.error(`[${requestId}] PDF generation error:`, pdfError);

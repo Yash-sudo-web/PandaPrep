@@ -15,6 +15,7 @@ interface MultiTabSwitchProps {
   handleChange: (field: string, value: string) => void;
   field: string;
   userCredits: number;
+  value?: string;
 }
 
 const MultiTabSwitch: React.FC<MultiTabSwitchProps> = ({
@@ -24,9 +25,10 @@ const MultiTabSwitch: React.FC<MultiTabSwitchProps> = ({
   handleChange,
   field,
   userCredits,
+  value,
 }) => {
   const [selectedOption, setSelectedOption] = useState<string | null>(
-    tabs[0].value
+    value || tabs[0].value
   );
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
@@ -36,6 +38,12 @@ const MultiTabSwitch: React.FC<MultiTabSwitchProps> = ({
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (value !== undefined) {
+      setSelectedOption(value);
+    }
+  }, [value]);
 
   return (
     <div className="w-full flex flex-col items-start gap-1 sm:gap-2 relative">

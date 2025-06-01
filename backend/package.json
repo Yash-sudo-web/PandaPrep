@@ -4,7 +4,7 @@
   "main": "src/index.js",
   "type": "module",
   "scripts": {
-    "dev": "nodemon run src/index.js",
+    "dev": "nodemon --ignore temp/ --ignore uploads/ --ignore '*.log' --ignore 'temp/**/*' src/index.js",
     "start": "node src/index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },

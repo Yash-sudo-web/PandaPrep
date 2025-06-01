@@ -204,7 +204,7 @@ Your goal is to be a reliable, accurate source of information about the specific
       const pageInfo = doc.metadata.page !== undefined ? `[Page ${doc.metadata.page}]` : "";
       context += `--- Document Excerpt ${i+1} ${pageInfo} ---\n${doc.pageContent}\n\n`;
     });
-    
+    console.log("Context retrieved successfully", context);
     console.log(`Retrieved ${results.length} relevant document chunks`);
     return context;
   }
