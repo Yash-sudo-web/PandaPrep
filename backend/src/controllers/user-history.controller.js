@@ -26,7 +26,7 @@ export async function getUserNotesHistoryController(req, res) {
 
     // Find all notes requests for this user
     const notesRequests = await NotesRequestModel.find(
-      { _userID: userDoc._id, status: 'completed' },
+      { _userID: userDoc._id, status: { $in: ['completed', 'processing']}},
       {
         _id: 1,
         subject_name: 1,

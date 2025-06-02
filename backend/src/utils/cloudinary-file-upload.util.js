@@ -1,6 +1,7 @@
 import { v2 as cloudinary } from 'cloudinary';
 import fs from 'fs';
 import dotenv from 'dotenv';
+import { NotesRequestModel } from '../models/user-request.model.js';
 dotenv.config({
   path: './.env',
 });
@@ -119,5 +120,30 @@ export const deleteOldPDFsFromCloudinary = async () => {
     } while (nextCursor);
   } catch (error) {
     console.error('Error deleting old PDFs from Cloudinary:', error);
+  }
+};
+
+export const deleteStuckProcessingRequests = async () => {
+  const TWELVE_HOURS_AGO = new Date(Date.now() - 12 * 60 * 60 * 1000);
+
+  try {
+    const stuckRequests = await NotesRequestModel.find({
+      status: 'processing',
+      updatedAt: { $lte: TWELVE_HOURS_AGO },
+    });
+
+    if (!stuckRequests.length) {
+      console.log('No stuck requests older than 12 hours found.');
+      return;
+    }
+
+    for (const request of stuckRequests) {
+      console.log(`Deleting stuck request: ${request._id} (Updated at: ${request.updatedAt})`);
+      await NotesRequestModel.deleteOne({ _id: request._id });
+    }
+
+    console.log(`${stuckRequests.length} stuck request(s) deleted.`);
+  } catch (error) {
+    console.error('Error deleting stuck processing requests:', error);
   }
 };

@@ -1377,7 +1377,7 @@ const NotesGenerate = () => {
               } shadow-md rounded-lg p-4 sm:p-6 min-h-[300px] w-full max-w-[65rem] mt-15 sm:mt-10`}
           >
             <div
-              className={`flex flex-col gap-4 h-auto ${currentStep === 1 ? "sm:h-[45rem]" : "sm:h-[40rem]"
+              className={`flex flex-col gap-4 h-auto ${currentStep === 1 ? "sm:h-[47.5rem]" : "sm:h-[40rem]"
                 }`}
             >
               {currentStep === 0 && step1Component()}
