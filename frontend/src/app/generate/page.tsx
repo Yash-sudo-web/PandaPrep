@@ -759,25 +759,6 @@ const NotesGenerate = () => {
             </div>
           </div>
 
-          {/* Education Level Selection */}
-          <div className="w-full py-5 flex flex-col gap-1">
-            <p className={`${montserrat500.className} py-2 text-2xl`}>
-              Education Level
-            </p>
-            <MultiTabSwitch
-              tabs={[
-                { label: "Beginner", value: "beginner" },
-                { label: "Intermediate", value: "intermediate" },
-                { label: "Advanced", value: "advanced" },
-              ]}
-              lgSize
-              handleChange={handleInputChange}
-              field="education_level"
-              userCredits={userCredits}
-              value={formData.education_level}
-            />
-          </div>
-
           <div
             className={`mt-8 mb-16 ${isDarkMode
               ? "bg-[#252320] border-[#D29C7B]"

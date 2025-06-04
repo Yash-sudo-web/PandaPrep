@@ -3,10 +3,21 @@ import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
 import { FaissStore } from "@langchain/community/vectorstores/faiss";
 import { GoogleGenerativeAIEmbeddings } from "@langchain/google-genai";
+import ocrProcessor from '../utils/ocr-processor.util.js';
 import dotenv from "dotenv";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
+
+
+
+
+
+///// isue with pdf.convert() kuch to gadbad hai daya kal dekhte
+
+
+
+
 
 dotenv.config();
 
@@ -14,14 +25,14 @@ dotenv.config();
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PDF_CACHE_DIR = path.join(process.cwd(), "temp", "pdfs");
 const VECTOR_STORE_DIR = path.join(process.cwd(), "temp", "vectorstores");
+const OCR_TEMP_DIR = path.join(process.cwd(), "temp", "ocr");
 
 // Ensure directories exist
-if (!fs.existsSync(PDF_CACHE_DIR)) {
-  fs.mkdirSync(PDF_CACHE_DIR, { recursive: true });
-}
-if (!fs.existsSync(VECTOR_STORE_DIR)) {
-  fs.mkdirSync(VECTOR_STORE_DIR, { recursive: true });
-}
+[PDF_CACHE_DIR, VECTOR_STORE_DIR, OCR_TEMP_DIR].forEach(dir => {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+});
 
 class ChatWithNotesAgent {
   /**
@@ -125,13 +136,153 @@ Your goal is to be a reliable, accurate source of information about the specific
   }
 
   /**
-   * Process and index a PDF document
+   * Check if a PDF is likely scanned and needs OCR
+   * @param {string} filePath - Path to the PDF file
+   * @returns {Promise<boolean>} True if OCR is recommended
+   */
+  static async shouldUseOCR(filePath) {
+    try {
+      // Try to extract text using standard PDF loader
+      const loader = new PDFLoader(filePath, { splitPages: false });
+      const docs = await loader.load();
+      
+      // If we get very little text, it's likely a scanned PDF
+      const totalText = docs.map(doc => doc.pageContent).join('');
+      const wordCount = totalText.trim().split(/\s+/).length;
+      const charCount = totalText.trim().length;
+      
+      // Heuristics for detecting scanned PDFs:
+      // 1. Very few words extracted
+      // 2. Low character to word ratio (lots of OCR artifacts)
+      // 3. File size vs text ratio suggests images
+      const stats = fs.statSync(filePath);
+      const fileSizeMB = stats.size / (1024 * 1024);
+      
+      const needsOCR = (
+        wordCount < 50 || // Very few words extracted
+        (charCount / wordCount) < 4 || // Suspicious character patterns
+        (fileSizeMB > 1 && wordCount < 100) // Large file with little text
+      );
+      
+      console.log(`PDF Analysis: ${wordCount} words, ${charCount} chars, ${fileSizeMB.toFixed(2)}MB - OCR needed: ${needsOCR}`);
+      return needsOCR;
+      
+    } catch (error) {
+      console.log("Error analyzing PDF, defaulting to OCR:", error.message);
+      return true; // Default to OCR if analysis fails
+    }
+  }
+
+  /**
+   * Process PDF with OCR and create documents for indexing
    * @param {string} filePath - Path to the PDF file
    * @param {string} documentId - Unique identifier for the document
+   * @returns {Promise<Array>} Array of document objects
+   */
+  static async processPdfWithOCR(filePath, documentId) {
+    console.log(`Processing PDF with OCR: ${filePath}`);
+    
+    const ocrInstance = new ocrProcessor();
+    
+    try {
+      // Process PDF with OCR
+      const ocrResults = await ocrInstance.processPdfWithOCR(filePath, OCR_TEMP_DIR);
+      
+      // Convert OCR results to LangChain document format
+      const documents = [];
+      
+      for (const pageResult of ocrResults.pages) {
+        if (pageResult.text && pageResult.text.trim()) {
+          const doc = {
+            pageContent: pageResult.text,
+            metadata: {
+              source: filePath,
+              page: pageResult.pageNumber,
+              confidence: pageResult.confidence,
+              extractionMethod: 'OCR',
+              documentId: documentId
+            }
+          };
+          
+          // Add table information if available
+          if (pageResult.tables && pageResult.tables.length > 0) {
+            doc.metadata.tables = pageResult.tables;
+            // Append structured table data to page content
+            const tableText = pageResult.tables.map(table => 
+              `\n[TABLE]\n${table.rows.map(row => row.join('\t')).join('\n')}\n[/TABLE]\n`
+            ).join('\n');
+            doc.pageContent += tableText;
+          }
+          
+          documents.push(doc);
+        }
+      }
+      
+      console.log(`OCR extracted ${documents.length} pages with average confidence: ${ocrResults.metadata.averageConfidence.toFixed(2)}%`);
+      
+      // Add summary document with metadata
+      if (ocrResults.fullText.trim()) {
+        documents.push({
+          pageContent: `Document Summary:\nTotal Pages: ${ocrResults.metadata.totalPages}\nAverage OCR Confidence: ${ocrResults.metadata.averageConfidence.toFixed(2)}%\nTables Found: ${ocrResults.tables.length}\nExtraction Method: OCR\n\nFull Text:\n${ocrResults.fullText}`,
+          metadata: {
+            source: filePath,
+            page: 0,
+            type: 'summary',
+            extractionMethod: 'OCR',
+            documentId: documentId,
+            ocrMetadata: ocrResults.metadata
+          }
+        });
+      }
+      
+      return documents;
+      
+    } catch (error) {
+      console.error("OCR processing failed:", error);
+      throw error;
+    } finally {
+      // Clean up OCR resources
+      await ocrInstance.cleanup();
+    }
+  }
+
+  /**
+   * Process PDF using standard text extraction
+   * @param {string} filePath - Path to the PDF file
+   * @param {string} documentId - Unique identifier for the document
+   * @returns {Promise<Array>} Array of document objects
+   */
+  static async processPdfStandard(filePath, documentId) {
+    console.log(`Processing PDF with standard extraction: ${filePath}`);
+    
+    const loader = new PDFLoader(filePath, { splitPages: true });
+    const docs = await loader.load();
+    
+    // Add extraction method metadata
+    docs.forEach((doc, index) => {
+      doc.metadata = {
+        ...doc.metadata,
+        extractionMethod: 'standard',
+        documentId: documentId,
+        page: index + 1
+      };
+    });
+    
+    console.log(`Standard extraction: ${docs.length} pages processed`);
+    return docs;
+  }
+
+  /**
+   * Process and index a PDF document with intelligent OCR detection
+   * @param {string} filePath - Path to the PDF file
+   * @param {string} documentId - Unique identifier for the document
+   * @param {Object} options - Processing options
    * @returns {Promise<string>} - Path to the vector store
    */
-  static async processPdfDocument(filePath, documentId) {
+  static async processPdfDocument(filePath, documentId, options = {}) {
     console.log(`Processing PDF document: ${filePath}`);
+    
+    const { forceOCR = false, forceStandard = false } = options;
     
     // Check if vector store already exists
     const vectorStorePath = path.join(VECTOR_STORE_DIR, documentId);
@@ -140,12 +291,31 @@ Your goal is to be a reliable, accurate source of information about the specific
       return vectorStorePath;
     }
     
-    // Load PDF document
-    const loader = new PDFLoader(filePath, {
-      splitPages: true
-    });
-    const docs = await loader.load();
-    console.log(`Loaded ${docs.length} pages from PDF`);
+    let docs;
+    
+    // Determine processing method
+    if (forceOCR) {
+      console.log("Forcing OCR processing");
+      docs = await this.processPdfWithOCR(filePath, documentId);
+    } else if (forceStandard) {
+      console.log("Forcing standard processing");
+      docs = await this.processPdfStandard(filePath, documentId);
+    } else {
+      // Intelligent detection
+      const needsOCR = await this.shouldUseOCR(filePath);
+      
+      if (needsOCR) {
+        console.log("PDF appears to be scanned, using OCR");
+        docs = await this.processPdfWithOCR(filePath, documentId);
+      } else {
+        console.log("PDF has extractable text, using standard extraction");
+        docs = await this.processPdfStandard(filePath, documentId);
+      }
+    }
+    
+    if (!docs || docs.length === 0) {
+      throw new Error("No content could be extracted from the PDF");
+    }
     
     // Split text into chunks
     const textSplitter = new RecursiveCharacterTextSplitter({
@@ -202,9 +372,12 @@ Your goal is to be a reliable, accurate source of information about the specific
     let context = "CONTEXT FROM DOCUMENT:\n\n";
     results.forEach((doc, i) => {
       const pageInfo = doc.metadata.page !== undefined ? `[Page ${doc.metadata.page}]` : "";
-      context += `--- Document Excerpt ${i+1} ${pageInfo} ---\n${doc.pageContent}\n\n`;
+      const extractionMethod = doc.metadata.extractionMethod ? `[${doc.metadata.extractionMethod.toUpperCase()}]` : "";
+      const confidence = doc.metadata.confidence ? `[Confidence: ${doc.metadata.confidence.toFixed(1)}%]` : "";
+      
+      context += `--- Document Excerpt ${i+1} ${pageInfo} ${extractionMethod} ${confidence} ---\n${doc.pageContent}\n\n`;
     });
-    console.log("Context retrieved successfully", context);
+    
     console.log(`Retrieved ${results.length} relevant document chunks`);
     return context;
   }
@@ -363,14 +536,15 @@ Your goal is to be a reliable, accurate source of information about the specific
       query,
       streaming = false,
       streamCallback,
-      options = {}
+      options = {},
+      processingOptions = {} // New parameter for PDF processing options
     } = params;
     
     try {
       // Process PDF document if pdfPath is provided
       let vectorStorePath;
       if (pdfPath) {
-        vectorStorePath = await this.processPdfDocument(pdfPath, documentId);
+        vectorStorePath = await this.processPdfDocument(pdfPath, documentId, processingOptions);
       } else if (params.vectorStorePath) {
         vectorStorePath = params.vectorStorePath;
       } else {
@@ -389,6 +563,28 @@ Your goal is to be a reliable, accurate source of information about the specific
         success: false,
         error: error.message
       };
+    }
+  }
+
+  /**
+   * Utility method to clean up temporary files and directories
+   * @param {string} documentId - Document ID to clean up
+   */
+  static async cleanup(documentId) {
+    const pathsToClean = [
+      path.join(OCR_TEMP_DIR, documentId),
+      path.join(VECTOR_STORE_DIR, documentId)
+    ];
+    
+    for (const dirPath of pathsToClean) {
+      try {
+        if (fs.existsSync(dirPath)) {
+          fs.rmSync(dirPath, { recursive: true, force: true });
+          console.log(`Cleaned up: ${dirPath}`);
+        }
+      } catch (error) {
+        console.warn(`Warning: Could not clean up ${dirPath}:`, error.message);
+      }
     }
   }
 }

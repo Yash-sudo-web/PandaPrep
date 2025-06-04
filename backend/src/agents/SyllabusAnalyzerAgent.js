@@ -186,6 +186,7 @@ class SyllabusAnalyzerAgent {
 
         // If we got a valid response (not an error object), break out of the loop
         if (!parsedResponse.error) {
+          console.log('Successfully generated valid JSON response', parsedResponse);
           break;
         }
 

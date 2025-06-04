@@ -7,7 +7,7 @@ import ChatWithNotesAgent from './ChatWithNotesAgent.js';
 
 dotenv.config();
 
-const endpoint = process.env.AZURE_AI_ENDPOINT; 
+const endpoint = process.env.AZURE_AI_ENDPOINT;
 const modelName = process.env.AZURE_MODEL_NAME;
 const apiKey = process.env.AZURE_API_KEY;
 
@@ -104,7 +104,8 @@ class NotesGeneratorAgent {
   8. Address user-specific instructions: "${user_instructions}"
   9. If note type is a QnA format, ensure ALL content is presented as questions and answers with theoretical explanations included within the answers
   10. When reference material is provided, integrate it naturally into your notes while ensuring accuracy and relevance
-  
+  11. dont provide any additional commentary or introduction, just the notes content
+
   EDUCATION LEVEL GUIDELINES (${education_level}):
   1. Content complexity: ${educationLevelConfig.complexity}
   2. Knowledge assumptions: ${educationLevelConfig.assumptions}
@@ -144,14 +145,15 @@ class NotesGeneratorAgent {
     }
 
     try {
-      const contextQuery = `${sectionTopic} ${params.subject_name || ''} explanation examples`.trim();
-      
+      const contextQuery =
+        `${sectionTopic} ${params.subject_name || ''} explanation examples`.trim();
+
       // Load the vector store directly using the imported function
       const vectorStore = await ChatWithNotesAgent.loadVectorStore(params.vectorStorePath);
-      
+
       // Retrieve context directly using the imported function
       const context = await ChatWithNotesAgent.retrieveContext(vectorStore, contextQuery, 3);
-      
+
       if (context && context.trim().length > 0) {
         return `\n\nRELEVANT REFERENCE MATERIAL:\n${context}\n\n`;
       }
@@ -166,19 +168,18 @@ class NotesGeneratorAgent {
     const noteType = params.note_type || 'detailed';
     const promptText =
       typeof prompt === 'string' ? prompt : prompt.prompt || JSON.stringify(prompt);
-    
-    // Extract section topic for context retrieval
+
+    // Extract section topic for context retrieval - use entire JSON object as string
     let sectionTopic = '';
-    if (typeof prompt === 'object' && prompt.topics) {
-      sectionTopic = Array.isArray(prompt.topics) ? prompt.topics.join(' ') : prompt.topics;
+    if (typeof prompt === 'object') {
+      sectionTopic = JSON.stringify(prompt);
     } else if (typeof prompt === 'string') {
-      // Try to extract topic from the prompt string (first line or first 50 characters)
-      const lines = prompt.split('\n');
-      sectionTopic = lines[0].substring(0, 50);
+      sectionTopic = prompt;
     }
 
     // Retrieve context if vector store is available
     let sectionContext = '';
+    console.log(`Retrieving context for section: "${sectionTopic}" with params:`, params);
     if (params.vectorStorePath && params.documentId && sectionTopic) {
       sectionContext = await this.retrieveSectionContext(sectionTopic, params);
     }
@@ -188,9 +189,9 @@ class NotesGeneratorAgent {
     const systemPrompt = this.getSystemPrompt(params);
 
     if (requestId) {
-      broadcastStage(requestId, 'notes_generation_started', { 
+      broadcastStage(requestId, 'notes_generation_started', {
         promptLength: enhancedPrompt.length,
-        hasContext: sectionContext.length > 0
+        hasContext: sectionContext.length > 0,
       });
     }
 
@@ -220,7 +221,7 @@ class NotesGeneratorAgent {
         },
       });
 
-      console.log("Response generated successfully", response);
+      console.log('Response generated successfully', response);
 
       if (response.status !== '200') {
         throw response.body.error;
@@ -273,7 +274,9 @@ class NotesGeneratorAgent {
       }
     }
 
-    console.log(`[Model Used] Source: ${source}, Model: ${model}, Context: ${sectionContext.length > 0 ? 'Yes' : 'No'}`);
+    console.log(
+      `[Model Used] Source: ${source}, Model: ${model}, Context: ${sectionContext.length > 0 ? 'Yes' : 'No'}`
+    );
     return this.formatResponse(content);
   }
 
@@ -300,7 +303,7 @@ class NotesGeneratorAgent {
       broadcastStage(requestId, 'notes_generation_overview', {
         totalSections: totalPrompts,
         topics: prompts.map((p) => p.topics || []),
-        hasVectorStore: !!(params.vectorStorePath && params.documentId)
+        hasVectorStore: !!(params.vectorStorePath && params.documentId),
       });
     }
 
