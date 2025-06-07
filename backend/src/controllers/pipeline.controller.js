@@ -12,7 +12,7 @@ import { UserModel } from '../models/user.model.js';
 import { uploadPDFToCloudinary } from '../utils/cloudinary-file-upload.util.js';
 import { addWatermarkToPdf } from '../utils/pdf-watermark-addition.util.js';
 import { convertLatexToMathJax } from '../utils/latex-to-image.util.js';
-import { addToQueue, getQueueStatus } from '../utils/queueConfig.js';
+import { addToQueue, getQueueStatus } from '../utils/queue-config.js';
 
 import {
   createRequestId,
@@ -168,6 +168,10 @@ export async function generateNotesController(req, res) {
       requestBody: req.body,
       requestIdDb: request._id,
       userId: request._userID,
+    });
+
+    await request.updateOne({
+      status: 'queued',
     });
 
     const queueStatus = await getQueueStatus(job.id);

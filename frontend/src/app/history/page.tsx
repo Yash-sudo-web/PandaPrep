@@ -90,6 +90,45 @@ const History = () => {
     }
   };
 
+  const StatusTag = ({ status }: { status: string }) => {
+    const statusStyles = {
+      completed: {
+        label: "Completed",
+        color: "bg-green-500 text-white",
+      },
+      processing: {
+        label: "Processing",
+        color: "bg-yellow-500 text-white",
+      },
+      queued: {
+        label: "In Queue",
+        color: "bg-orange-500 text-white",
+      }
+    };
+
+    type StatusKey = keyof typeof statusStyles;
+
+    const tag =
+      status in statusStyles
+        ? statusStyles[status as StatusKey]
+        : {
+            label: status,
+            color: "bg-gray-400 text-white",
+          };
+
+    return (
+      <span
+        className={cn(
+          "text-xs font-semibold px-2 py-0.5 rounded-full",
+          montserrat500.className,
+          tag.color
+        )}
+      >
+        {tag.label}
+      </span>
+    );
+  };
+
   const handleRenameNote = async (id: number) => {
     try {
       const email = user?.email || getCookie("email");
