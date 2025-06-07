@@ -6,6 +6,7 @@ import { DM_Sans } from 'next/font/google'
 import Footer from "@/components/global/footer";
 import HealthCheckWrapper from "@/components/global/health-check-wrapper";
 import CookieConsent from "@/components/global/cookie-consent";
+import { Toaster } from 'sonner'
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -46,6 +47,7 @@ export default function RootLayout({
           </HealthCheckWrapper>
           <Footer />
           <CookieConsent />
+          <Toaster richColors position="top-center" />
         </ThemeProvider>
       </body>
     </html>

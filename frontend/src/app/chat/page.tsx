@@ -7,25 +7,43 @@ import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Badge } from "@/components/ui/badge"
-import { Upload, FileText, Send, Loader2, X, Sparkles, MessageCircle, Eye, Zap } from "lucide-react"
+import { Upload, FileText, Send, Loader2, X, Sparkles, MessageCircle, Eye, Zap, ChevronLeft, ChevronRight } from "lucide-react"
 import Navbar from "@/components/global/navbar"
+import { toast } from "sonner"
+import { getAuth } from "firebase/auth"
 
 interface Message {
   id: number
   role: "user" | "assistant"
   content: string
+  pending?: boolean
+}
+
+interface ChatResponse {
+  success: boolean
+  data?: {
+    response: string
+    relevantContextCount: number
+  }
+  error?: string
 }
 
 export default function PDFChatPage() {
   const { theme, resolvedTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
+  const [mounted, setMounted] = useState<boolean>(false)
   const [uploadedFile, setUploadedFile] = useState<File | null>(null)
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null)
   const [isDragOver, setIsDragOver] = useState<boolean>(false)
-  const [showPdfViewer, setShowPdfViewer] = useState<boolean>(false)
+  const [showPdfViewer, setShowPdfViewer] = useState<boolean>(true)
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState<string>("")
   const [isLoading, setIsLoading] = useState<boolean>(false)
+  const [chatCollapsed, setChatCollapsed] = useState<boolean>(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [documentId, setDocumentId] = useState<string | null>(null)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const eventSourceRef = useRef<EventSource | null>(null)
+  const auth = getAuth()
 
   const isDarkMode = mounted && resolvedTheme === "dark"
 
@@ -33,13 +51,75 @@ export default function PDFChatPage() {
     setMounted(true)
   }, [])
 
-  const handleFileUpload = (file: File) => {
+  useEffect(() => {
+    // Create URL for PDF when file is uploaded
+    if (uploadedFile) {
+      const url = URL.createObjectURL(uploadedFile)
+      setPdfUrl(url)
+      // Cleanup URL when component unmounts or file changes
+      return () => URL.revokeObjectURL(url)
+    }
+  }, [uploadedFile])
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+  // Cleanup event source on unmount
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close()
+      }
+    }
+  }, [])
+
+  const handleFileUpload = async (file: File) => {
     if (file.type === "application/pdf") {
       setUploadedFile(file)
       setShowPdfViewer(false)
       setMessages([])
+      
+      try {
+        const formData = new FormData()
+        formData.append('pdf', file)
+
+        // Get the auth token
+        const token = await auth.currentUser?.getIdToken()
+        if (!token) {
+          toast.error('Please sign in to upload files')
+          return
+        }
+        
+        const response = await fetch('/api/chat/upload', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+          body: formData,
+        })
+        
+        const data = await response.json()
+        
+        if (!data.success) {
+          throw new Error(data.message || 'Failed to process PDF')
+        }
+        
+        setDocumentId(data.data.documentId)
+        toast.success('PDF processed successfully')
+      } catch (error) {
+        console.error('Error uploading PDF:', error)
+        toast.error('Failed to process PDF')
+        setUploadedFile(null)
+        setDocumentId(null)
+        setPdfUrl(null)
+      }
     } else {
-      alert("Please upload a PDF file only.")
+      toast.error('Please upload a PDF file only')
     }
   }
 
@@ -66,8 +146,13 @@ export default function PDFChatPage() {
     setUploadedFile(null)
     setShowPdfViewer(false)
     setMessages([])
+    setDocumentId(null)
+    setPdfUrl(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ""
+    }
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close()
     }
   }
 
@@ -75,13 +160,20 @@ export default function PDFChatPage() {
     setInput(e.target.value)
   }
 
-  const handleSubmit = (e: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLInputElement>) => {
+  const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement> | React.KeyboardEvent<HTMLInputElement>) => {
     e.preventDefault()
-    if (!uploadedFile) {
-      alert("Please upload a PDF first.")
+    if (!documentId) {
+      toast.error('Please upload a PDF first')
       return
     }
     if (!input.trim()) return
+
+    // Get the auth token
+    const token = await auth.currentUser?.getIdToken()
+    if (!token) {
+      toast.error('Please sign in to chat')
+      return
+    }
 
     const userMessage: Message = {
       id: Date.now(),
@@ -89,19 +181,90 @@ export default function PDFChatPage() {
       content: input
     }
 
-    setMessages(prev => [...prev, userMessage])
+    const pendingMessage: Message = {
+      id: Date.now() + 1,
+      role: "assistant",
+      content: "",
+      pending: true
+    }
+
+    setMessages(prev => [...prev, userMessage, pendingMessage])
     setInput("")
     setIsLoading(true)
 
-    setTimeout(() => {
-      const aiMessage: Message = {
-        id: Date.now() + 1,
-        role: "assistant",
-        content: "Demo Response"
+    // Clean up any existing EventSource
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close()
+      eventSourceRef.current = null
+    }
+
+    try {
+      // Create new EventSource for streaming with auth token in query params
+      const eventSource = new EventSource(
+        `/api/chat/stream?documentId=${documentId}&query=${encodeURIComponent(input)}&token=${encodeURIComponent(token)}`
+      )
+
+      let fullResponse = ""
+      let hasError = false
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          
+          if (data.error) {
+            hasError = true
+            throw new Error(data.error)
+          }
+
+          if (data.done) {
+            eventSource.close()
+            setIsLoading(false)
+            return
+          }
+
+          if (data.chunk && !hasError) {
+            fullResponse += data.chunk
+            setMessages(prev => prev.map(msg => 
+              msg.pending ? { ...msg, content: fullResponse } : msg
+            ))
+          }
+        } catch (error) {
+          console.error('Error parsing message:', error)
+          eventSource.close()
+          setIsLoading(false)
+          if (!hasError) {
+            toast.error('Failed to parse response')
+            setMessages(prev => prev.filter(msg => !msg.pending))
+          }
+        }
       }
-      setMessages(prev => [...prev, aiMessage])
+
+      eventSource.onerror = (error) => {
+        console.error('EventSource error:', error)
+        eventSource.close()
+        setIsLoading(false)
+        if (!hasError) {
+          toast.error('Failed to get response')
+          setMessages(prev => prev.filter(msg => !msg.pending))
+        }
+        hasError = true
+      }
+
+      eventSourceRef.current = eventSource
+
+      // Cleanup on component unmount or when starting a new chat
+      return () => {
+        if (eventSourceRef.current) {
+          eventSourceRef.current.close()
+          eventSourceRef.current = null
+        }
+      }
+    } catch (error) {
+      console.error('Error in chat:', error)
       setIsLoading(false)
-    }, 2000)
+      toast.error('Failed to get response')
+      setMessages(prev => prev.filter(msg => !msg.pending))
+    }
   }
 
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -115,293 +278,318 @@ export default function PDFChatPage() {
   }
 
   return (
-
-    <div className={`min-h-screen ${isDarkMode
-        ? "bg-[#1E1D1B]"
-        : "bg-[#FAF7F0]"
-      }`}>
+    <div className={`min-h-screen ${isDarkMode ? "bg-[#1E1D1B]" : "bg-[#FAF7F0]"}`}>
       <Navbar />
-      <div className="relative z-10 container mx-auto px-4 py-8">
-        <div className="text-center mb-12">
-          <div className={`inline-flex items-center gap-2 ${isDarkMode ? "bg-[#D29C7B]/10" : "bg-[#B17457]/10"
-            } backdrop-blur-sm rounded-full px-4 py-2 mb-6`}>
-            <Sparkles className={`h-4 w-4 ${isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]"
-              }`} />
-            <span className={`${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
-              } text-sm font-medium`}>AI-Powered PDF Analysis</span>
-          </div>
-          <h1 className={`text-5xl mt-11 md:text-6xl font-bold ${isDarkMode
-              ? "bg-gradient-to-r from-[#FAF7F0] via-[#D0CCC4] to-[#D29C7B] bg-clip-text text-transparent"
-              : "bg-gradient-to-r from-[#4A4947] via-[#B17457] to-[#4A4947] bg-clip-text text-transparent"
-            } mb-4`}>
-            Chat with your PDF
-          </h1>
-          <p className={`text-xl ${isDarkMode ? "text-[#D0CCC4]/70" : "text-[#4A4947]/70"
-            } max-w-2xl mx-auto`}>
-            Upload any PDF document and have intelligent conversations about its content
-          </p>
-        </div>
 
-        <div className="max-w-6xl mx-auto">
+      {/* Main Content with proper spacing */}
+      <div className="relative mt-24 z-10 container mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-12">
+        {/* Main Application Area */}
+        <div className="max-w-7xl mx-auto">
           {!uploadedFile ? (
-            <Card className={`${isDarkMode
+            <>
+              {/* Hero Section with improved spacing */}
+              <div className="text-center mb-12 px-4">
+                <div className={`inline-flex items-center gap-2 ${isDarkMode ? "bg-[#D29C7B]/10" : "bg-[#B17457]/10"} backdrop-blur-sm rounded-full px-6 py-3 mb-6`}>
+                  <Sparkles className={`h-4 w-4 ${isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]"}`} />
+                  <span className={`${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"} text-sm font-medium`}>AI-Powered PDF Analysis</span>
+                </div>
+                <h1 className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold ${isDarkMode
+                  ? "bg-gradient-to-r from-[#FAF7F0] via-[#D0CCC4] to-[#D29C7B] bg-clip-text text-transparent"
+                  : "bg-gradient-to-r from-[#4A4947] via-[#B17457] to-[#4A4947] bg-clip-text text-transparent"
+                  } mb-6 leading-tight`}>
+                  Chat with your PDF
+                </h1>
+                <p className={`text-base sm:text-lg md:text-xl ${isDarkMode ? "text-[#D0CCC4]/70" : "text-[#4A4947]/70"} max-w-3xl mx-auto leading-relaxed`}>
+                  Upload any PDF document and have intelligent conversations about its content
+                </p>
+              </div>
+              {/* Upload Section with better spacing */}
+              <Card className={`${isDarkMode
                 ? "bg-[#1E1D1B]/80 border-[#D29C7B]/20"
                 : "bg-white/90 border-[#B17457]/20"
-              } backdrop-blur-xl shadow-2xl`}>
-              <CardContent className="p-8">
-                <div
-                  className={`relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300 group cursor-pointer ${isDragOver
+                } backdrop-blur-xl shadow-2xl max-w-4xl mx-auto`}>
+                <CardContent className="p-6 sm:p-8 md:p-12">
+                  <div
+                    className={`relative border-2 border-dashed rounded-3xl p-8 sm:p-12 md:p-16 text-center transition-all duration-300 group cursor-pointer ${isDragOver
                       ? isDarkMode
-                        ? "border-[#D29C7B] bg-[#D29C7B]/10 scale-105"
-                        : "border-[#B17457] bg-[#B17457]/10 scale-105"
+                        ? "border-[#D29C7B] bg-[#D29C7B]/10 scale-[1.02]"
+                        : "border-[#B17457] bg-[#B17457]/10 scale-[1.02]"
                       : isDarkMode
                         ? "border-[#D0CCC4]/20 hover:border-[#D29C7B]/50 hover:bg-[#1E1D1B]/50"
                         : "border-[#4A4947]/20 hover:border-[#B17457]/50 hover:bg-white/50"
                     }`}
-                  onDrop={handleDrop}
-                  onDragOver={handleDragOver}
-                  onDragLeave={handleDragLeave}
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  <div className={`absolute inset-0 ${isDarkMode
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <div className={`absolute inset-0 ${isDarkMode
                       ? "bg-gradient-to-r from-[#D29C7B]/10 to-[#D29C7B]/5"
                       : "bg-gradient-to-r from-[#B17457]/10 to-[#B17457]/5"
-                    } rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
+                    } rounded-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-300`}></div>
 
-                  <div className="relative z-10">
-                    <div className={`w-20 h-20 ${isDarkMode
+                    <div className="relative z-10">
+                      <div className={`w-20 h-20 sm:w-24 sm:h-24 ${isDarkMode
                         ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80"
                         : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80"
-                      } rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300`}>
-                      <Upload className={`h-10 w-10 ${isDarkMode ? "text-[#FAF7F0]" : "text-white"
-                        }`} />
-                    </div>
+                        } rounded-2xl flex items-center justify-center mx-auto mb-8 group-hover:scale-110 transition-transform duration-300`}>
+                        <Upload className={`h-10 w-10 sm:h-12 sm:w-12 ${isDarkMode ? "text-[#FAF7F0]" : "text-white"}`} />
+                      </div>
 
-                    <h3 className={`text-2xl font-bold ${isDarkMode ? "text-[#FAF7F0]" : "text-[#4A4947]"
-                      } mb-3`}>Drop your PDF here</h3>
-                    <p className={`${isDarkMode ? "text-[#D0CCC4]/60" : "text-[#4A4947]/60"
-                      } mb-6 text-lg`}>Or click to browse and select your document</p>
-                    <Button
-                      size="lg"
-                      className={`${isDarkMode
+                      <h3 className={`text-2xl sm:text-3xl font-bold ${isDarkMode ? "text-[#FAF7F0]" : "text-[#4A4947]"} mb-4`}>Drop your PDF here</h3>
+                      <p className={`${isDarkMode ? "text-[#D0CCC4]/60" : "text-[#4A4947]/60"} mb-8 text-lg leading-relaxed`}>Or click to browse and select your document</p>
+                      <Button
+                        size="lg"
+                        className={`${isDarkMode
                           ? "bg-[#D29C7B] hover:bg-[#D29C7B]/80 text-[#1E1D1B]"
                           : "bg-[#B17457] hover:bg-[#B17457]/80 text-[#FAF7F0]"
-                        } border-0 shadow-lg hover:shadow-xl transition-all duration-300`}
-                    >
-                      Choose File
-                    </Button>
-                  </div>
+                          } border-0 shadow-lg hover:shadow-xl transition-all duration-300 px-8 py-4 text-base font-medium`}
+                      >
+                        Choose File
+                      </Button>
+                    </div>
 
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept="application/pdf"
-                    className="hidden"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0]
-                      if (file) handleFileUpload(file)
-                    }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="application/pdf"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file) handleFileUpload(file)
+                      }}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </>
           ) : (
-            /* Chat Section */
-            <div className="space-y-6">
-              {/* File Info */}
-              <Card className={`${isDarkMode
+            /* Main Application Layout - Mobile responsive grid */
+            <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4 lg:gap-6 h-[calc(100vh-8rem)]">
+              {/* Mobile View Controls */}
+              <div className="flex items-center justify-between lg:hidden mb-2 px-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowPdfViewer(!showPdfViewer)}
+                  className={`${isDarkMode
+                    ? "text-[#D0CCC4] hover:text-[#FAF7F0]"
+                    : "text-[#4A4947] hover:text-[#4A4947]"
+                  }`}
+                >
+                  {showPdfViewer ? (
+                    <div className="flex items-center gap-2">
+                      <MessageCircle className="h-4 w-4" />
+                      <span>Show Chat</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      <span>Show PDF</span>
+                    </div>
+                  )}
+                </Button>
+              </div>
+
+              {/* PDF Section - Hidden on mobile when chat is shown */}
+              <div className={`${!showPdfViewer ? 'hidden lg:flex' : 'flex'} flex-col gap-3 h-full`}>
+                {/* File Info Card */}
+                <Card className={`${isDarkMode
                   ? "bg-[#1E1D1B]/80 border-[#D29C7B]/20"
                   : "bg-white/90 border-[#B17457]/20"
-                } backdrop-blur-xl`}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-10 h-10 ${isDarkMode
+                  } backdrop-blur-xl shadow-lg shrink-0`}>
+                  <CardContent className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 ${isDarkMode
                           ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80"
                           : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80"
-                        } rounded-lg flex items-center justify-center`}>
-                        <FileText className={`h-5 w-5 ${isDarkMode ? "text-[#FAF7F0]" : "text-white"
-                          }`} />
+                          } rounded-lg flex items-center justify-center`}>
+                          <FileText className={`h-4 w-4 ${isDarkMode ? "text-[#FAF7F0]" : "text-white"}`} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h3 className={`font-medium text-sm truncate ${isDarkMode ? "text-[#FAF7F0]" : "text-[#4A4947]"}`}>
+                            {uploadedFile.name}
+                          </h3>
+                          <p className={`text-xs ${isDarkMode ? "text-[#D0CCC4]/60" : "text-[#4A4947]/60"}`}>
+                            {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB • Ready for analysis
+                          </p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className={`font-semibold ${isDarkMode ? "text-[#FAF7F0]" : "text-[#4A4947]"
-                          }`}>{uploadedFile.name}</h3>
-                        <p className={`text-sm ${isDarkMode ? "text-[#D0CCC4]/60" : "text-[#4A4947]/60"
-                          }`}>
-                          {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB • Ready for analysis
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowPdfViewer(!showPdfViewer)}
-                        className={`${isDarkMode
-                            ? "text-[#D0CCC4]/70 hover:text-[#FAF7F0] hover:bg-[#D29C7B]/10"
-                            : "text-[#4A4947]/70 hover:text-[#4A4947] hover:bg-[#B17457]/10"
-                          }`}
-                      >
-                        <Eye className="h-4 w-4 mr-2" />
-                        {showPdfViewer ? "Hide" : "View"} PDF
-                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={removeFile}
-                        className={`${isDarkMode
-                            ? "text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                            : "text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                        className={`h-8 w-8 p-0 ${isDarkMode
+                          ? "text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                          : "text-red-500 hover:text-red-600 hover:bg-red-500/10"
                           }`}
                       >
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
 
-              {/* PDF Viewer */}
-              {showPdfViewer && (
+                {/* PDF Viewer */}
                 <Card className={`${isDarkMode
-                    ? "bg-[#1E1D1B]/80 border-[#D29C7B]/20"
-                    : "bg-white/90 border-[#B17457]/20"
-                  } backdrop-blur-xl overflow-hidden`}>
-                  <CardContent className="p-0">
-                    <div className="h-96">
-                      <iframe src={URL.createObjectURL(uploadedFile)} className="w-full h-full" title="PDF Viewer" />
+                  ? "bg-[#1E1D1B]/80 border-[#D29C7B]/20"
+                  : "bg-white/90 border-[#B17457]/20"
+                  } backdrop-blur-xl overflow-hidden flex-1 shadow-lg`}>
+                  <CardContent className="p-0 h-full">
+                    <div className="relative h-full">
+                      {pdfUrl && (
+                        <object
+                          data={pdfUrl}
+                          type="application/pdf"
+                          className="w-full h-full"
+                        >
+                          <div className={`flex items-center justify-center h-full ${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}>
+                            <div className="text-center p-8">
+                              <FileText className={`h-16 w-16 mx-auto mb-4 ${isDarkMode ? "text-[#D29C7B]/50" : "text-[#B17457]/50"}`} />
+                              <p className="text-lg mb-4">PDF cannot be displayed in this browser.</p>
+                              <Button
+                                onClick={() => window.open(pdfUrl, '_blank')}
+                                className={`${isDarkMode
+                                  ? "bg-[#D29C7B] hover:bg-[#D29C7B]/80 text-[#1E1D1B]"
+                                  : "bg-[#B17457] hover:bg-[#B17457]/80 text-[#FAF7F0]"
+                                  }`}
+                              >
+                                Open PDF in New Tab
+                              </Button>
+                            </div>
+                          </div>
+                        </object>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
-              )}
+              </div>
 
-              {/* Chat Interface */}
-              <Card className={`${isDarkMode
-                  ? "bg-[#1E1D1B]/80 border-[#D29C7B]/20"
+              {/* Chat Section - Hidden on mobile when PDF is shown */}
+              <div className={`${showPdfViewer ? 'hidden lg:flex' : 'flex'} flex-col h-full`}>
+                <Card className={`${isDarkMode
+                  ? "bg-[#1E1D1B]/90 border-[#D29C7B]/20"
                   : "bg-white/90 border-[#B17457]/20"
-                } backdrop-blur-xl shadow-2xl`}>
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3 mb-6">
-                    <div className={`w-8 h-8 ${isDarkMode
+                  } backdrop-blur-xl shadow-2xl h-full flex flex-col`}>
+                  <CardContent className="p-4 lg:p-6 h-full flex flex-col">
+                    {/* Chat Header */}
+                    <div className="flex items-center gap-3 mb-6">
+                      <div className={`w-8 h-8 ${isDarkMode
                         ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80"
                         : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80"
-                      } rounded-lg flex items-center justify-center`}>
-                      <MessageCircle className={`h-4 w-4 ${isDarkMode ? "text-[#FAF7F0]" : "text-white"
-                        }`} />
+                        } rounded-lg flex items-center justify-center`}>
+                        <MessageCircle className={`h-4 w-4 ${isDarkMode ? "text-[#FAF7F0]" : "text-white"}`} />
+                      </div>
+                      <h2 className={`text-lg font-semibold ${isDarkMode ? "text-[#FAF7F0]" : "text-[#4A4947]"}`}>
+                        AI Assistant
+                      </h2>
                     </div>
-                    <h2 className={`text-xl font-semibold ${isDarkMode ? "text-[#FAF7F0]" : "text-[#4A4947]"
-                      }`}>Chat with Notes</h2>
-                  </div>
 
-                  <ScrollArea className="h-96 mb-6 pr-4">
-                    <div className="space-y-4">
-                      {messages.length === 0 ? (
-                        <div className="text-center py-12">
-                          <div className={`w-16 h-16 ${isDarkMode
-                              ? "bg-gradient-to-r from-[#D29C7B]/20 to-[#D29C7B]/10"
-                              : "bg-gradient-to-r from-[#B17457]/20 to-[#B17457]/10"
-                            } rounded-2xl flex items-center justify-center mx-auto mb-4`}>
-                            <Sparkles className={`h-8 w-8 ${isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]"
-                              }`} />
-                          </div>
-                          <h3 className={`text-lg font-semibold ${isDarkMode ? "text-[#FAF7F0]" : "text-[#4A4947]"
-                            } mb-2`}>Analyze your Notes</h3>
-
-                          <div className="flex flex-wrap justify-center gap-2">
-                            <Badge variant="outline" className={`${isDarkMode
-                                ? "border-[#D29C7B]/20 text-[#D0CCC4]"
-                                : "border-[#B17457]/20 text-[#4A4947]"
-                              }`}>
-                              "Summarize this document"
-                            </Badge>
-                            <Badge variant="outline" className={`${isDarkMode
-                                ? "border-[#D29C7B]/20 text-[#D0CCC4]"
-                                : "border-[#B17457]/20 text-[#4A4947]"
-                              }`}>
-                              "What are the key points?"
-                            </Badge>
-                            <Badge variant="outline" className={`${isDarkMode
-                                ? "border-[#D29C7B]/20 text-[#D0CCC4]"
-                                : "border-[#B17457]/20 text-[#4A4947]"
-                              }`}>
-                              "Explain the main concepts"
-                            </Badge>
-                          </div>
-                        </div>
-                      ) : (
-                        messages.map((message) => (
-                          <div
-                            key={message.id}
-                            className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                          >
-                            {message.role === "assistant" && (
-                              <div className={`w-8 h-8 ${isDarkMode
+                    {/* Messages Area */}
+                    <div className="flex-1 overflow-hidden">
+                      <ScrollArea className="h-full pr-4">
+                        <div className="space-y-6">
+                          {messages.length === 0 ? (
+                            <div className="text-center py-8">
+                              <div className={`w-20 h-20 ${isDarkMode
+                                  ? "bg-gradient-to-r from-[#D29C7B]/20 to-[#D29C7B]/10"
+                                  : "bg-gradient-to-r from-[#B17457]/20 to-[#B17457]/10"
+                                } rounded-3xl flex items-center justify-center mx-auto mb-6`}>
+                                <Sparkles className={`h-10 w-10 ${isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]"}`} />
+                              </div>
+                              <h3 className={`text-lg font-semibold ${isDarkMode ? "text-[#FAF7F0]" : "text-[#4A4947]"} mb-4`}>
+                                Start Analyzing Your PDF
+                              </h3>
+                              <p className={`${isDarkMode ? "text-[#D0CCC4]/60" : "text-[#4A4947]/60"} mb-6 text-sm leading-relaxed`}>
+                                Ask me anything about your document. Here are some suggestions:
+                              </p>
+                              <div className="flex flex-wrap justify-center gap-2">
+                                {["Summarize this document", "What are the key points?", "Explain the main concepts"].map((suggestion) => (
+                                  <Badge 
+                                    key={suggestion}
+                                    variant="outline" 
+                                    className={`${isDarkMode
+                                      ? "border-[#D29C7B]/20 text-[#D0CCC4] hover:bg-[#D29C7B]/10"
+                                      : "border-[#B17457]/20 text-[#4A4947] hover:bg-[#B17457]/10"
+                                    } cursor-pointer transition-colors duration-200 py-2 px-3`}
+                                    onClick={() => setInput(suggestion)}
+                                  >
+                                    {suggestion}
+                                  </Badge>
+                                ))}
+                              </div>
+                            </div>
+                          ) : (
+                            messages.map((message) => (
+                              <div
+                                key={message.id}
+                                className={`flex gap-4 ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                              >
+                                {message.role === "assistant" && (
+                                  <div className={`w-10 h-10 ${isDarkMode
+                                      ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80"
+                                      : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80"
+                                    } rounded-full flex items-center justify-center flex-shrink-0 mt-1`}>
+                                    <Sparkles className={`h-5 w-5 ${isDarkMode ? "text-[#FAF7F0]" : "text-white"}`} />
+                                  </div>
+                                )}
+                                <div
+                                  className={`max-w-[85%] rounded-2xl px-5 py-4 shadow-lg ${message.role === "user"
+                                      ? isDarkMode
+                                        ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80 text-[#1E1D1B]"
+                                        : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80 text-[#FAF7F0]"
+                                      : isDarkMode
+                                        ? "bg-[#1E1D1B]/60 backdrop-blur-sm text-[#FAF7F0] border border-[#D29C7B]/20"
+                                        : "bg-white/60 backdrop-blur-sm text-[#4A4947] border border-[#B17457]/20"
+                                    }`}
+                                >
+                                  <p className="whitespace-pre-wrap leading-relaxed text-sm">{message.content}</p>
+                                </div>
+                                {message.role === "user" && (
+                                  <div className={`w-10 h-10 ${isDarkMode
+                                      ? "bg-gradient-to-r from-[#D29C7B]/80 to-[#D29C7B]"
+                                      : "bg-gradient-to-r from-[#B17457]/80 to-[#B17457]"
+                                    } rounded-full flex items-center justify-center flex-shrink-0 mt-1`}>
+                                    <span className={`${isDarkMode ? "text-[#1E1D1B]" : "text-white"} text-sm font-semibold`}>U</span>
+                                  </div>
+                                )}
+                              </div>
+                            ))
+                          )}
+                          {isLoading && (
+                            <div className="flex gap-4 justify-start">
+                              <div className={`w-10 h-10 ${isDarkMode
                                   ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80"
                                   : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80"
-                                } rounded-full flex items-center justify-center flex-shrink-0 mt-1`}>
-                                <Sparkles className={`h-4 w-4 ${isDarkMode ? "text-[#FAF7F0]" : "text-white"
-                                  }`} />
+                                } rounded-full flex items-center justify-center flex-shrink-0`}>
+                                <Sparkles className={`h-5 w-5 ${isDarkMode ? "text-[#FAF7F0]" : "text-white"}`} />
                               </div>
-                            )}
-                            <div
-                              className={`max-w-[80%] rounded-2xl px-4 py-3 shadow-lg ${message.role === "user"
-                                  ? isDarkMode
-                                    ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80 text-[#1E1D1B] ml-12"
-                                    : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80 text-[#FAF7F0] ml-12"
-                                  : isDarkMode
-                                    ? "bg-[#1E1D1B]/60 backdrop-blur-sm text-[#FAF7F0] border border-[#D29C7B]/20"
-                                    : "bg-white/60 backdrop-blur-sm text-[#4A4947] border border-[#B17457]/20"
-                                }`}
-                            >
-                              <p className="whitespace-pre-wrap leading-relaxed">{message.content}</p>
-                            </div>
-                            {message.role === "user" && (
-                              <div className={`w-8 h-8 ${isDarkMode
-                                  ? "bg-gradient-to-r from-[#D29C7B]/80 to-[#D29C7B]"
-                                  : "bg-gradient-to-r from-[#B17457]/80 to-[#B17457]"
-                                } rounded-full flex items-center justify-center flex-shrink-0 mt-1`}>
-                                <span className={`${isDarkMode ? "text-[#1E1D1B]" : "text-white"
-                                  } text-sm font-semibold`}>U</span>
+                              <div className={`${isDarkMode
+                                  ? "bg-[#1E1D1B]/60 border-[#D29C7B]/20"
+                                  : "bg-white/60 border-[#B17457]/20"
+                                } backdrop-blur-sm rounded-2xl px-5 py-4 border`}>
+                                <div className="flex items-center gap-3">
+                                  <Loader2 className={`h-4 w-4 animate-spin ${isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]"}`} />
+                                  <span className={`${isDarkMode ? "text-[#D0CCC4]/70" : "text-[#4A4947]/70"} text-sm`}>Analyzing your document...</span>
+                                </div>
                               </div>
-                            )}
-                          </div>
-                        ))
-                      )}
-                      {isLoading && (
-                        <div className="flex gap-3 justify-start">
-                          <div className={`w-8 h-8 ${isDarkMode
-                              ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80"
-                              : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80"
-                            } rounded-full flex items-center justify-center flex-shrink-0`}>
-                            <Sparkles className={`h-4 w-4 ${isDarkMode ? "text-[#FAF7F0]" : "text-white"
-                              }`} />
-                          </div>
-                          <div className={`${isDarkMode
-                              ? "bg-[#1E1D1B]/60 border-[#D29C7B]/20"
-                              : "bg-white/60 border-[#B17457]/20"
-                            } backdrop-blur-sm rounded-2xl px-4 py-3 border`}>
-                            <div className="flex items-center gap-2">
-                              <Loader2 className={`h-4 w-4 animate-spin ${isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]"
-                                }`} />
-                              <span className={`${isDarkMode ? "text-[#D0CCC4]/70" : "text-[#4A4947]/70"
-                                }`}>Analyzing...</span>
                             </div>
-                          </div>
+                          )}
                         </div>
-                      )}
+                      </ScrollArea>
                     </div>
-                  </ScrollArea>
 
-                  <div className="relative">
-                    <div className="relative">
+                    {/* Input Area */}
+                    <div className="relative mt-4">
                       <Input
                         value={input}
                         onChange={handleInputChange}
                         placeholder="Ask me anything about your PDF..."
                         disabled={isLoading}
-                        className={`pr-12 h-12 ${isDarkMode
-                            ? "bg-[#1E1D1B]/60 border-[#D29C7B]/20 text-[#FAF7F0] placeholder:text-[#D0CCC4]/50 focus:border-[#D29C7B] focus:ring-[#D29C7B]/20"
-                            : "bg-white/60 border-[#B17457]/20 text-[#4A4947] placeholder:text-[#4A4947]/50 focus:border-[#B17457] focus:ring-[#B17457]/20"
+                        className={`pr-12 h-11 text-base ${isDarkMode
+                          ? "bg-[#1E1D1B]/60 border-[#D29C7B]/20 text-[#FAF7F0] placeholder:text-[#D0CCC4]/50"
+                          : "bg-white/60 border-[#B17457]/20 text-[#4A4947] placeholder:text-[#4A4947]/50"
                           } backdrop-blur-sm rounded-xl`}
                         onKeyPress={handleKeyPress}
                       />
@@ -409,9 +597,9 @@ export default function PDFChatPage() {
                         onClick={handleSubmit}
                         disabled={isLoading || !input.trim()}
                         size="sm"
-                        className={`absolute right-2 top-2 h-8 w-8 p-0 ${isDarkMode
-                            ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80 hover:from-[#D29C7B]/80 hover:to-[#D29C7B]/60"
-                            : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80 hover:from-[#B17457]/80 hover:to-[#B17457]/60"
+                        className={`absolute right-2 top-1.5 h-8 w-8 p-0 ${isDarkMode
+                          ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80"
+                          : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80"
                           } rounded-lg`}
                       >
                         {isLoading ? (
@@ -421,9 +609,9 @@ export default function PDFChatPage() {
                         )}
                       </Button>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
           )}
         </div>
