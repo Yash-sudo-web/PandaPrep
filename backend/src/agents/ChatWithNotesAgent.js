@@ -35,6 +35,31 @@ const OCR_TEMP_DIR = path.join(process.cwd(), "temp", "ocr");
 });
 
 class ChatWithNotesAgent {
+  // Add a static map to store chat histories
+  static chatHistories = new Map();
+
+  /**
+   * Get or create chat history for a document
+   * @param {string} documentId - The document identifier
+   * @returns {Array} - The chat history array
+   */
+  static getChatHistory(documentId) {
+    if (!this.chatHistories.has(documentId)) {
+      this.chatHistories.set(documentId, []);
+    }
+    return this.chatHistories.get(documentId);
+  }
+
+  /**
+   * Add a message to chat history
+   * @param {string} documentId - The document identifier
+   * @param {Object} message - The message object
+   */
+  static addToChatHistory(documentId, message) {
+    const history = this.getChatHistory(documentId);
+    history.push(message);
+  }
+
   /**
    * Initialize the Google Generative AI client
    * @returns {GoogleGenAI} The initialized client
@@ -46,10 +71,11 @@ class ChatWithNotesAgent {
   /**
    * Get the instruction prompt for the model
    * @param {Object} options - Options for customizing the prompt
+   * @param {Array} chatHistory - Previous chat messages
    * @returns {string} - The instruction prompt
    */
-  static getInstructionPrompt(options = {}) {
-    return `You are an intelligent assistant analyzing a PDF document. Your task is to provide accurate, natural, and contextually relevant responses based on the document content provided below.
+  static getInstructionPrompt(options = {}, chatHistory = []) {
+    const basePrompt = `You are an intelligent assistant analyzing a PDF document. Your task is to provide accurate, natural, and contextually relevant responses based on the document content provided below.
 
 Instructions:
 1. Base your responses ONLY on the provided document excerpts
@@ -61,9 +87,14 @@ Instructions:
 7. Format your response appropriately (lists for multiple items, paragraphs for explanations)
 8. If the question is about personal information, be discreet and professional
 
+${chatHistory.length > 0 ? '\nPrevious conversation context:\n' + chatHistory.map(msg => 
+  `${msg.role}: ${msg.content}`
+).join('\n') + '\n' : ''}
+
 Context from the document is provided below, marked as "Document Excerpt":
 
 `;
+    return basePrompt;
   }
 
   /**
@@ -332,14 +363,16 @@ ${doc.pageContent.trim()}
       // Get relevant context
       const context = await this.retrieveContext(vectorStore, query, options.retrievalCount || 5);
       
-      // Get instruction prompt
-      const instructionPrompt = this.getInstructionPrompt(options);
+      // Get chat history
+      const chatHistory = this.getChatHistory(documentId);
+      
+      // Get instruction prompt with chat history
+      const instructionPrompt = this.getInstructionPrompt(options, chatHistory);
       
       // Initialize Gemini model
       const genAI = this.initializeClient();
       
-      // Prepare content for generation - using only "user" role
-      // Include instructions and context in the user's message
+      // Prepare content for generation
       const contents = [
         {
           role: "user",
@@ -347,20 +380,24 @@ ${doc.pageContent.trim()}
         }
       ];
       
-      // Generate response using the updated API format
+      // Generate response
       console.log("Generating response...");
       const response = await genAI.models.generateContent({
         model: "gemini-2.0-flash-lite",
         contents: contents
       });
       
-      // Check if response has candidates and extract text
+      // Check response
       if (!response.candidates || !response.candidates[0] || !response.candidates[0].content) {
         throw new Error("Invalid response structure from Gemini");
       }
       
       // Extract response text
       const responseText = response.candidates[0].content.parts[0].text || "";
+      
+      // Add messages to chat history
+      this.addToChatHistory(documentId, { role: "user", content: query });
+      this.addToChatHistory(documentId, { role: "assistant", content: responseText });
       
       return {
         success: true,
@@ -397,13 +434,16 @@ ${doc.pageContent.trim()}
       // Get relevant context
       const context = await this.retrieveContext(vectorStore, query, options.retrievalCount || 5);
       
-      // Get instruction prompt
-      const instructionPrompt = this.getInstructionPrompt(options);
+      // Get chat history
+      const chatHistory = this.getChatHistory(documentId);
+      
+      // Get instruction prompt with chat history
+      const instructionPrompt = this.getInstructionPrompt(options, chatHistory);
       
       // Initialize Gemini model
       const genAI = this.initializeClient();
       
-      // Prepare content for generation - using only "user" role 
+      // Prepare content for generation
       const contents = [
         {
           role: "user",
@@ -417,17 +457,12 @@ ${doc.pageContent.trim()}
         model: "gemini-2.0-flash-lite",
         contents: contents
       });
-
-      console.log("Response structure:", JSON.stringify(response, null, 2));
       
       let fullResponse = "";
       
       // Process the stream
       for await (const chunk of response) {
-        console.log("Chunk structure:", JSON.stringify(chunk, null, 2));
-        // Extract text from the chunk
         const chunkText = chunk.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        console.log("Extracted chunk text:", chunkText);
         fullResponse += chunkText;
         
         // Call the stream callback if provided
@@ -435,6 +470,10 @@ ${doc.pageContent.trim()}
           streamCallback(chunkText, fullResponse);
         }
       }
+      
+      // Add messages to chat history
+      this.addToChatHistory(documentId, { role: "user", content: query });
+      this.addToChatHistory(documentId, { role: "assistant", content: fullResponse });
       
       return {
         success: true,

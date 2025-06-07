@@ -47,6 +47,25 @@ export default function PDFChatPage() {
 
   const isDarkMode = mounted && resolvedTheme === "dark"
 
+  // Load messages from localStorage when documentId changes
+  useEffect(() => {
+    if (documentId) {
+      const savedMessages = localStorage.getItem(`chat_messages_${documentId}`)
+      if (savedMessages) {
+        setMessages(JSON.parse(savedMessages))
+      } else {
+        setMessages([])
+      }
+    }
+  }, [documentId])
+
+  // Save messages to localStorage whenever they change
+  useEffect(() => {
+    if (documentId && messages.length > 0) {
+      localStorage.setItem(`chat_messages_${documentId}`, JSON.stringify(messages))
+    }
+  }, [messages, documentId])
+
   useEffect(() => {
     setMounted(true)
   }, [])
@@ -80,9 +99,10 @@ export default function PDFChatPage() {
 
   const handleFileUpload = async (file: File) => {
     if (file.type === "application/pdf") {
+      // Clear previous chat messages when uploading a new file
+      setMessages([])
       setUploadedFile(file)
       setShowPdfViewer(false)
-      setMessages([])
       
       try {
         const formData = new FormData()
@@ -109,7 +129,16 @@ export default function PDFChatPage() {
           throw new Error(data.message || 'Failed to process PDF')
         }
         
-        setDocumentId(data.data.documentId)
+        // Set new documentId and clear previous messages
+        const newDocumentId = data.data.documentId
+        setDocumentId(newDocumentId)
+        
+        // Load any existing messages for this document
+        const savedMessages = localStorage.getItem(`chat_messages_${newDocumentId}`)
+        if (savedMessages) {
+          setMessages(JSON.parse(savedMessages))
+        }
+        
         toast.success('PDF processed successfully')
       } catch (error) {
         console.error('Error uploading PDF:', error)
@@ -117,6 +146,7 @@ export default function PDFChatPage() {
         setUploadedFile(null)
         setDocumentId(null)
         setPdfUrl(null)
+        setMessages([])
       }
     } else {
       toast.error('Please upload a PDF file only')
@@ -143,6 +173,9 @@ export default function PDFChatPage() {
   }
 
   const removeFile = () => {
+    if (documentId) {
+      localStorage.removeItem(`chat_messages_${documentId}`)
+    }
     setUploadedFile(null)
     setShowPdfViewer(false)
     setMessages([])
@@ -188,7 +221,15 @@ export default function PDFChatPage() {
       pending: true
     }
 
-    setMessages(prev => [...prev, userMessage, pendingMessage])
+    // Update messages with new messages while preserving history
+    setMessages(prevMessages => {
+      const updatedMessages = [...prevMessages, userMessage, pendingMessage]
+      if (documentId) {
+        localStorage.setItem(`chat_messages_${documentId}`, JSON.stringify(updatedMessages))
+      }
+      return updatedMessages
+    })
+    
     setInput("")
     setIsLoading(true)
 
@@ -219,14 +260,31 @@ export default function PDFChatPage() {
           if (data.done) {
             eventSource.close()
             setIsLoading(false)
+            // Save final message state to localStorage
+            setMessages(prevMessages => {
+              const finalMessages = prevMessages.map(msg => 
+                msg.pending ? { ...msg, content: fullResponse, pending: false } : msg
+              )
+              if (documentId) {
+                localStorage.setItem(`chat_messages_${documentId}`, JSON.stringify(finalMessages))
+              }
+              return finalMessages
+            })
             return
           }
 
           if (data.chunk && !hasError) {
             fullResponse += data.chunk
-            setMessages(prev => prev.map(msg => 
-              msg.pending ? { ...msg, content: fullResponse } : msg
-            ))
+            // Update messages while preserving history
+            setMessages(prevMessages => {
+              const updatedMessages = prevMessages.map(msg => 
+                msg.pending ? { ...msg, content: fullResponse } : msg
+              )
+              if (documentId) {
+                localStorage.setItem(`chat_messages_${documentId}`, JSON.stringify(updatedMessages))
+              }
+              return updatedMessages
+            })
           }
         } catch (error) {
           console.error('Error parsing message:', error)
@@ -234,7 +292,14 @@ export default function PDFChatPage() {
           setIsLoading(false)
           if (!hasError) {
             toast.error('Failed to parse response')
-            setMessages(prev => prev.filter(msg => !msg.pending))
+            // Remove pending message while preserving history
+            setMessages(prevMessages => {
+              const updatedMessages = prevMessages.filter(msg => !msg.pending)
+              if (documentId) {
+                localStorage.setItem(`chat_messages_${documentId}`, JSON.stringify(updatedMessages))
+              }
+              return updatedMessages
+            })
           }
         }
       }
@@ -245,25 +310,32 @@ export default function PDFChatPage() {
         setIsLoading(false)
         if (!hasError) {
           toast.error('Failed to get response')
-          setMessages(prev => prev.filter(msg => !msg.pending))
+          // Remove pending message while preserving history
+          setMessages(prevMessages => {
+            const updatedMessages = prevMessages.filter(msg => !msg.pending)
+            if (documentId) {
+              localStorage.setItem(`chat_messages_${documentId}`, JSON.stringify(updatedMessages))
+            }
+            return updatedMessages
+          })
         }
         hasError = true
       }
 
       eventSourceRef.current = eventSource
 
-      // Cleanup on component unmount or when starting a new chat
-      return () => {
-        if (eventSourceRef.current) {
-          eventSourceRef.current.close()
-          eventSourceRef.current = null
-        }
-      }
     } catch (error) {
       console.error('Error in chat:', error)
       setIsLoading(false)
       toast.error('Failed to get response')
-      setMessages(prev => prev.filter(msg => !msg.pending))
+      // Remove pending message while preserving history
+      setMessages(prevMessages => {
+        const updatedMessages = prevMessages.filter(msg => !msg.pending)
+        if (documentId) {
+          localStorage.setItem(`chat_messages_${documentId}`, JSON.stringify(updatedMessages))
+        }
+        return updatedMessages
+      })
     }
   }
 
@@ -278,13 +350,12 @@ export default function PDFChatPage() {
   }
 
   return (
-    <div className={`min-h-screen ${isDarkMode ? "bg-[#1E1D1B]" : "bg-[#FAF7F0]"}`}>
+    <div className="min-h-screen overflow-hidden flex flex-col">
       <Navbar />
-
+      
       {/* Main Content with proper spacing */}
-      <div className="relative mt-24 z-10 container mx-auto px-4 sm:px-6 lg:px-8 pt-12 pb-12">
-        {/* Main Application Area */}
-        <div className="max-w-7xl mx-auto">
+      <div className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-4 mt-24">
+        <div className="max-w-7xl mx-auto h-full">
           {!uploadedFile ? (
             <>
               {/* Hero Section with improved spacing */}
@@ -365,7 +436,7 @@ export default function PDFChatPage() {
             </>
           ) : (
             /* Main Application Layout - Mobile responsive grid */
-            <div className="flex flex-col lg:grid lg:grid-cols-2 gap-4 lg:gap-6 h-[calc(100vh-8rem)]">
+            <div className="grid lg:grid-cols-2 gap-4 lg:gap-6 h-[calc(100vh-10rem)] overflow-hidden">
               {/* Mobile View Controls */}
               <div className="flex items-center justify-between lg:hidden mb-2 px-1">
                 <Button
@@ -391,105 +462,98 @@ export default function PDFChatPage() {
                 </Button>
               </div>
 
-              {/* PDF Section - Hidden on mobile when chat is shown */}
-              <div className={`${!showPdfViewer ? 'hidden lg:flex' : 'flex'} flex-col gap-3 h-full`}>
-                {/* File Info Card */}
-                <Card className={`${isDarkMode
-                  ? "bg-[#1E1D1B]/80 border-[#D29C7B]/20"
-                  : "bg-white/90 border-[#B17457]/20"
-                  } backdrop-blur-xl shadow-lg shrink-0`}>
-                  <CardContent className="p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className={`w-8 h-8 ${isDarkMode
-                          ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80"
-                          : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80"
-                          } rounded-lg flex items-center justify-center`}>
-                          <FileText className={`h-4 w-4 ${isDarkMode ? "text-[#FAF7F0]" : "text-white"}`} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h3 className={`font-medium text-sm truncate ${isDarkMode ? "text-[#FAF7F0]" : "text-[#4A4947]"}`}>
-                            {uploadedFile.name}
-                          </h3>
-                          <p className={`text-xs ${isDarkMode ? "text-[#D0CCC4]/60" : "text-[#4A4947]/60"}`}>
-                            {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB • Ready for analysis
-                          </p>
-                        </div>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={removeFile}
-                        className={`h-8 w-8 p-0 ${isDarkMode
-                          ? "text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                          : "text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                          }`}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-
-                {/* PDF Viewer */}
-                <Card className={`${isDarkMode
-                  ? "bg-[#1E1D1B]/80 border-[#D29C7B]/20"
-                  : "bg-white/90 border-[#B17457]/20"
-                  } backdrop-blur-xl overflow-hidden flex-1 shadow-lg`}>
-                  <CardContent className="p-0 h-full">
-                    <div className="relative h-full">
-                      {pdfUrl && (
-                        <object
-                          data={pdfUrl}
-                          type="application/pdf"
-                          className="w-full h-full"
-                        >
-                          <div className={`flex items-center justify-center h-full ${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}>
-                            <div className="text-center p-8">
-                              <FileText className={`h-16 w-16 mx-auto mb-4 ${isDarkMode ? "text-[#D29C7B]/50" : "text-[#B17457]/50"}`} />
-                              <p className="text-lg mb-4">PDF cannot be displayed in this browser.</p>
-                              <Button
-                                onClick={() => window.open(pdfUrl, '_blank')}
-                                className={`${isDarkMode
-                                  ? "bg-[#D29C7B] hover:bg-[#D29C7B]/80 text-[#1E1D1B]"
-                                  : "bg-[#B17457] hover:bg-[#B17457]/80 text-[#FAF7F0]"
-                                  }`}
-                              >
-                                Open PDF in New Tab
-                              </Button>
-                            </div>
+              {/* PDF Section */}
+              <div className={`${!showPdfViewer ? 'hidden lg:block' : 'block'} h-full overflow-hidden`}>
+                <div className="flex flex-col h-full gap-2">
+                  {/* File Info Card */}
+                  <Card className="shrink-0">
+                    <CardContent className="p-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className={`w-7 h-7 ${isDarkMode
+                            ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80"
+                            : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80"
+                            } rounded-lg flex items-center justify-center`}>
+                            <FileText className={`h-4 w-4 ${isDarkMode ? "text-[#FAF7F0]" : "text-white"}`} />
                           </div>
-                        </object>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
+                          <div className="min-w-0 flex-1">
+                            <h3 className={`font-medium text-sm truncate ${isDarkMode ? "text-[#FAF7F0]" : "text-[#4A4947]"}`}>
+                              {uploadedFile.name}
+                            </h3>
+                            <p className={`text-xs ${isDarkMode ? "text-[#D0CCC4]/60" : "text-[#4A4947]/60"}`}>
+                              {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB • Ready for analysis
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={removeFile}
+                          className={`h-7 w-7 p-0 ${isDarkMode
+                            ? "text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                            : "text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                            }`}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  {/* PDF Viewer */}
+                  <Card className="flex-1 overflow-hidden">
+                    <CardContent className="p-0 h-full">
+                      <div className="h-full">
+                        {pdfUrl && (
+                          <object
+                            data={pdfUrl}
+                            type="application/pdf"
+                            className="w-full h-full"
+                          >
+                            <div className={`flex items-center justify-center h-full ${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}>
+                              <div className="text-center p-8">
+                                <FileText className={`h-16 w-16 mx-auto mb-4 ${isDarkMode ? "text-[#D29C7B]/50" : "text-[#B17457]/50"}`} />
+                                <p className="text-lg mb-4">PDF cannot be displayed in this browser.</p>
+                                <Button
+                                  onClick={() => window.open(pdfUrl, '_blank')}
+                                  className={`${isDarkMode
+                                    ? "bg-[#D29C7B] hover:bg-[#D29C7B]/80 text-[#1E1D1B]"
+                                    : "bg-[#B17457] hover:bg-[#B17457]/80 text-[#FAF7F0]"
+                                    }`}
+                                >
+                                  Open PDF in New Tab
+                                </Button>
+                              </div>
+                            </div>
+                          </object>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
 
-              {/* Chat Section - Hidden on mobile when PDF is shown */}
-              <div className={`${showPdfViewer ? 'hidden lg:flex' : 'flex'} flex-col h-full`}>
-                <Card className={`${isDarkMode
-                  ? "bg-[#1E1D1B]/90 border-[#D29C7B]/20"
-                  : "bg-white/90 border-[#B17457]/20"
-                  } backdrop-blur-xl shadow-2xl h-full flex flex-col`}>
-                  <CardContent className="p-4 lg:p-6 h-full flex flex-col">
+              {/* Chat Section */}
+              <div className={`${showPdfViewer ? 'hidden lg:block' : 'block'} h-full overflow-hidden`}>
+                <Card className="h-full">
+                  <CardContent className="p-3 lg:p-4 h-full flex flex-col">
                     {/* Chat Header */}
-                    <div className="flex items-center gap-3 mb-6">
-                      <div className={`w-8 h-8 ${isDarkMode
+                    <div className="shrink-0 flex items-center gap-2 mb-3">
+                      <div className={`w-7 h-7 ${isDarkMode
                         ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80"
                         : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80"
                         } rounded-lg flex items-center justify-center`}>
                         <MessageCircle className={`h-4 w-4 ${isDarkMode ? "text-[#FAF7F0]" : "text-white"}`} />
                       </div>
-                      <h2 className={`text-lg font-semibold ${isDarkMode ? "text-[#FAF7F0]" : "text-[#4A4947]"}`}>
+                      <h2 className={`text-base font-semibold ${isDarkMode ? "text-[#FAF7F0]" : "text-[#4A4947]"}`}>
                         AI Assistant
                       </h2>
                     </div>
 
                     {/* Messages Area */}
-                    <div className="flex-1 overflow-hidden">
-                      <ScrollArea className="h-full pr-4">
-                        <div className="space-y-6">
+                    <div className="flex-1 min-h-0 overflow-hidden">
+                      <ScrollArea className="h-full">
+                        <div className="space-y-3 pr-3">
                           {messages.length === 0 ? (
                             <div className="text-center py-8">
                               <div className={`w-20 h-20 ${isDarkMode
@@ -576,36 +640,37 @@ export default function PDFChatPage() {
                               </div>
                             </div>
                           )}
+                          <div ref={messagesEndRef} />
                         </div>
                       </ScrollArea>
                     </div>
 
                     {/* Input Area */}
-                    <div className="relative mt-4">
+                    <div className="shrink-0 relative mt-3">
                       <Input
                         value={input}
                         onChange={handleInputChange}
                         placeholder="Ask me anything about your PDF..."
                         disabled={isLoading}
-                        className={`pr-12 h-11 text-base ${isDarkMode
+                        className={`pr-10 h-9 text-sm ${isDarkMode
                           ? "bg-[#1E1D1B]/60 border-[#D29C7B]/20 text-[#FAF7F0] placeholder:text-[#D0CCC4]/50"
                           : "bg-white/60 border-[#B17457]/20 text-[#4A4947] placeholder:text-[#4A4947]/50"
-                          } backdrop-blur-sm rounded-xl`}
+                          } backdrop-blur-sm rounded-lg`}
                         onKeyPress={handleKeyPress}
                       />
                       <Button
                         onClick={handleSubmit}
                         disabled={isLoading || !input.trim()}
                         size="sm"
-                        className={`absolute right-2 top-1.5 h-8 w-8 p-0 ${isDarkMode
+                        className={`absolute right-1.5 top-1 h-7 w-7 p-0 ${isDarkMode
                           ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80"
                           : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80"
                           } rounded-lg`}
                       >
                         {isLoading ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
                         ) : (
-                          <Send className="h-4 w-4" />
+                          <Send className="h-3.5 w-3.5" />
                         )}
                       </Button>
                     </div>
