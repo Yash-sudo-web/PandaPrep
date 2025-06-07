@@ -27,5 +27,4 @@ app.use("/api/payment", razorpayPaymentRoutes)
 app.use("/api/commons", commonsRoutes)
 app.use("/api", healthCheckRoutes)
 
-
 export { app }

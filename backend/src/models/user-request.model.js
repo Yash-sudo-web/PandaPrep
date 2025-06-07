@@ -85,7 +85,7 @@ const UserRequestSchema = new mongoose.Schema(
     // Status tracking
     status: {
       type: String,
-      enum: ['pending', 'processing', 'completed', 'failed'],
+      enum: ['pending', 'queued' ,'processing', 'completed', 'failed'],
       default: 'pending',
     },
     relativePathToReferenceMaterial: {

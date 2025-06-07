@@ -73,7 +73,7 @@ export function initializeWebSocketServer(server) {
 // Function to broadcast updates to all clients for a specific requestId
 export function broadcastUpdate(requestId, data) {
   if (!activeConnections.has(requestId)) {
-    console.log(`[WebSocket] No active connections for request: ${requestId}`);
+    // console.log(`[WebSocket] No active connections for request: ${requestId}`);
     return false;
   }
   
