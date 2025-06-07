@@ -165,20 +165,15 @@ const Navbar = () => {
                 </div>
 
                 <div className={`border-t mx-4 ${isDarkMode ? "border-[#504E49]" : "border-[#C9C3B3]"}`} />
-                <div
-                  className={`group relative flex justify-between px-5 py-3 text-[1.25rem] transition-all duration-200 hover:pl-6 cursor-not-allowed ${isDarkMode
+                <Link
+                  href="/chat"
+                  className={`px-5 py-3 hover:bg-opacity-20 text-[1.25rem] transition-all duration-200 hover:pl-6 ${isDarkMode
                     ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black"
                     : "text-[#4A4947] hover:bg-[#f0eee9]"
                     }`}
                 >
-                  <div className="flex items-center gap-2 blur-[0.5px]">
-                    Chat with PDFs
-                  </div>
-
-                  <div className="absolute invisible group-hover:visible bg-black/80 text-white text-sm rounded-md py-1 px-2 bottom-full mb-1 right-0 whitespace-nowrap">
-                    Coming soon
-                  </div>
-                </div>
+                  Chat with Notes
+                </Link>
               </motion.div>
             )}
           </AnimatePresence>
@@ -446,15 +441,12 @@ const Navbar = () => {
                           </div>
                         </div>
 
-                        <div className={`group relative flex justify-between py-3 text-[1.25rem] cursor-not-allowed ${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
-                          }`}>
-                          <div className="flex items-center gap-2 blur-[0.5px]">
-                            Chat with PDFs
-                            <span className={`text-xs text-black px-2 py-0.5 rounded-full ${isDarkMode ? "bg-[#D0CCC4]" : "bg-[#FAF7F0] text-[#4A4947]"}`}>
-                              Coming Soon
-                            </span>
-                          </div>
-                        </div>
+                        <Link
+                          href="/chat"
+                          className={`py-3 text-[1.25rem] ${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}
+                        >
+                          Chat with Notes
+                        </Link>
                       </div>
                     </motion.div>
                   )}
