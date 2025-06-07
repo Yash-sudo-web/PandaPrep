@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useState, useRef, useEffect } from "react"
+import { montserrat500 } from "@/lib/font-utils"
 import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,6 +12,7 @@ import { Upload, FileText, Send, Loader2, X, Sparkles, MessageCircle, Eye, Zap, 
 import Navbar from "@/components/global/navbar"
 import { toast } from "sonner"
 import { getAuth } from "firebase/auth"
+import Image from "next/image"
 
 interface Message {
   id: number
@@ -39,6 +41,7 @@ export default function PDFChatPage() {
   const [input, setInput] = useState<string>("")
   const [isLoading, setIsLoading] = useState<boolean>(false)
   const [chatCollapsed, setChatCollapsed] = useState<boolean>(false)
+  const [userPhotoUrl, setUserPhotoUrl] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [documentId, setDocumentId] = useState<string | null>(null)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -79,6 +82,13 @@ export default function PDFChatPage() {
       return () => URL.revokeObjectURL(url)
     }
   }, [uploadedFile])
+
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (user?.photoURL) {
+      setUserPhotoUrl(user.photoURL);
+    }
+  }, [auth.currentUser]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -214,21 +224,8 @@ export default function PDFChatPage() {
       content: input
     }
 
-    const pendingMessage: Message = {
-      id: Date.now() + 1,
-      role: "assistant",
-      content: "",
-      pending: true
-    }
-
-    // Update messages with new messages while preserving history
-    setMessages(prevMessages => {
-      const updatedMessages = [...prevMessages, userMessage, pendingMessage]
-      if (documentId) {
-        localStorage.setItem(`chat_messages_${documentId}`, JSON.stringify(updatedMessages))
-      }
-      return updatedMessages
-    })
+    // Update messages with only the user message initially
+    setMessages(prevMessages => [...prevMessages, userMessage])
     
     setInput("")
     setIsLoading(true)
@@ -247,6 +244,10 @@ export default function PDFChatPage() {
 
       let fullResponse = ""
       let hasError = false
+      let assistantMessageId = Date.now() + 1
+
+      // Add the assistant's message only when we get the first chunk
+      let assistantMessageAdded = false
 
       eventSource.onmessage = (event) => {
         try {
@@ -260,31 +261,33 @@ export default function PDFChatPage() {
           if (data.done) {
             eventSource.close()
             setIsLoading(false)
-            // Save final message state to localStorage
-            setMessages(prevMessages => {
-              const finalMessages = prevMessages.map(msg => 
-                msg.pending ? { ...msg, content: fullResponse, pending: false } : msg
-              )
-              if (documentId) {
-                localStorage.setItem(`chat_messages_${documentId}`, JSON.stringify(finalMessages))
-              }
-              return finalMessages
-            })
             return
           }
 
           if (data.chunk && !hasError) {
             fullResponse += data.chunk
-            // Update messages while preserving history
-            setMessages(prevMessages => {
-              const updatedMessages = prevMessages.map(msg => 
-                msg.pending ? { ...msg, content: fullResponse } : msg
+            
+            // Add assistant message on first chunk if not added yet
+            if (!assistantMessageAdded) {
+              assistantMessageAdded = true
+              setMessages(prevMessages => [
+                ...prevMessages,
+                {
+                  id: assistantMessageId,
+                  role: "assistant",
+                  content: fullResponse
+                }
+              ])
+            } else {
+              // Update existing assistant message
+              setMessages(prevMessages => 
+                prevMessages.map(msg => 
+                  msg.id === assistantMessageId 
+                    ? { ...msg, content: fullResponse }
+                    : msg
+                )
               )
-              if (documentId) {
-                localStorage.setItem(`chat_messages_${documentId}`, JSON.stringify(updatedMessages))
-              }
-              return updatedMessages
-            })
+            }
           }
         } catch (error) {
           console.error('Error parsing message:', error)
@@ -292,14 +295,6 @@ export default function PDFChatPage() {
           setIsLoading(false)
           if (!hasError) {
             toast.error('Failed to parse response')
-            // Remove pending message while preserving history
-            setMessages(prevMessages => {
-              const updatedMessages = prevMessages.filter(msg => !msg.pending)
-              if (documentId) {
-                localStorage.setItem(`chat_messages_${documentId}`, JSON.stringify(updatedMessages))
-              }
-              return updatedMessages
-            })
           }
         }
       }
@@ -310,14 +305,6 @@ export default function PDFChatPage() {
         setIsLoading(false)
         if (!hasError) {
           toast.error('Failed to get response')
-          // Remove pending message while preserving history
-          setMessages(prevMessages => {
-            const updatedMessages = prevMessages.filter(msg => !msg.pending)
-            if (documentId) {
-              localStorage.setItem(`chat_messages_${documentId}`, JSON.stringify(updatedMessages))
-            }
-            return updatedMessages
-          })
         }
         hasError = true
       }
@@ -328,14 +315,6 @@ export default function PDFChatPage() {
       console.error('Error in chat:', error)
       setIsLoading(false)
       toast.error('Failed to get response')
-      // Remove pending message while preserving history
-      setMessages(prevMessages => {
-        const updatedMessages = prevMessages.filter(msg => !msg.pending)
-        if (documentId) {
-          localStorage.setItem(`chat_messages_${documentId}`, JSON.stringify(updatedMessages))
-        }
-        return updatedMessages
-      })
     }
   }
 
@@ -350,28 +329,28 @@ export default function PDFChatPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-hidden flex flex-col">
+    <div className={`min-h-screen ${montserrat500.className} overflow-hidden flex flex-col ${isDarkMode ? "bg-[#1E1D1B]" : "bg-[#FAF7F0]"}`}>
       <Navbar />
       
       {/* Main Content with proper spacing */}
-      <div className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-4 mt-24">
-        <div className="max-w-7xl mx-auto h-full">
+      <div className="flex-1 container mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-8 mt-24 sm:mt-20 mb-4 sm:mb-12 flex items-start justify-center">
+        <div className="max-w-7xl w-full mx-auto">
           {!uploadedFile ? (
             <>
-              {/* Hero Section with improved spacing */}
-              <div className="text-center mb-12 px-4">
-                <div className={`inline-flex items-center gap-2 ${isDarkMode ? "bg-[#D29C7B]/10" : "bg-[#B17457]/10"} backdrop-blur-sm rounded-full px-6 py-3 mb-6`}>
-                  <Sparkles className={`h-4 w-4 ${isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]"}`} />
-                  <span className={`${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"} text-sm font-medium`}>AI-Powered PDF Analysis</span>
+              {/* Persistent Header Section */}
+              <div className="text-center mb-4 sm:mb-12 px-2 sm:px-4">
+                <div className={`inline-flex items-center gap-1.5 sm:gap-2 ${isDarkMode ? "border-[#D0CCC4] bg-[#D29C7B]/10" : "bg-[#B17457]/10 border-[#B17457]"} backdrop-blur-sm border rounded-full px-2 sm:px-6 py-1.5 sm:py-3 mb-3 sm:mb-6`}>
+                  <Sparkles className={`h-2.5 sm:h-4 w-2.5 sm:w-4 ${isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]"}`} />
+                  <span className={`${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"} text-xs sm:text-sm font-medium`}>AI-Powered PDF Analysis</span>
                 </div>
-                <h1 className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold ${isDarkMode
-                  ? "bg-gradient-to-r from-[#FAF7F0] via-[#D0CCC4] to-[#D29C7B] bg-clip-text text-transparent"
-                  : "bg-gradient-to-r from-[#4A4947] via-[#B17457] to-[#4A4947] bg-clip-text text-transparent"
-                  } mb-6 leading-tight`}>
-                  Chat with your PDF
+                <h1 className={`text-lg sm:text-4xl md:text-5xl lg:text-6xl font-bold ${isDarkMode
+                  ? "text-[#B17457]"
+                  : "text-[#4A4947]"
+                  } mb-2 sm:mb-6 leading-tight`}>
+                  Chat with your Notes
                 </h1>
-                <p className={`text-base sm:text-lg md:text-xl ${isDarkMode ? "text-[#D0CCC4]/70" : "text-[#4A4947]/70"} max-w-3xl mx-auto leading-relaxed`}>
-                  Upload any PDF document and have intelligent conversations about its content
+                <p className={`text-xs sm:text-lg md:text-xl ${isDarkMode ? "text-[#D0CCC4]/70" : "text-[#4A4947]/70"} max-w-3xl mx-auto leading-relaxed`}>
+                  Upload your Notes and have intelligent conversations about its content
                 </p>
               </div>
               {/* Upload Section with better spacing */}
@@ -436,246 +415,286 @@ export default function PDFChatPage() {
             </>
           ) : (
             /* Main Application Layout - Mobile responsive grid */
-            <div className="grid lg:grid-cols-2 gap-4 lg:gap-6 h-[calc(100vh-10rem)] overflow-hidden">
-              {/* Mobile View Controls */}
-              <div className="flex items-center justify-between lg:hidden mb-2 px-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowPdfViewer(!showPdfViewer)}
-                  className={`${isDarkMode
-                    ? "text-[#D0CCC4] hover:text-[#FAF7F0]"
-                    : "text-[#4A4947] hover:text-[#4A4947]"
-                  }`}
-                >
-                  {showPdfViewer ? (
-                    <div className="flex items-center gap-2">
-                      <MessageCircle className="h-4 w-4" />
-                      <span>Show Chat</span>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      <span>Show PDF</span>
-                    </div>
-                  )}
-                </Button>
+            <div className="space-y-2 sm:space-y-0">
+              {/* Compact Header for Mobile */}
+              <div className="text-center py-2 sm:py-4 lg:hidden">
+                <h1 className={`text-base sm:text-2xl font-bold ${isDarkMode ? "text-[#B17457]" : "text-[#4A4947]"}`}>
+                  Chat with your Notes
+                </h1>
               </div>
 
-              {/* PDF Section */}
-              <div className={`${!showPdfViewer ? 'hidden lg:block' : 'block'} h-full overflow-hidden`}>
-                <div className="flex flex-col h-full gap-2">
-                  {/* File Info Card */}
-                  <Card className="shrink-0">
-                    <CardContent className="p-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className={`w-7 h-7 ${isDarkMode
+              {/* Mobile View Controls */}
+              <div className="flex items-center justify-center lg:hidden px-2 sm:px-4 w-full">
+                <div className={`w-full max-w-sm rounded-lg sm:rounded-2xl p-0.5 sm:p-1.5 ${isDarkMode 
+                  ? "bg-[#2A2826] ring-1 ring-[#D29C7B]/20" 
+                  : "bg-white/95 ring-1 ring-[#B17457]/20"} shadow-lg backdrop-blur-sm`}>
+                  <div className={`flex w-full rounded-md sm:rounded-xl overflow-hidden ${isDarkMode 
+                    ? "bg-[#1E1D1B]" 
+                    : "bg-[#F5F5F5]"}`}>
+                    <Button
+                      variant="ghost"
+                      onClick={() => setShowPdfViewer(false)}
+                      className={`flex-1 h-8 sm:h-12 ${!showPdfViewer 
+                        ? isDarkMode 
+                          ? "bg-[#D29C7B] text-[#1E1D1B] hover:bg-[#D29C7B] hover:text-[#1E1D1B]" 
+                          : "bg-[#B17457] text-white hover:bg-[#B17457] hover:text-white"
+                        : isDarkMode
+                          ? "text-[#D29C7B]/70 hover:text-[#D29C7B] hover:bg-transparent"
+                          : "text-[#B17457]/70 hover:text-[#B17457] hover:bg-transparent"
+                      } transition-all duration-200`}
+                    >
+                      <div className="flex items-center justify-center gap-1 sm:gap-2">
+                        <MessageCircle className="h-3 w-3 sm:h-5 sm:w-5" />
+                        <span className="text-xs sm:text-base font-medium">Chat</span>
+                      </div>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => setShowPdfViewer(true)}
+                      className={`flex-1 h-8 sm:h-12 ${showPdfViewer 
+                        ? isDarkMode 
+                          ? "bg-[#D29C7B] text-[#1E1D1B] hover:bg-[#D29C7B] hover:text-[#1E1D1B]" 
+                          : "bg-[#B17457] text-white hover:bg-[#B17457] hover:text-white"
+                        : isDarkMode
+                          ? "text-[#D29C7B]/70 hover:text-[#D29C7B] hover:bg-transparent"
+                          : "text-[#B17457]/70 hover:text-[#B17457] hover:bg-transparent"
+                      } transition-all duration-200`}
+                    >
+                      <div className="flex items-center justify-center gap-1 sm:gap-2">
+                        <Eye className="h-3 w-3 sm:h-5 sm:w-5" />
+                        <span className="text-xs sm:text-base font-medium">View PDF</span>
+                      </div>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid lg:grid-cols-2 gap-2 lg:gap-6 h-[calc(100vh-12rem)] sm:h-[calc(100vh-16rem)] lg:h-[calc(100vh-12rem)] overflow-hidden">
+                {/* PDF Section */}
+                <div className={`${!showPdfViewer ? 'hidden lg:block' : 'block'} w-full h-full overflow-hidden`}>
+                  <div className="flex flex-col h-full gap-2">
+                    {/* File Info Card */}
+                    <Card className="shrink-0">
+                      <CardContent className="p-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-7 h-7 ${isDarkMode
+                              ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80"
+                              : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80"
+                              } rounded-lg flex items-center justify-center`}>
+                              <FileText className={`h-4 w-4 ${isDarkMode ? "text-[#FAF7F0]" : "text-white"}`} />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h3 className={`font-medium text-sm truncate ${isDarkMode ? "text-[#FAF7F0]" : "text-[#4A4947]"}`}>
+                                {uploadedFile.name}
+                              </h3>
+                              <p className={`text-xs ${isDarkMode ? "text-[#D0CCC4]/60" : "text-[#4A4947]/60"}`}>
+                                {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB • Ready for analysis
+                              </p>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={removeFile}
+                            className={`h-7 w-7 p-0 ${isDarkMode
+                              ? "text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                              : "text-red-500 hover:text-red-600 hover:bg-red-500/10"
+                              }`}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* PDF Viewer */}
+                    <Card className="flex-1 overflow-hidden">
+                      <CardContent className="p-0 h-full">
+                        <div className="h-full">
+                          {pdfUrl && (
+                            <object
+                              data={pdfUrl}
+                              type="application/pdf"
+                              className="w-full h-full"
+                            >
+                              <div className={`flex items-center justify-center h-full ${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}>
+                                <div className="text-center p-8">
+                                  <FileText className={`h-16 w-16 mx-auto mb-4 ${isDarkMode ? "text-[#D29C7B]/50" : "text-[#B17457]/50"}`} />
+                                  <p className="text-lg mb-4">PDF cannot be displayed in this browser.</p>
+                                  <Button
+                                    onClick={() => window.open(pdfUrl, '_blank')}
+                                    className={`${isDarkMode
+                                      ? "bg-[#D29C7B] hover:bg-[#D29C7B]/80 text-[#1E1D1B]"
+                                      : "bg-[#B17457] hover:bg-[#B17457]/80 text-[#FAF7F0]"
+                                      }`}
+                                  >
+                                    Open PDF in New Tab
+                                  </Button>
+                                </div>
+                              </div>
+                            </object>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                {/* Chat Section */}
+                <div className={`${showPdfViewer ? 'hidden lg:block' : 'block'} w-full h-full overflow-hidden`}>
+                  <Card className="h-full">
+                    <CardContent className="p-3 lg:p-4 h-full flex flex-col">
+                      {/* Chat Header */}
+                      <div className="shrink-0 flex items-center gap-2 mb-3">
+                        <div className={`w-7 h-7 ${isDarkMode
+                          ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80"
+                          : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80"
+                          } rounded-lg flex items-center justify-center`}>
+                          <MessageCircle className={`h-4 w-4 ${isDarkMode ? "text-[#FAF7F0]" : "text-white"}`} />
+                        </div>
+                        <h2 className={`text-base font-semibold ${isDarkMode ? "text-[#FAF7F0]" : "text-[#4A4947]"}`}>
+                          AI Assistant
+                        </h2>
+                      </div>
+
+                      {/* Messages Area */}
+                      <div className="flex-1 min-h-0 overflow-hidden">
+                        <ScrollArea className="h-full">
+                          <div className="space-y-3 pr-3">
+                            {messages.length === 0 ? (
+                              <div className="text-center py-8">
+                                <div className={`w-20 h-20 ${isDarkMode
+                                    ? "bg-gradient-to-r from-[#D29C7B]/20 to-[#D29C7B]/10"
+                                    : "bg-gradient-to-r from-[#B17457]/20 to-[#B17457]/10"
+                                  } rounded-3xl flex items-center justify-center mx-auto mb-6`}>
+                                  <Sparkles className={`h-10 w-10 ${isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]"}`} />
+                                </div>
+                                <h3 className={`text-2xl sm:text-3xl font-bold ${isDarkMode ? "text-[#B17457]" : "text-[#4A4947]"} mb-4`}>
+                                  Start Analyzing Your Notes
+                                </h3>
+                                <p className={`${isDarkMode ? "text-[#D0CCC4]/60" : "text-[#4A4947]/60"} mb-6 text-sm leading-relaxed`}>
+                                  Ask me anything about your document. Here are some suggestions:
+                                </p>
+                                <div className="flex flex-wrap justify-center gap-2">
+                                  {["Summarize this document", "What are the key points?", "Explain the main concepts"].map((suggestion) => (
+                                    <Badge 
+                                      key={suggestion}
+                                      variant="outline" 
+                                      className={`${isDarkMode
+                                        ? "border-[#D29C7B]/20 text-[#D0CCC4] hover:bg-[#D29C7B]/10"
+                                        : "border-[#B17457]/20 text-[#4A4947] hover:bg-[#B17457]/10"
+                                      } cursor-pointer transition-colors duration-200 py-2 px-3`}
+                                      onClick={() => setInput(suggestion)}
+                                    >
+                                      {suggestion}
+                                    </Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            ) : (
+                              messages.map((message) => (
+                                <div
+                                  key={message.id}
+                                  className={`flex gap-4 ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                                >
+                                  {message.role === "assistant" && (
+                                    <div className={`w-10 h-10 ${isDarkMode
+                                        ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80"
+                                        : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80"
+                                      } rounded-full flex items-center justify-center flex-shrink-0 mt-1`}>
+                                      <Sparkles className={`h-5 w-5 ${isDarkMode ? "text-[#FAF7F0]" : "text-white"}`} />
+                                    </div>
+                                  )}
+                                  <div
+                                    className={`max-w-[85%] rounded-2xl px-5 py-4 shadow-lg ${message.role === "user"
+                                        ? isDarkMode
+                                          ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80 text-[#1E1D1B]"
+                                          : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80 text-[#FAF7F0]"
+                                        : isDarkMode
+                                          ? "bg-[#1E1D1B]/60 backdrop-blur-sm text-[#FAF7F0] border border-[#D29C7B]/20"
+                                          : "bg-white/60 backdrop-blur-sm text-[#4A4947] border border-[#B17457]/20"
+                                    }`}
+                                  >
+                                    <p className="whitespace-pre-wrap leading-relaxed text-sm">{message.content}</p>
+                                  </div>
+                                  {message.role === "user" && (
+                                    <div className={`w-10 h-10 ${isDarkMode
+                                        ? "bg-gradient-to-r from-[#D29C7B]/80 to-[#D29C7B] ring-1 ring-[#D29C7B]"
+                                        : "bg-gradient-to-r from-[#B17457]/80 to-[#B17457] ring-1 ring-[#B17457]"
+                                      } rounded-full flex items-center justify-center flex-shrink-0 mt-1 overflow-hidden`}>
+                                      {userPhotoUrl ? (
+                                        <Image
+                                          src={userPhotoUrl}
+                                          alt="User"
+                                          width={40}
+                                          height={40}
+                                          className="object-cover"
+                                        />
+                                      ) : (
+                                        <span className={`${isDarkMode ? "text-[#1E1D1B]" : "text-white"} text-sm font-semibold`}>U</span>
+                                      )}
+                                    </div>
+                                  )}
+                                </div>
+                              ))
+                            )}
+                            {isLoading && (
+                              <div className="flex gap-4 justify-start">
+                                <div className={`w-10 h-10 ${isDarkMode
+                                    ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80"
+                                    : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80"
+                                  } rounded-full flex items-center justify-center flex-shrink-0`}>
+                                  <Sparkles className={`h-5 w-5 ${isDarkMode ? "text-[#FAF7F0]" : "text-white"}`} />
+                                </div>
+                                <div className={`${isDarkMode
+                                    ? "bg-[#1E1D1B]/60 border-[#D29C7B]/20"
+                                    : "bg-white/60 border-[#B17457]/20"
+                                  } backdrop-blur-sm rounded-2xl px-5 py-4 border`}>
+                                  <div className="flex items-center gap-3">
+                                    <Loader2 className={`h-4 w-4 animate-spin ${isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]"}`} />
+                                    <span className={`${isDarkMode ? "text-[#D0CCC4]/70" : "text-[#4A4947]/70"} text-sm`}>Analyzing your document...</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                            <div ref={messagesEndRef} />
+                          </div>
+                        </ScrollArea>
+                      </div>
+
+                      {/* Input Area */}
+                      <div className="shrink-0 relative mt-3">
+                        <Input
+                          value={input}
+                          onChange={handleInputChange}
+                          placeholder="Ask me anything about your PDF..."
+                          disabled={isLoading}
+                          className={`pr-10 h-9 text-sm ${isDarkMode
+                            ? "bg-[#1E1D1B]/60 border-[#D29C7B]/20 text-[#FAF7F0] placeholder:text-[#D0CCC4]/50"
+                            : "bg-white/60 border-[#B17457]/20 text-[#4A4947] placeholder:text-[#4A4947]/50"
+                            } backdrop-blur-sm rounded-lg`}
+                          onKeyPress={handleKeyPress}
+                        />
+                        <Button
+                          onClick={handleSubmit}
+                          disabled={isLoading || !input.trim()}
+                          size="sm"
+                          className={`absolute right-1.5 top-1 h-7 w-7 p-0 ${isDarkMode
                             ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80"
                             : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80"
-                            } rounded-lg flex items-center justify-center`}>
-                            <FileText className={`h-4 w-4 ${isDarkMode ? "text-[#FAF7F0]" : "text-white"}`} />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <h3 className={`font-medium text-sm truncate ${isDarkMode ? "text-[#FAF7F0]" : "text-[#4A4947]"}`}>
-                              {uploadedFile.name}
-                            </h3>
-                            <p className={`text-xs ${isDarkMode ? "text-[#D0CCC4]/60" : "text-[#4A4947]/60"}`}>
-                              {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB • Ready for analysis
-                            </p>
-                          </div>
-                        </div>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={removeFile}
-                          className={`h-7 w-7 p-0 ${isDarkMode
-                            ? "text-red-400 hover:text-red-300 hover:bg-red-500/10"
-                            : "text-red-500 hover:text-red-600 hover:bg-red-500/10"
-                            }`}
+                            } rounded-lg`}
                         >
-                          <X className="h-4 w-4" />
+                          {isLoading ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Send className="h-3.5 w-3.5" />
+                          )}
                         </Button>
                       </div>
                     </CardContent>
                   </Card>
-
-                  {/* PDF Viewer */}
-                  <Card className="flex-1 overflow-hidden">
-                    <CardContent className="p-0 h-full">
-                      <div className="h-full">
-                        {pdfUrl && (
-                          <object
-                            data={pdfUrl}
-                            type="application/pdf"
-                            className="w-full h-full"
-                          >
-                            <div className={`flex items-center justify-center h-full ${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}>
-                              <div className="text-center p-8">
-                                <FileText className={`h-16 w-16 mx-auto mb-4 ${isDarkMode ? "text-[#D29C7B]/50" : "text-[#B17457]/50"}`} />
-                                <p className="text-lg mb-4">PDF cannot be displayed in this browser.</p>
-                                <Button
-                                  onClick={() => window.open(pdfUrl, '_blank')}
-                                  className={`${isDarkMode
-                                    ? "bg-[#D29C7B] hover:bg-[#D29C7B]/80 text-[#1E1D1B]"
-                                    : "bg-[#B17457] hover:bg-[#B17457]/80 text-[#FAF7F0]"
-                                    }`}
-                                >
-                                  Open PDF in New Tab
-                                </Button>
-                              </div>
-                            </div>
-                          </object>
-                        )}
-                      </div>
-                    </CardContent>
-                  </Card>
                 </div>
-              </div>
-
-              {/* Chat Section */}
-              <div className={`${showPdfViewer ? 'hidden lg:block' : 'block'} h-full overflow-hidden`}>
-                <Card className="h-full">
-                  <CardContent className="p-3 lg:p-4 h-full flex flex-col">
-                    {/* Chat Header */}
-                    <div className="shrink-0 flex items-center gap-2 mb-3">
-                      <div className={`w-7 h-7 ${isDarkMode
-                        ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80"
-                        : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80"
-                        } rounded-lg flex items-center justify-center`}>
-                        <MessageCircle className={`h-4 w-4 ${isDarkMode ? "text-[#FAF7F0]" : "text-white"}`} />
-                      </div>
-                      <h2 className={`text-base font-semibold ${isDarkMode ? "text-[#FAF7F0]" : "text-[#4A4947]"}`}>
-                        AI Assistant
-                      </h2>
-                    </div>
-
-                    {/* Messages Area */}
-                    <div className="flex-1 min-h-0 overflow-hidden">
-                      <ScrollArea className="h-full">
-                        <div className="space-y-3 pr-3">
-                          {messages.length === 0 ? (
-                            <div className="text-center py-8">
-                              <div className={`w-20 h-20 ${isDarkMode
-                                  ? "bg-gradient-to-r from-[#D29C7B]/20 to-[#D29C7B]/10"
-                                  : "bg-gradient-to-r from-[#B17457]/20 to-[#B17457]/10"
-                                } rounded-3xl flex items-center justify-center mx-auto mb-6`}>
-                                <Sparkles className={`h-10 w-10 ${isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]"}`} />
-                              </div>
-                              <h3 className={`text-lg font-semibold ${isDarkMode ? "text-[#FAF7F0]" : "text-[#4A4947]"} mb-4`}>
-                                Start Analyzing Your PDF
-                              </h3>
-                              <p className={`${isDarkMode ? "text-[#D0CCC4]/60" : "text-[#4A4947]/60"} mb-6 text-sm leading-relaxed`}>
-                                Ask me anything about your document. Here are some suggestions:
-                              </p>
-                              <div className="flex flex-wrap justify-center gap-2">
-                                {["Summarize this document", "What are the key points?", "Explain the main concepts"].map((suggestion) => (
-                                  <Badge 
-                                    key={suggestion}
-                                    variant="outline" 
-                                    className={`${isDarkMode
-                                      ? "border-[#D29C7B]/20 text-[#D0CCC4] hover:bg-[#D29C7B]/10"
-                                      : "border-[#B17457]/20 text-[#4A4947] hover:bg-[#B17457]/10"
-                                    } cursor-pointer transition-colors duration-200 py-2 px-3`}
-                                    onClick={() => setInput(suggestion)}
-                                  >
-                                    {suggestion}
-                                  </Badge>
-                                ))}
-                              </div>
-                            </div>
-                          ) : (
-                            messages.map((message) => (
-                              <div
-                                key={message.id}
-                                className={`flex gap-4 ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                              >
-                                {message.role === "assistant" && (
-                                  <div className={`w-10 h-10 ${isDarkMode
-                                      ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80"
-                                      : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80"
-                                    } rounded-full flex items-center justify-center flex-shrink-0 mt-1`}>
-                                    <Sparkles className={`h-5 w-5 ${isDarkMode ? "text-[#FAF7F0]" : "text-white"}`} />
-                                  </div>
-                                )}
-                                <div
-                                  className={`max-w-[85%] rounded-2xl px-5 py-4 shadow-lg ${message.role === "user"
-                                      ? isDarkMode
-                                        ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80 text-[#1E1D1B]"
-                                        : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80 text-[#FAF7F0]"
-                                      : isDarkMode
-                                        ? "bg-[#1E1D1B]/60 backdrop-blur-sm text-[#FAF7F0] border border-[#D29C7B]/20"
-                                        : "bg-white/60 backdrop-blur-sm text-[#4A4947] border border-[#B17457]/20"
-                                    }`}
-                                >
-                                  <p className="whitespace-pre-wrap leading-relaxed text-sm">{message.content}</p>
-                                </div>
-                                {message.role === "user" && (
-                                  <div className={`w-10 h-10 ${isDarkMode
-                                      ? "bg-gradient-to-r from-[#D29C7B]/80 to-[#D29C7B]"
-                                      : "bg-gradient-to-r from-[#B17457]/80 to-[#B17457]"
-                                    } rounded-full flex items-center justify-center flex-shrink-0 mt-1`}>
-                                    <span className={`${isDarkMode ? "text-[#1E1D1B]" : "text-white"} text-sm font-semibold`}>U</span>
-                                  </div>
-                                )}
-                              </div>
-                            ))
-                          )}
-                          {isLoading && (
-                            <div className="flex gap-4 justify-start">
-                              <div className={`w-10 h-10 ${isDarkMode
-                                  ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80"
-                                  : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80"
-                                } rounded-full flex items-center justify-center flex-shrink-0`}>
-                                <Sparkles className={`h-5 w-5 ${isDarkMode ? "text-[#FAF7F0]" : "text-white"}`} />
-                              </div>
-                              <div className={`${isDarkMode
-                                  ? "bg-[#1E1D1B]/60 border-[#D29C7B]/20"
-                                  : "bg-white/60 border-[#B17457]/20"
-                                } backdrop-blur-sm rounded-2xl px-5 py-4 border`}>
-                                <div className="flex items-center gap-3">
-                                  <Loader2 className={`h-4 w-4 animate-spin ${isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]"}`} />
-                                  <span className={`${isDarkMode ? "text-[#D0CCC4]/70" : "text-[#4A4947]/70"} text-sm`}>Analyzing your document...</span>
-                                </div>
-                              </div>
-                            </div>
-                          )}
-                          <div ref={messagesEndRef} />
-                        </div>
-                      </ScrollArea>
-                    </div>
-
-                    {/* Input Area */}
-                    <div className="shrink-0 relative mt-3">
-                      <Input
-                        value={input}
-                        onChange={handleInputChange}
-                        placeholder="Ask me anything about your PDF..."
-                        disabled={isLoading}
-                        className={`pr-10 h-9 text-sm ${isDarkMode
-                          ? "bg-[#1E1D1B]/60 border-[#D29C7B]/20 text-[#FAF7F0] placeholder:text-[#D0CCC4]/50"
-                          : "bg-white/60 border-[#B17457]/20 text-[#4A4947] placeholder:text-[#4A4947]/50"
-                          } backdrop-blur-sm rounded-lg`}
-                        onKeyPress={handleKeyPress}
-                      />
-                      <Button
-                        onClick={handleSubmit}
-                        disabled={isLoading || !input.trim()}
-                        size="sm"
-                        className={`absolute right-1.5 top-1 h-7 w-7 p-0 ${isDarkMode
-                          ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80"
-                          : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80"
-                          } rounded-lg`}
-                      >
-                        {isLoading ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Send className="h-3.5 w-3.5" />
-                        )}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
               </div>
             </div>
           )}

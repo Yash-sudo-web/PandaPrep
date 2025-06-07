@@ -47,7 +47,7 @@ export default function RootLayout({
           </HealthCheckWrapper>
           <Footer />
           <CookieConsent />
-          <Toaster richColors position="top-center" />
+          <Toaster richColors position="top-right" closeButton={true} />
         </ThemeProvider>
       </body>
     </html>
