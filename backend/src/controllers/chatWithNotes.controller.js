@@ -94,7 +94,7 @@ export const processPdfController = async (req, res) => {
     }
     
     const pdfPath = await downloadPdfFromUrl(pdfUrl, documentId);
-
+    console.log("PDF downloaded to:", pdfPath);
     // Process the PDF document to create vector store
     const vectorStorePath = await ChatWithNotesAgent.processPdfDocument(pdfPath, documentId);
     
@@ -107,7 +107,7 @@ export const processPdfController = async (req, res) => {
       syllabus: "This is a syllabus for the document",
       type: 'pdf_chat',
       status: 'completed',
-      secure_url: pdfPath,
+      secure_url: pdfUrl,
     });
 
     // Create initial chat history
@@ -117,6 +117,7 @@ export const processPdfController = async (req, res) => {
       pdfUrl: pdfUrl,
       pdfName: fileName,
       messages: [],
+      documentId: documentId
     });
     
     return res.status(200).json({
@@ -322,5 +323,73 @@ export const streamChatWithPdfController = async (req, res) => {
     // Send error in SSE format
     res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
     res.end();
+  }
+};
+
+export const reloadPdfAndChatController = async (req, res) => {
+  try {
+    const { historyId, email } = req.body;
+    const user = await UserModel.findOne({ email: email }).then(user => user._id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    const userId = user._id;
+
+    // Get the user request to find the PDF URL
+    const userRequest = await NotesRequestModel.findOne({
+      _id: historyId,
+      _userID: userId,
+      type: 'pdf_chat'
+    });
+
+    if (!userRequest) {
+      return res.status(404).json({
+        success: false,
+        message: 'Chat history not found'
+      });
+    }
+
+    // Get the chat history
+    const chatHistory = await ChatHistoryModel.findOne({
+      _historyID: historyId,
+      _userID: userId
+    });
+
+    if (!chatHistory) {
+      return res.status(404).json({
+        success: false,
+        message: 'Chat history not found'
+      });
+    }
+
+    // Download the PDF from the secure URL
+    const pdfPath = await downloadPdfFromUrl(chatHistory.pdfUrl, historyId);
+
+    // Process the PDF and create vector store
+    const vectorStorePath = await ChatWithNotesAgent.processPdfDocument(pdfPath, chatHistory.documentId);
+
+    // Return the necessary information for the frontend
+    res.json({
+      success: true,
+      data: {
+        historyId,
+        pdfName: chatHistory.pdfName,
+        messages: chatHistory.messages,
+        pdfUrl: chatHistory.pdfUrl,
+        vectorStorePath,
+        documentId: chatHistory.documentId
+      }
+    });
+
+  } catch (error) {
+    console.error('Error reloading PDF and chat:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error reloading PDF and chat history',
+      error: error.message
+    });
   }
 };

@@ -48,6 +48,7 @@ export default function PDFChatPage() {
   const [chatCollapsed, setChatCollapsed] = useState<boolean>(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [documentId, setDocumentId] = useState<string | null>(null);
+  const [pdfName, setPdfName] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const eventSourceRef = useRef<EventSource | null>(null);
   const [idToken, setIdToken] = useState<string | null>(null);
@@ -97,6 +98,62 @@ export default function PDFChatPage() {
       }
     };
   }, []);
+
+useEffect(() => {
+  const loadChatHistory = async () => {
+    const params = new URLSearchParams(window.location.search);
+    const historyId = params.get('historyId');
+
+    if (historyId && idToken) {
+      try {
+        const response = await axios.post(
+          `${BASE_URL}/chat/reload-pdf`,
+          { historyId, email: user?.email || "" },
+          {
+            headers: {
+              Authorization: `Bearer ${idToken}`,
+            },
+          }
+        );
+
+        if (response.data.success) {
+          const { pdfName, messages: historyMessages, vectorStorePath, pdfUrl, documentId } = response.data.data;
+
+          setDocumentId(documentId);
+          setPdfName(pdfName);
+
+          // Format chat messages
+          const formattedMessages = historyMessages.map((msg: any) => ({
+            id: Date.now() + Math.random(),
+            role: msg.role,
+            content: msg.content,
+          }));
+          setMessages(formattedMessages);
+          setShowPdfViewer(true);
+          setPdfUrl(pdfUrl);
+
+          // Download the actual PDF file and create a File object
+          const fileResponse = await fetch(pdfUrl);
+          const blob = await fileResponse.blob();
+          const downloadedFile = new File([blob], pdfName || 'loaded-pdf.pdf', {
+            type: 'application/pdf',
+          });
+          setUploadedFile(downloadedFile); // use your actual state setter for the uploaded file
+
+          toast.success("Chat history loaded successfully");
+        }
+      } catch (error) {
+        console.error("Error loading chat history:", error);
+        toast.error("Failed to load chat history");
+      }
+    }
+  };
+
+  if (idToken) {
+    loadChatHistory();
+  }
+}, [idToken]);
+
 
   const handleFileUpload = async (file: File) => {
     if (file.type === "application/pdf") {

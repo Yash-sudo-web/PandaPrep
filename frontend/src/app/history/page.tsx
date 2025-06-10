@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/global/navbar";
 import { cn, getCookie } from "@/lib/utils";
-import { Eye, Info, Search, Trash2, Pencil, Save, X } from "lucide-react";
+import { Eye, Info, Search, Trash2, Pencil, Save, X, MessageCircle } from "lucide-react";
 import axios from "axios";
 import { BASE_URL } from "@/lib/constant";
 import { useTheme } from "next-themes";
@@ -230,6 +230,12 @@ const History = () => {
     getNoteName(note).toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleContinueChat = (note: any) => {
+    if (note.type === 'pdf_chat') {
+      router.push(`/chat?historyId=${note.id}`);
+    }
+  };
+
   if (!mounted) return <div className="min-h-screen" />;
 
   return (
@@ -424,6 +430,21 @@ const History = () => {
                       <div className="flex items-center gap-2">
                         <StatusTag status={note.status} />
                         <TypeTag type={note.type} />
+                        {note.type === 'pdf_chat' && (
+                          <button
+                            onClick={() => handleContinueChat(note)}
+                            className={cn(
+                              "flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full",
+                              montserrat500.className,
+                              isDarkMode
+                                ? "bg-purple-500 text-white hover:bg-purple-600"
+                                : "bg-purple-500 text-white hover:bg-purple-600"
+                            )}
+                          >
+                            <MessageCircle className="w-3 h-3" />
+                            Continue Chat
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
