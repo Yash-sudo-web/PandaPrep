@@ -94,7 +94,6 @@ export const processPdfController = async (req, res) => {
     }
     
     const pdfPath = await downloadPdfFromUrl(pdfUrl, documentId);
-    console.log("PDF downloaded to:", pdfPath);
     // Process the PDF document to create vector store
     const vectorStorePath = await ChatWithNotesAgent.processPdfDocument(pdfPath, documentId);
     

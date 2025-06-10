@@ -273,7 +273,7 @@ const History = () => {
             </div>
             <input
               type="text"
-              placeholder="Search your notes..."
+              placeholder="Search your entries..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className={cn(
@@ -315,8 +315,7 @@ const History = () => {
                 )}
               >
                 <p>
-                  You have {notes.length} generated{" "}
-                  {notes.length === 1 ? "note" : "notes"} in PandaPrep.
+                  You have {notes.length} {notes.length === 1 ? "entry" : "entries"} in your PandaPrep history.
                 </p>
                 <div className="relative inline-block">
                   <Info

@@ -149,6 +149,16 @@ const Navbar = () => {
                   Notes Generator
                 </Link>
                 <div className={`border-t mx-4 ${isDarkMode ? "border-[#504E49]" : "border-[#C9C3B3]"}`} />
+                <Link
+                  href="/chat"
+                  className={`px-5 py-3 hover:bg-opacity-20 text-[1.25rem] transition-all duration-200 hover:pl-6 ${isDarkMode
+                    ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black"
+                    : "text-[#4A4947] hover:bg-[#f0eee9]"
+                    }`}
+                >
+                  Chat with Notes
+                </Link>
+                <div className={`border-t mx-4 ${isDarkMode ? "border-[#504E49]" : "border-[#C9C3B3]"}`} />
                 <div
                   className={`group relative flex justify-between px-5 py-3 text-[1.25rem] transition-all duration-200 hover:pl-6 cursor-not-allowed ${isDarkMode
                     ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black"
@@ -164,16 +174,7 @@ const Navbar = () => {
                   </div>
                 </div>
 
-                <div className={`border-t mx-4 ${isDarkMode ? "border-[#504E49]" : "border-[#C9C3B3]"}`} />
-                <Link
-                  href="/chat"
-                  className={`px-5 py-3 hover:bg-opacity-20 text-[1.25rem] transition-all duration-200 hover:pl-6 ${isDarkMode
-                    ? "text-[#D0CCC4] hover:bg-[#D0CCC4] hover:text-black"
-                    : "text-[#4A4947] hover:bg-[#f0eee9]"
-                    }`}
-                >
-                  Chat with Notes
-                </Link>
+                
               </motion.div>
             )}
           </AnimatePresence>
@@ -431,6 +432,12 @@ const Navbar = () => {
                         >
                           Notes Generator
                         </Link>
+                        <Link
+                          href="/chat"
+                          className={`py-3 text-[1.25rem] ${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}
+                        >
+                          Chat with Notes
+                        </Link>
                         <div className={`group relative flex justify-between py-3 text-[1.25rem] cursor-not-allowed ${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}>
                           <div className="flex items-center gap-2 blur-[0.5px]">
                             Notes Summarizer
@@ -440,13 +447,6 @@ const Navbar = () => {
 
                           </div>
                         </div>
-
-                        <Link
-                          href="/chat"
-                          className={`py-3 text-[1.25rem] ${isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"}`}
-                        >
-                          Chat with Notes
-                        </Link>
                       </div>
                     </motion.div>
                   )}
