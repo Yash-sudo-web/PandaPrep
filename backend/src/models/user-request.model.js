@@ -20,6 +20,13 @@ const UserRequestSchema = new mongoose.Schema(
       sparse: true,
       index: true,
     },
+    // Type of request
+    type: {
+      type: String,
+      enum: ['pdf_generation', 'pdf_chat'],
+      default: 'pdf_generation',
+      required: true,
+    },
     // Basic information
     subject_name: {
       type: String,
