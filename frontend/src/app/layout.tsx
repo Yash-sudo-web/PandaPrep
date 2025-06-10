@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "@/providers/theme-provider"
+import { Analytics } from '@vercel/analytics/next';
 import Footer from "@/components/global/footer";
 import HealthCheckWrapper from "@/components/global/health-check-wrapper";
 import CookieConsent from "@/components/global/cookie-consent";
@@ -42,6 +43,7 @@ export default function RootLayout({
         disableTransitionOnChange>
           <HealthCheckWrapper>
             {children}
+            <Analytics />
           </HealthCheckWrapper>
           <Footer />
           <CookieConsent />

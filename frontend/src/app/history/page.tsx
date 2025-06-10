@@ -26,6 +26,7 @@ const History = () => {
       subject_name: string;
       createdAt: string;
       secure_url: string;
+      status: string;
     }[]
   >([]);
   const [selectedNotes, setSelectedNotes] = useState<number[]>([]);
@@ -301,7 +302,9 @@ const History = () => {
                       isDarkMode
                         ? "bg-neutral-800 text-[#D0CCC4] border border-[#D29C7B]"
                         : "bg-white text-[#4A4947] border border-[#B17457]",
-                      isTooltipVisible ? "opacity-100 visible" : "opacity-0 invisible"
+                      isTooltipVisible
+                        ? "opacity-100 visible"
+                        : "opacity-0 invisible"
                     )}
                   >
                     Notes older than 30 days will be deleted automatically.
@@ -389,6 +392,9 @@ const History = () => {
                     >
                       {new Date(note.createdAt).toLocaleString()}
                     </p>
+                    <div className="mt-1">
+                      <StatusTag status={note.status} />
+                    </div>
                   </div>
                   <div className="flex gap-4 items-center self-end sm:self-auto">
                     {editNoteId === note.id ? (
@@ -434,25 +440,34 @@ const History = () => {
                     )}
 
                     <button
-                      className="p-1 rounded-full hover:bg-opacity-20 transition-colors"
+                      className={`p-1 rounded-full hover:bg-opacity-20 transition-colors ${
+                        note.status === "completed"
+                          ? "cursor-pointer"
+                          : "opacity-50"
+                      }`}
                       onClick={() => window.open(note.secure_url, "_blank")}
+                      disabled={note.status !== "completed"}
                       aria-label="View note"
                     >
                       <Eye
-                        className="cursor-pointer"
+                        className=""
                         color={isDarkMode ? "#D0CCC4" : "#676E7B"}
                       />
                     </button>
                     <input
                       type="checkbox"
-                      className={cn(
-                        "h-5 w-5 focus:ring-2 cursor-pointer",
+                      className={`${
+                        note.status === "completed"
+                          ? "cursor-pointer"
+                          : ""
+                      } h-5 w-5 focus:ring-2 ${
                         isDarkMode
                           ? "text-[#D29C7B] focus:ring-[#D29C7B]"
                           : "text-[#B17457] focus:ring-[#B17457]"
-                      )}
+                      }`}
                       checked={selectedNotes.includes(note.id)}
                       onChange={() => toggleSelection(note.id)}
+                      disabled={note.status !== "completed"}
                     />
                   </div>
                 </div>
