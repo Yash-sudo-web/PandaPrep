@@ -354,12 +354,12 @@ export default function PDFChatPage() {
   }
 
   return (
-    <div className="min-h-screen overflow-hidden flex flex-col">
+    <div className={`min-h-screen ${montserrat500.className} overflow-hidden flex flex-col ${isDarkMode ? "bg-[#1E1D1B]" : "bg-[#FAF7F0]"}`}>
       <Navbar />
       <Toaster richColors position="top-right" closeButton={true} />
       {/* Main Content with proper spacing */}
-      <div className="flex-1 container mx-auto px-4 sm:px-6 lg:px-8 py-4 mt-24">
-        <div className="max-w-7xl mx-auto h-full">
+      <div className="flex-1 container mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-8 mt-24 sm:mt-20 mb-4 sm:mb-12 flex items-start justify-center">
+        <div className="max-w-7xl w-full mx-auto">
           {!uploadedFile ? (
             <>
               {/* Hero Section with improved spacing */}
@@ -489,7 +489,14 @@ export default function PDFChatPage() {
             </>
           ) : (
             /* Main Application Layout - Mobile responsive grid */
-            <div className="grid lg:grid-cols-2 gap-4 lg:gap-6 h-[calc(100vh-10rem)] overflow-hidden">
+            <div className="space-y-2 sm:space-y-0">
+              {/* Compact Header for Mobile */}
+              <div className="text-center py-2 sm:py-4 lg:hidden">
+                <h1 className={`text-base sm:text-2xl font-bold ${isDarkMode ? "text-[#B17457]" : "text-[#4A4947]"}`}>
+                  Chat with your Notes
+                </h1>
+              </div>
+
               {/* Mobile View Controls */}
               <div className="flex items-center justify-between lg:hidden mb-2 px-1">
                 <Button
