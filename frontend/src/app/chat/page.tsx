@@ -26,6 +26,7 @@ import { getAuth, onAuthStateChanged, User } from "firebase/auth";
 import axios from "axios";
 import { BASE_URL } from "@/lib/constant";
 import { useRouter } from "next/navigation";
+import { montserrat500 } from "@/lib/font-utils";
 
 interface Message {
   id: number;

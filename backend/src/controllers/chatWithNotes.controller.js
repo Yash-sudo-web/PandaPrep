@@ -86,7 +86,6 @@ export const processPdfController = async (req, res) => {
     }
     console.log("user:", user);
     const userId = user[0]._id
-console.log("userId:", userId);
     if (!pdfUrl || !userId || !fileName) {
       return res.status(400).json({
         success: false,
@@ -115,7 +114,7 @@ console.log("userId:", userId);
     await ChatHistoryModel.create({
       _userID: userId,
       _historyID: historyEntry._id,
-      pdfUrl: pdfPath,
+      pdfUrl: pdfUrl,
       pdfName: fileName,
       messages: [],
     });
