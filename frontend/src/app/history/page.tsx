@@ -27,6 +27,7 @@ const History = () => {
       createdAt: string;
       secure_url: string;
       status: string;
+      type: 'pdf_generation' | 'pdf_chat';
     }[]
   >([]);
   const [selectedNotes, setSelectedNotes] = useState<number[]>([]);
@@ -121,6 +122,33 @@ const History = () => {
       <span
         className={cn(
           "text-xs font-semibold px-2 py-0.5 rounded-full",
+          montserrat500.className,
+          tag.color
+        )}
+      >
+        {tag.label}
+      </span>
+    );
+  };
+
+  const TypeTag = ({ type }: { type: 'pdf_generation' | 'pdf_chat' }) => {
+    const typeStyles = {
+      pdf_generation: {
+        label: "Notes Generation",
+        color: "bg-blue-500 text-white",
+      },
+      pdf_chat: {
+        label: "Chat with Notes",
+        color: "bg-purple-500 text-white",
+      }
+    };
+
+    const tag = typeStyles[type];
+
+    return (
+      <span
+        className={cn(
+          "text-xs font-semibold px-2 py-0.5 rounded-full ml-2",
           montserrat500.className,
           tag.color
         )}
@@ -393,7 +421,10 @@ const History = () => {
                       {new Date(note.createdAt).toLocaleString()}
                     </p>
                     <div className="mt-1">
-                      <StatusTag status={note.status} />
+                      <div className="flex items-center gap-2">
+                        <StatusTag status={note.status} />
+                        <TypeTag type={note.type} />
+                      </div>
                     </div>
                   </div>
                   <div className="flex gap-4 items-center self-end sm:self-auto">

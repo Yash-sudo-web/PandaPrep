@@ -1,16 +1,15 @@
 import express from 'express';
 import {
-  uploadPdfController,
   chatWithPdfController,
   streamChatWithPdfController,
-  upload
+  processPdfController
 } from '../controllers/chatWithNotes.controller.js';
 import { verifyFirebaseToken } from '../middlewares/auth-verify.middleware.js';
 
 const router = express.Router();
 
 // Route to upload and process a PDF file
-router.post('/upload-pdf', verifyFirebaseToken, upload.single('pdf'), uploadPdfController);
+router.post('/process-pdf', verifyFirebaseToken, processPdfController);
 
 // Route to chat with a processed PDF document
 router.post('/chat-with-pdf', verifyFirebaseToken, chatWithPdfController);
