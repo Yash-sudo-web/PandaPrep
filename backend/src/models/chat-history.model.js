@@ -12,6 +12,10 @@ const ChatHistorySchema = new mongoose.Schema(
       ref: 'UserRequest',
       required: true,
     },
+    documentId: {
+      type: String,
+      required: true,
+    },
     messages: [{
       role: {
         type: String,
