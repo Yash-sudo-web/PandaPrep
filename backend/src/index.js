@@ -3,7 +3,7 @@ import http from 'http';
 import connectDB from './db/index.js';
 import { app } from './app.js';
 import { initializeWebSocketServer } from './websocket/server.js';
-import { deleteOldPDFsFromCloudinary } from './utils/cloudinary-file-upload.util.js';
+import { deleteOldPDFsFromCloudinary, deleteStuckProcessingRequests } from './utils/cloudinary-file-upload.util.js';
 import cron from 'node-cron';
 import { recoverPendingJobs } from './utils/queue-config.js';
 
@@ -20,6 +20,11 @@ const wss = initializeWebSocketServer(server);
 cron.schedule("0 0 * * *", async () => {
   console.log("Running scheduled cleanup of old PDFs...");
   await deleteOldPDFsFromCloudinary();
+});
+
+cron.schedule('0 * * * *', async () => {
+  console.log('Running hourly cleanup of stuck processing requests...');
+  await deleteStuckProcessingRequests();
 });
 
 connectDB()
