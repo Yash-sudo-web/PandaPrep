@@ -7,6 +7,12 @@ const PaymentLogSchema = new mongoose.Schema({
     razorpaySignature: String,
     amount: Number,
     status: { type: String, enum: ["Pending", "Success", "Failed"], default: "Pending" },
+    finalAmount: { type: Number }, // Amount after discount
+    appliedCoupon: {
+        code: { type: String },
+        discount_amount: { type: Number },
+        _id: { type: mongoose.Schema.Types.ObjectId, ref: 'Coupon' }
+    },
     createdAt: { type: Date, default: Date.now },
 });
 
