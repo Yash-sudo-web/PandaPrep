@@ -2,6 +2,7 @@ import Razorpay from 'razorpay';
 import crypto from 'crypto';
 import { UserModel } from "../models/user.model.js";
 import { PaymentLogModel } from "../models/payment-logs.model.js";
+import { sendPurchaseReceiptEmail } from '../utils/email.util.js';
 import { CouponModel } from "../models/coupon.model.js";
 
 import dotenv from 'dotenv';
@@ -111,16 +112,51 @@ export const verifyPaymentController = async (req, res) => {
             1500: 450,
         };
 
-        const creditsToAdd = creditsMap[originalAmount] || 0;
+        const planMap = {
+            49: "Starter",
+            249: "Growth",
+            1500: "Scale"
+        };
+
+        const credits = creditsMap[paymentLog.amount] || 0;
+        const planTitle = planMap[paymentLog.amount] || "Custom";
 
         await UserModel.findByIdAndUpdate(userId, {
-            $inc: { "subscription.credits": creditsToAdd },
+            $inc: { "subscription.credits": credits },
             $set: { "subscription.plan": "paid" }
         });
 
-        console.log(`Payment verified: User ${userId} paid ₹${paymentLog.finalAmount} (original: ₹${originalAmount}) and received ${creditsToAdd} credits`);
+        // Send receipt email
+        const firstName = user.displayName ? user.displayName.split(' ')[0] : user.email.split('@')[0];
+        const emailResult = await sendPurchaseReceiptEmail({
+            userEmail: user.email,
+            userName: firstName,
+            planTitle,
+            amount: paymentLog.amount,
+            credits,
+            orderId: order_id,
+            paymentId: payment_id,
+            date: new Date().toLocaleDateString('en-IN', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            }),
+            couponApplied: couponCode ? couponCode.toUpperCase() : null,
+            discountAmount: discountAmount || null
+        });
+
+        if (!emailResult.success) {
+            console.error('Failed to send receipt email:', emailResult.error);
+        }
         
-        res.json({ success: true, message: "Payment verified, credits added", user });
+        res.json({ 
+            success: true, 
+            message: "Payment verified, credits added", 
+            user,
+            emailSent: emailResult.success 
+        });
     } catch (error) {
         console.error("Verify payment error:", error);
         res.status(500).json({ success: false, error: "Server Error" });

@@ -1,6 +1,6 @@
 import axios from 'axios';
 import dotenv from 'dotenv';
-import { getNotesReadyEmailTemplate } from '../templates/email.template.js';
+import { getNotesReadyEmailTemplate, getPurchaseReceiptEmailTemplate } from '../templates/email.template.js';
 
 dotenv.config();
 
@@ -112,6 +112,87 @@ Thanks for using PandaPrep!
 
   } catch (error) {
     console.error('Error sending notes ready email:', error);
+    return {
+      success: false,
+      error: error.message
+    };
+  }
+}
+
+/**
+ * Sends purchase receipt email to user
+ * @param {Object} params - Email parameters
+ * @param {string} params.userEmail - User's email address  
+ * @param {string} params.userName - User's name
+ * @param {string} params.planTitle - Title of the purchased plan
+ * @param {number} params.amount - Total amount paid
+ * @param {number} params.credits - Number of credits added
+ * @param {string} params.orderId - Razorpay order ID
+ * @param {string} params.paymentId - Razorpay payment ID
+ * @param {string} params.date - Purchase date
+ * @param {string} [params.couponApplied] - Coupon code if applied
+ * @param {number} [params.discountAmount] - Discount amount if coupon applied
+ * @returns {Promise<Object>} - Email sending result
+ */
+export async function sendPurchaseReceiptEmail({ 
+  userEmail, 
+  userName, 
+  planTitle, 
+  amount, 
+  credits, 
+  orderId, 
+  paymentId, 
+  date,
+  couponApplied,
+  discountAmount 
+}) {
+  try {
+    const htmlContent = getPurchaseReceiptEmailTemplate({
+      userName,
+      planTitle,
+      amount,
+      credits,
+      orderId,
+      paymentId,
+      date,
+      couponApplied,
+      discountAmount
+    });
+
+    const plainTextContent = `
+Hey ${userName},
+
+Thank you for purchasing the ${planTitle} plan. Here's your receipt for your records.
+
+Plan: ${planTitle}
+Credits Added: ${credits}
+${couponApplied ? `Coupon Applied: ${couponApplied}
+Discount: -₹${discountAmount}` : ''}
+Total Amount: ₹${amount}
+Order ID: ${orderId}
+Payment ID: ${paymentId}
+Date: ${date}
+
+Your credits have been added to your account. You can start using them right away!
+
+If you have any questions about your purchase, feel free to contact us at support@pandaprepai.tech.
+
+Thanks for choosing PandaPrep — we're here to help you prep smarter!
+— Team PandaPrep ✨
+    `.trim();
+
+    const result = await sendBrevoEmail({
+      to: userEmail,
+      toName: userName,
+      subject: `🎉 Thank You for Your Purchase - ${planTitle} Plan`,
+      htmlContent,
+      textContent: plainTextContent
+    });
+
+    return result;
+
+  } catch (error) {
+    console.error('Error sending purchase receipt email:', error);
     return {
       success: false,
       error: error.message
