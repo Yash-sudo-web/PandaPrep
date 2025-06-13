@@ -196,7 +196,6 @@ useEffect(() => {
         );
 
         const data = await response.data;
-        console.log("PDF upload response:", data);
 
         if (!data.success) {
           throw new Error(data.message || "Failed to process PDF");

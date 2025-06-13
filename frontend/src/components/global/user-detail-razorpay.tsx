@@ -239,11 +239,6 @@ const CustomerDetailsDialog = React.forwardRef<CustomerDetailsDialogRef, Custome
         // Calculate the final amount to charge
         const finalAmount = couponDiscount ? couponDiscount.final_amount : currentPlan.cost;
         
-        // Debug logs
-        console.log("=== PAYMENT DEBUG ===");
-        console.log("Original plan cost:", currentPlan.cost);
-        console.log("Coupon discount object:", couponDiscount);
-        console.log("Final amount being sent to backend:", finalAmount);
         
         const requestPayload = {
             userId: userId,
@@ -253,7 +248,6 @@ const CustomerDetailsDialog = React.forwardRef<CustomerDetailsDialogRef, Custome
             discountAmount: couponDiscount?.discount_amount || 0, // Send discount amount
         };
         
-        console.log("Request payload to create-order:", requestPayload);
         
         const { data } = await axios.post(
             `${BASE_URL}/payment/create-order`,
@@ -265,8 +259,6 @@ const CustomerDetailsDialog = React.forwardRef<CustomerDetailsDialogRef, Custome
             }
         );
 
-        console.log("Response from create-order:", data);
-        console.log("Order amount from backend:", data.order?.amount);
 
         const { order } = data;
         if (!order) throw new Error("Order creation failed");
@@ -351,7 +343,6 @@ const CustomerDetailsDialog = React.forwardRef<CustomerDetailsDialogRef, Custome
             },
         };
 
-        console.log("Razorpay options amount:", options.amount);
 
         const rzp = new window.Razorpay(options);
         rzp.open();
