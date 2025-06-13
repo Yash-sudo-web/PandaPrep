@@ -148,7 +148,7 @@ const History = () => {
     return (
       <span
         className={cn(
-          "text-xs font-semibold px-2 py-0.5 rounded-full ml-2",
+          "text-xs font-semibold px-2 py-0.5 rounded-full ",
           montserrat500.className,
           tag.color
         )}
@@ -427,7 +427,8 @@ const History = () => {
                     </p>
                     <div className="mt-1">
                       <div className="flex items-center gap-2">
-                        <StatusTag status={note.status} />
+                        {/* Only show StatusTag if type is not 'pdf_chat' */}
+                        {note.type !== 'pdf_chat' && <StatusTag status={note.status} />}
                         <TypeTag type={note.type} />
                         {note.type === 'pdf_chat' && (
                           <button
