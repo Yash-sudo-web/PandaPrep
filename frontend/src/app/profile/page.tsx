@@ -19,7 +19,6 @@ import { BASE_URL } from "@/lib/constant";
 import Image from "next/image";
 import { toast } from "sonner";
 
-
 interface CountryOption {
   label: string;
   value: string;

@@ -1,7 +1,6 @@
 "use client";
 
 import Navbar from "@/components/global/navbar";
-
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { FeatureSection } from "@/components/global/features";
