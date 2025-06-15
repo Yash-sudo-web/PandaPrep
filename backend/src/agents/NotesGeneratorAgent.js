@@ -132,6 +132,8 @@ class NotesGeneratorAgent {
      - For integrals use \\int_{lower}^{upper} expression
      - For sums use \\sum_{lower}^{upper} expression
      - For limits use \\lim_{x \\to value} expression
+     - **IMPORTANT: When writing about programming languages or code that contains literal dollar signs (like PHP variables), ALWAYS wrap such content in code blocks using backticks to prevent MathJax rendering conflicts**
+     - **Use \`$variable\` for inline code with dollar signs, or \`\`\`code blocks\`\`\` for multi-line code examples**
   4. Use tables for comparative information when useful
   5. Make sure headings follow a logical hierarchy
   

@@ -86,10 +86,10 @@ async function downloadPdfFromUrl(pdfUrl, requestId) {
   const response = await axios.get(pdfUrl, { responseType: 'stream' });
   const fileName = `reference_${requestId}_${Date.now()}.pdf`;
   const filePath = path.join(OUTPUT_DIR, fileName);
-  
+
   const writer = fs.createWriteStream(filePath);
   response.data.pipe(writer);
-  
+
   return new Promise((resolve, reject) => {
     writer.on('finish', () => resolve(filePath));
     writer.on('error', reject);
@@ -200,6 +200,76 @@ export async function generateNotesController(req, res) {
     });
   }
 }
+/**
+ * Cleanup function to remove temporary files after processing
+ * @param {string} requestId - The request ID for logging
+ * @param {string} requestOutputDir - Directory containing request-specific files
+ * @param {string} zipPath - Path to ZIP file (if created)
+ * @param {string} referencePdfPath - Path to reference PDF (if downloaded)
+ * @param {string} vectorStorePath - Path to vector store files (if created)
+ */
+async function cleanupTempFiles(requestId, requestOutputDir, zipPath = null, referencePdfPath = null, vectorStorePath = null) {
+  console.log(`[${requestId}] Starting cleanup of temporary files...`);
+  
+  const filesToClean = [];
+  const dirsToClean = [];
+
+  try {
+    // 1. Clean up request output directory (contains markdown and PDF)
+    if (requestOutputDir && fs.existsSync(requestOutputDir)) {
+      dirsToClean.push(requestOutputDir);
+      console.log(`[${requestId}] Marked request directory for cleanup: ${requestOutputDir}`);
+    }
+
+    // 2. Clean up ZIP file
+    if (zipPath && fs.existsSync(zipPath)) {
+      filesToClean.push(zipPath);
+      console.log(`[${requestId}] Marked ZIP file for cleanup: ${zipPath}`);
+    }
+
+    // 3. Clean up reference PDF (if not already cleaned)
+    if (referencePdfPath && fs.existsSync(referencePdfPath)) {
+      filesToClean.push(referencePdfPath);
+      console.log(`[${requestId}] Marked reference PDF for cleanup: ${referencePdfPath}`);
+    }
+
+    // 4. Clean up vector store files
+    if (vectorStorePath && fs.existsSync(vectorStorePath)) {
+      // Vector store might be a directory or file
+      const stats = fs.statSync(vectorStorePath);
+      if (stats.isDirectory()) {
+        dirsToClean.push(vectorStorePath);
+      } else {
+        filesToClean.push(vectorStorePath);
+      }
+      console.log(`[${requestId}] Marked vector store for cleanup: ${vectorStorePath}`);
+    }
+
+    // Delete individual files
+    for (const file of filesToClean) {
+      try {
+        fs.unlinkSync(file);
+        console.log(`[${requestId}] ✓ Deleted file: ${file}`);
+      } catch (error) {
+        console.warn(`[${requestId}] ⚠ Failed to delete file ${file}:`, error.message);
+      }
+    }
+
+    // Delete directories recursively
+    for (const dir of dirsToClean) {
+      try {
+        fs.rmSync(dir, { recursive: true, force: true });
+        console.log(`[${requestId}] ✓ Deleted directory: ${dir}`);
+      } catch (error) {
+        console.warn(`[${requestId}] ⚠ Failed to delete directory ${dir}:`, error.message);
+      }
+    }
+
+    console.log(`[${requestId}] Cleanup completed successfully`);
+  } catch (error) {
+    console.error(`[${requestId}] Error during cleanup:`, error);
+  }
+}
 
 /**
  * Main function to generate notes (runs in background)
@@ -221,7 +291,10 @@ export async function generateNotes(requestId, requestBody, requestIdDb, _userId
   let referencePdfPath = null;
   let vectorStorePath = null;
   let documentId = null;
+  let requestOutputDir = null;
+  let zipPath = null;
 
+  // Handle reference PDF download and processing
   if (requestBody.relativePathToReferenceMaterial) {
     try {
       console.log(`[${requestId}] Downloading reference PDF...`);
@@ -358,7 +431,7 @@ export async function generateNotes(requestId, requestBody, requestIdDb, _userId
     filePrefix = `${sanitizedSubject}_${note_type}_${education_level}_${timestamp}`;
 
     // Create a dedicated output directory for this request
-    const requestOutputDir = path.join(OUTPUT_DIR, requestIdDb.toString());
+    requestOutputDir = path.join(OUTPUT_DIR, requestIdDb.toString());
     if (!fs.existsSync(requestOutputDir)) {
       fs.mkdirSync(requestOutputDir, { recursive: true });
     }
@@ -477,6 +550,7 @@ export async function generateNotes(requestId, requestBody, requestIdDb, _userId
           broadcastStage(requestId, 'pdf_generation_failed', {
             error: pdfError.message,
           });
+          throw pdfError;
         }
 
         fs.writeFileSync(pdfPath, content.data);
@@ -491,6 +565,7 @@ export async function generateNotes(requestId, requestBody, requestIdDb, _userId
           'pdfGeneration'
         );
         downloadUrl = uploadResponse.secure_url;
+        
         if (uploadResponse && uploadResponse.secure_url) {
           await NotesRequestModel.updateOne(
             { _id: requestIdDb },
@@ -500,9 +575,7 @@ export async function generateNotes(requestId, requestBody, requestIdDb, _userId
             }
           );
         } else {
-          broadcastStage(requestId, 'pdf_generation_failed', {
-            error: pdfError.message,
-          });
+          throw new Error('Failed to upload PDF to Cloudinary');
         }
 
         broadcastStage(requestId, 'pdf_generation_complete', {
@@ -532,6 +605,7 @@ export async function generateNotes(requestId, requestBody, requestIdDb, _userId
             completed_at: new Date(),
           }
         );
+
         if (note_type === 'detailed') {
           await UserModel.updateOne({ _id: _userId }, { $inc: { 'subscription.credits': -1 } });
         }
@@ -553,21 +627,38 @@ export async function generateNotes(requestId, requestBody, requestIdDb, _userId
           console.log(`[${requestId}] Email sent successfully to ${user.email}: ${res.messageId}`);
         }
 
-        if (referencePdfPath && fs.existsSync(referencePdfPath)) {
-          fs.unlinkSync(referencePdfPath);
-        }
+        // CLEANUP: After successful PDF upload to Cloudinary
+        console.log(`[${requestId}] PDF uploaded successfully, cleaning up local files...`);
+        await cleanupTempFiles(requestId, requestOutputDir, null, referencePdfPath, vectorStorePath);
+
       } catch (pdfError) {
         console.error(`[${requestId}] PDF generation error:`, pdfError);
+        
+        // CLEANUP: Even on error, clean up what we can
+        console.log(`[${requestId}] PDF generation failed, cleaning up local files...`);
+        await cleanupTempFiles(requestId, requestOutputDir, null, referencePdfPath, vectorStorePath);
+        
         broadcastStage(requestId, 'pdf_generation_failed', {
           error: pdfError.message,
         });
+        throw pdfError; // Re-throw to be caught by outer try-catch
       }
     } else {
       // Create a ZIP archive for markdown format
-      await createZipArchive(requestId, requestOutputDir, filePrefix, downloadUrl);
+      zipPath = await createZipArchive(requestId, requestOutputDir, filePrefix, downloadUrl);
+      
+      // CLEANUP: After ZIP creation, clean up all temporary files
+      console.log(`[${requestId}] ZIP created successfully, cleaning up local files...`);
+      await cleanupTempFiles(requestId, requestOutputDir, zipPath, referencePdfPath, vectorStorePath);
     }
+
   } catch (error) {
     console.error(`[${requestId}] Generation process error:`, error);
+    
+    // CLEANUP: On any error, attempt to clean up temporary files
+    console.log(`[${requestId}] Error occurred, attempting cleanup...`);
+    await cleanupTempFiles(requestId, requestOutputDir, zipPath, referencePdfPath, vectorStorePath);
+    
     broadcastError(requestId, 'Generation process failed', error.message);
 
     // Update request status in database
