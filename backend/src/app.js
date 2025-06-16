@@ -7,6 +7,7 @@ import healthCheckRoutes from "./routes/health-check.route.js";
 import razorpayPaymentRoutes from "./routes/razorpay.route.js";
 import chatWithNotesRoutes from "./routes/chatWithNotes.route.js";
 import commonsRoutes from "./routes/commons.route.js";
+import couponRoutes from './routes/coupon.route.js';
 
 import cors from "cors"
 const app = express();
@@ -24,8 +25,8 @@ app.use("/api/userHistory", userHistoryRoutes);
 app.use("/api", contactLogRoutes);
 app.use("/api/chat", chatWithNotesRoutes);
 app.use("/api/payment", razorpayPaymentRoutes)
+app.use('/api/coupon', couponRoutes);
 app.use("/api/commons", commonsRoutes)
 app.use("/api", healthCheckRoutes)
-
 
 export { app }

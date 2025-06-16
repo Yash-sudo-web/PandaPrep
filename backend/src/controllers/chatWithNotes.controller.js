@@ -2,8 +2,12 @@ import ChatWithNotesAgent from '../agents/ChatWithNotesAgent.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import axios from 'axios';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
+import { UserModel } from '../models/user.model.js';
+import { NotesRequestModel } from '../models/user-request.model.js';
+import { ChatHistoryModel } from '../models/chat-history.model.js';
 
 // Constants
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -47,26 +51,73 @@ export const upload = multer({
   }
 });
 
+async function downloadPdfFromUrl(pdfUrl, requestId) {
+  const response = await axios.get(pdfUrl, { responseType: 'stream' });
+  const fileName = `reference_${requestId}_${Date.now()}.pdf`;
+  const filePath = path.join(UPLOADS_DIR, fileName);
+  
+  const writer = fs.createWriteStream(filePath);
+  response.data.pipe(writer);
+  
+  return new Promise((resolve, reject) => {
+    writer.on('finish', () => resolve(filePath));
+    writer.on('error', reject);
+  });
+}
+
 /**
  * Controller to upload and process a PDF document
  * @param {Object} req - Express request object
  * @param {Object} res - Express response object
  */
-export const uploadPdfController = async (req, res) => {
+export const processPdfController = async (req, res) => {
   try {
-    if (!req.file) {
-      return res.status(400).json({
+    const documentId = `doc-${uuidv4()}`;
+    const pdfUrl = req.body.relativeUrl;
+    const email = req.body.email;
+    const fileName = req.body.fileName;
+
+    const user = await UserModel.find({ email });
+    if (!user) {
+      return res.status(404).json({
         success: false,
-        message: 'No PDF file uploaded'
+        message: 'User not found'
       });
     }
-
-    // Generate a unique document ID
-    const documentId = `doc-${uuidv4()}`;
-    const pdfPath = req.file.path;
+    console.log("user:", user);
+    const userId = user[0]._id
+    if (!pdfUrl || !userId || !fileName) {
+      return res.status(400).json({
+        success: false,
+        message: 'pdfUrl, userId, and fileName are required'
+      });
+    }
     
+    const pdfPath = await downloadPdfFromUrl(pdfUrl, documentId);
     // Process the PDF document to create vector store
     const vectorStorePath = await ChatWithNotesAgent.processPdfDocument(pdfPath, documentId);
+    
+    // Create a new history entry
+    const historyEntry = await NotesRequestModel.create({
+      _userID: userId,
+      requestId: documentId,
+      subject_name: fileName,
+      display_name: fileName,
+      syllabus: "This is a syllabus for the document",
+      type: 'pdf_chat',
+      status: 'completed',
+      secure_url: pdfUrl,
+    });
+
+    // Create initial chat history
+    await ChatHistoryModel.create({
+      _userID: userId,
+      _historyID: historyEntry._id,
+      pdfUrl: pdfUrl,
+      pdfName: fileName,
+      messages: [],
+      documentId: documentId
+    });
     
     return res.status(200).json({
       success: true,
@@ -74,7 +125,7 @@ export const uploadPdfController = async (req, res) => {
       data: {
         documentId,
         vectorStorePath,
-        originalFilename: req.file.originalname
+        originalFilename: fileName
       }
     });
   } catch (error) {
@@ -95,11 +146,19 @@ export const uploadPdfController = async (req, res) => {
 export const chatWithPdfController = async (req, res) => {
   try {
     const { documentId, query, options } = req.body;
+    const user = req.user;
     
     if (!documentId || !query) {
       return res.status(400).json({
         success: false,
         message: 'documentId and query are required'
+      });
+    }
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
       });
     }
     
@@ -129,6 +188,36 @@ export const chatWithPdfController = async (req, res) => {
         error: result.error
       });
     }
+
+    // Find the history entry
+    const historyEntry = await NotesRequestModel.findOne({ requestId: documentId });
+    if (!historyEntry) {
+      return res.status(404).json({
+        success: false,
+        message: 'History entry not found'
+      });
+    }
+
+    // Update chat history
+    await ChatHistoryModel.findOneAndUpdate(
+      { _historyID: historyEntry._id },
+      {
+        $push: {
+          messages: [
+            {
+              role: 'user',
+              content: query,
+              timestamp: new Date()
+            },
+            {
+              role: 'assistant',
+              content: result.response,
+              timestamp: new Date()
+            }
+          ]
+        }
+      }
+    );
     
     return res.status(200).json({
       success: true,
@@ -156,14 +245,12 @@ export const chatWithPdfController = async (req, res) => {
 export const streamChatWithPdfController = async (req, res) => {
   try {
     const { documentId, query, options } = req.body;
-    
     if (!documentId || !query) {
       return res.status(400).json({
         success: false,
         message: 'documentId and query are required'
       });
     }
-    
     // Construct vector store path from document ID
     const vectorStorePath = path.join(VECTOR_STORE_DIR, documentId);
     
@@ -180,8 +267,11 @@ export const streamChatWithPdfController = async (req, res) => {
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');
     
+    let fullResponse = '';
+    
     // Define stream callback function
-    const streamCallback = (chunk, fullResponse) => {
+    const streamCallback = (chunk) => {
+      fullResponse += chunk;
       res.write(`data: ${JSON.stringify({ chunk })}\n\n`);
     };
     
@@ -194,6 +284,31 @@ export const streamChatWithPdfController = async (req, res) => {
       streamCallback,
       options: options || {}
     });
+
+    // Find the history entry
+    const historyEntry = await NotesRequestModel.findOne({ requestId: documentId });
+    if (historyEntry) {
+      // Update chat history
+      await ChatHistoryModel.findOneAndUpdate(
+        { _historyID: historyEntry._id },
+        {
+          $push: {
+            messages: [
+              {
+                role: 'user',
+                content: query,
+                timestamp: new Date()
+              },
+              {
+                role: 'assistant',
+                content: fullResponse,
+                timestamp: new Date()
+              }
+            ]
+          }
+        }
+      );
+    }
     
     // Send completion event
     res.write(`data: ${JSON.stringify({ 
@@ -207,5 +322,73 @@ export const streamChatWithPdfController = async (req, res) => {
     // Send error in SSE format
     res.write(`data: ${JSON.stringify({ error: error.message })}\n\n`);
     res.end();
+  }
+};
+
+export const reloadPdfAndChatController = async (req, res) => {
+  try {
+    const { historyId, email } = req.body;
+    const user = await UserModel.findOne({ email: email }).then(user => user._id);
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+    const userId = user._id;
+
+    // Get the user request to find the PDF URL
+    const userRequest = await NotesRequestModel.findOne({
+      _id: historyId,
+      _userID: userId,
+      type: 'pdf_chat'
+    });
+
+    if (!userRequest) {
+      return res.status(404).json({
+        success: false,
+        message: 'Chat history not found'
+      });
+    }
+
+    // Get the chat history
+    const chatHistory = await ChatHistoryModel.findOne({
+      _historyID: historyId,
+      _userID: userId
+    });
+
+    if (!chatHistory) {
+      return res.status(404).json({
+        success: false,
+        message: 'Chat history not found'
+      });
+    }
+
+    // Download the PDF from the secure URL
+    const pdfPath = await downloadPdfFromUrl(chatHistory.pdfUrl, historyId);
+
+    // Process the PDF and create vector store
+    const vectorStorePath = await ChatWithNotesAgent.processPdfDocument(pdfPath, chatHistory.documentId);
+
+    // Return the necessary information for the frontend
+    res.json({
+      success: true,
+      data: {
+        historyId,
+        pdfName: chatHistory.pdfName,
+        messages: chatHistory.messages,
+        pdfUrl: chatHistory.pdfUrl,
+        vectorStorePath,
+        documentId: chatHistory.documentId
+      }
+    });
+
+  } catch (error) {
+    console.error('Error reloading PDF and chat:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error reloading PDF and chat history',
+      error: error.message
+    });
   }
 };

@@ -86,6 +86,16 @@ const CustomerDetailsDialog = React.forwardRef<CustomerDetailsDialogRef, Custome
 
         const { theme, resolvedTheme } = useTheme();
         const [mounted, setMounted] = useState(false);
+        const [couponCode, setCouponCode] = React.useState("");
+        const [couponDiscount, setCouponDiscount] = React.useState<{
+            code: string;
+            discount_amount: number;
+            original_amount: number;
+            final_amount: number;
+        } | null>(null);
+        const [couponError, setCouponError] = React.useState("");
+        const [isValidatingCoupon, setIsValidatingCoupon] = React.useState(false);
+
 
         useEffect(() => {
             setMounted(true);
@@ -108,6 +118,9 @@ const CustomerDetailsDialog = React.forwardRef<CustomerDetailsDialogRef, Custome
                 email: '',
                 contact: ''
             });
+            setCouponCode("");
+            setCouponDiscount(null);
+            setCouponError("");
         };
 
         const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,124 +182,175 @@ const CustomerDetailsDialog = React.forwardRef<CustomerDetailsDialogRef, Custome
             return !Object.values(newErrors).some(error => error);
         };
 
+        const validateCoupon = async () => {
+        if (!couponCode.trim() || !currentPlan) return;
+        
+        setIsValidatingCoupon(true);
+        setCouponError("");
+        
+        try {
+            const response = await axios.post(
+                `${BASE_URL}/coupon/validate`,
+                {
+                    couponCode: couponCode.trim(),
+                    amount: currentPlan.cost
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${idToken}`,
+                    },
+                }
+            );
+            
+            if (response.data.success) {
+                setCouponDiscount(response.data.coupon);
+                toast.success(`Coupon applied! You save ₹${response.data.coupon.discount_amount}`);
+            }
+        } catch (error: any) {
+            setCouponError(error.response?.data?.error || "Invalid coupon code");
+            setCouponDiscount(null);
+        } finally {
+            setIsValidatingCoupon(false);
+        }
+    };
+
+    const removeCoupon = () => {
+        setCouponCode("");
+        setCouponDiscount(null);
+        setCouponError("");
+    };
         const handleProceed = async () => {
-            if (!currentPlan) return;
+    if (!currentPlan) return;
 
-            // Validate form before proceeding
-            if (!validateForm()) {
-                toast.error("Please correct the errors in the form");
-                return;
-            }
+    // Validate form before proceeding
+    if (!validateForm()) {
+        toast.error("Please correct the errors in the form");
+        return;
+    }
 
-            setOpen(false);
+    setOpen(false);
 
-            if (!idToken || !userId) {
-                console.error("Auth token or user ID not available");
-                return;
-            }
+    if (!idToken || !userId) {
+        console.error("Auth token or user ID not available");
+        return;
+    }
 
-            try {
-                const { data } = await axios.post(
-                    `${BASE_URL}/payment/create-order`,
-                    {
-                        userId: userId,
-                        amount: currentPlan.cost,
-                    },
-                    {
-                        headers: {
-                            Authorization: `Bearer ${idToken}`,
-                        },
-                    }
-                );
-
-                const { order } = data;
-                if (!order) throw new Error("Order creation failed");
-
-                const options = {
-                    key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
-                    amount: order.amount * 100,
-                    currency: "INR",
-                    name: "PandaPrep",
-                    description: `${currentPlan.title} Plan - ${currentPlan.credits} Credits`,
-                    order_id: order.id,
-                    method: {
-                        netbanking: true,
-                        card: true,
-                        wallet: true,
-                        upi: true,
-                        paylater: true,
-                        emi: true,
-                    },
-                    config: {
-                        display: {
-                            blocks: {
-                                upi: {
-                                    name: "Pay using UPI",
-                                    instruments: [{ method: "upi" }],
-                                },
-                                cards: {
-                                    name: "Pay using Card",
-                                    instruments: [{ method: "card" }],
-                                },
-                                wallets: {
-                                    name: "Pay using Wallets",
-                                    instruments: [{ method: "wallet" }],
-                                },
-                            },
-                            sequence: ["upi", "cards", "wallets"],
-                            preferences: {
-                                show_default_blocks: true,
-                            },
-                        },
-                        recommended: {
-                            method: ["upi", "card"],
-                            description: "Recommended payment options"
-                        }
-                    },
-                    handler: async (response: any) => {
-                        try {
-                            const verifyRes = await axios.post(
-                                `${BASE_URL}/payment/verify-order`,
-                                {
-                                    userId: userId,
-                                    order_id: order.id,
-                                    payment_id: response.razorpay_payment_id,
-                                    signature: response.razorpay_signature,
-                                },
-                                {
-                                    headers: {
-                                        Authorization: `Bearer ${idToken}`,
-                                    },
-                                }
-                            );
-
-                            if (verifyRes.data.success) {
-                                toast.success("Payment Successful! Credits Updated.");
-                            } else {
-                                toast.error("Payment verification failed.");
-                            }
-                        } catch (error) {
-                            toast.error("An error occurred during payment verification.");
-                        }
-                    },
-                    prefill: customerDetails,
-                    theme: { 
-                        color: isDarkMode ? "#16814e" : "#B17457" 
-                    },
-                    modal: {
-                        ondismiss: () => {
-                            toast.warning("Payment process timed out. Please try again.");
-                        },
-                    },
-                };
-
-                const rzp = new window.Razorpay(options);
-                rzp.open();
-            } catch (error) {
-                console.error("Payment error:", error);
-                toast.error("Payment initiation failed. Please try again.");
-            }
+    try {
+        // Calculate the final amount to charge
+        const finalAmount = couponDiscount ? couponDiscount.final_amount : currentPlan.cost;
+        
+        
+        const requestPayload = {
+            userId: userId,
+            amount: finalAmount, // Use discounted amount if coupon is applied
+            originalAmount: currentPlan.cost, // Send original amount for reference
+            couponCode: couponDiscount?.code || null, // Send coupon code if applied
+            discountAmount: couponDiscount?.discount_amount || 0, // Send discount amount
         };
+        
+        
+        const { data } = await axios.post(
+            `${BASE_URL}/payment/create-order`,
+            requestPayload,
+            {
+                headers: {
+                    Authorization: `Bearer ${idToken}`,
+                },
+            }
+        );
+
+
+        const { order } = data;
+        if (!order) throw new Error("Order creation failed");
+
+        const options = {
+            key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
+            amount: order.amount, // This should now be the discounted amount
+            currency: "INR",
+            name: "PandaPrep",
+            description: `${currentPlan.title} Plan - ${currentPlan.credits} Credits${couponDiscount ? ` (Coupon: ${couponDiscount.code})` : ''}`,
+            order_id: order.id,
+            method: {
+                netbanking: true,
+                card: true,
+                wallet: true,
+                upi: true,
+                paylater: true,
+                emi: true,
+            },
+            config: {
+                display: {
+                    blocks: {
+                        upi: {
+                            name: "Pay using UPI",
+                            instruments: [{ method: "upi" }],
+                        },
+                        cards: {
+                            name: "Pay using Card",
+                            instruments: [{ method: "card" }],
+                        },
+                        wallets: {
+                            name: "Pay using Wallets",
+                            instruments: [{ method: "wallet" }],
+                        },
+                    },
+                    sequence: ["upi", "cards", "wallets"],
+                    preferences: {
+                        show_default_blocks: true,
+                    },
+                },
+                recommended: {
+                    method: ["upi", "card"],
+                    description: "Recommended payment options"
+                }
+            },
+            handler: async (response: any) => {
+                try {
+                    const verifyRes = await axios.post(
+                        `${BASE_URL}/payment/verify-order`,
+                        {
+                            userId: userId,
+                            order_id: order.id,
+                            payment_id: response.razorpay_payment_id,
+                            signature: response.razorpay_signature,
+                            couponCode: couponDiscount?.code || null, // Include coupon info in verification
+                            discountAmount: couponDiscount?.discount_amount || 0,
+                        },
+                        {
+                            headers: {
+                                Authorization: `Bearer ${idToken}`,
+                            },
+                        }
+                    );
+
+                    if (verifyRes.data.success) {
+                        toast.success("Payment Successful! Credits Updated.");
+                    } else {
+                        toast.error("Payment verification failed.");
+                    }
+                } catch (error) {
+                    toast.error("An error occurred during payment verification.");
+                }
+            },
+            prefill: customerDetails,
+            theme: { 
+                color: isDarkMode ? "#16814e" : "#B17457" 
+            },
+            modal: {
+                ondismiss: () => {
+                    toast.warning("Payment process timed out. Please try again.");
+                },
+            },
+        };
+
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+    } catch (error) {
+        console.error("Payment error:", error);
+        toast.error("Payment initiation failed. Please try again.");
+    }
+};
 
         React.useImperativeHandle(ref, () => ({
             openDialog,
@@ -437,6 +501,73 @@ const CustomerDetailsDialog = React.forwardRef<CustomerDetailsDialogRef, Custome
                                         </p>
                                     )}
                                 </div>
+                                <div className="flex flex-col gap-2">
+                                <Label 
+                                    htmlFor="coupon" 
+                                    className={cn(
+                                        themeClasses.label,
+                                        funnel_display.className
+                                    )}
+                                >
+                                    Coupon Code (Optional)
+                                </Label>
+                                <div className="flex gap-2">
+                                    <Input
+                                        id="coupon"
+                                        name="coupon"
+                                        value={couponCode}
+                                        onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                                        placeholder="Enter coupon code"
+                                        className={cn(
+                                            "flex-1",
+                                            themeClasses.input,
+                                            funnel_display.className
+                                        )}
+                                        disabled={!!couponDiscount}
+                                    />
+                                    {!couponDiscount ? (
+                                        <Button
+                                            type="button"
+                                            onClick={validateCoupon}
+                                            disabled={!couponCode.trim() || isValidatingCoupon}
+                                            className={cn(
+                                                "px-4 py-2 text-xs cursor-pointer",
+                                                themeClasses.button,
+                                                funnel_display.className
+                                            )}
+                                        >
+                                            {isValidatingCoupon ? "Checking..." : "Apply"}
+                                        </Button>
+                                    ) : (
+                                        <Button
+                                            type="button"
+                                            onClick={removeCoupon}
+                                            variant="outline"
+                                            className={cn(
+                                                "px-4 py-2 text-xs cursor-pointer",
+                                                funnel_display.className
+                                            )}
+                                        >
+                                            Remove
+                                        </Button>
+                                    )}
+                                </div>
+                                {couponError && (
+                                    <p className={cn("text-xs mt-1", themeClasses.error)}>
+                                        {couponError}
+                                    </p>
+                                )}
+                                {couponDiscount && (
+                                    <div className={cn("text-xs mt-1 p-2 rounded border", 
+                                        isDarkMode ? "bg-green-900/20 border-green-700 text-green-400" : "bg-green-50 border-green-200 text-green-700"
+                                    )}>
+                                        <p>✓ Coupon &quot;{couponDiscount.code}&quot; applied!</p>
+                                        <p>Original: ₹{couponDiscount.original_amount}</p>
+                                        <p>Discount: -₹{couponDiscount.discount_amount}</p>
+                                        <p className="font-semibold">Final: ₹{couponDiscount.final_amount}</p>
+                                    </div>
+                                )}
+                            </div>
                             </div>
                         </div>
                         <DialogFooter>

@@ -20,6 +20,13 @@ const UserRequestSchema = new mongoose.Schema(
       sparse: true,
       index: true,
     },
+    // Type of request
+    type: {
+      type: String,
+      enum: ['pdf_generation', 'pdf_chat'],
+      default: 'pdf_generation',
+      required: true,
+    },
     // Basic information
     subject_name: {
       type: String,
@@ -85,7 +92,7 @@ const UserRequestSchema = new mongoose.Schema(
     // Status tracking
     status: {
       type: String,
-      enum: ['pending', 'processing', 'completed', 'failed'],
+      enum: ['pending', 'queued' ,'processing', 'completed', 'failed'],
       default: 'pending',
     },
     relativePathToReferenceMaterial: {

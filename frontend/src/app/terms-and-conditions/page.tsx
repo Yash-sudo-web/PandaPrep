@@ -45,8 +45,8 @@ const TermsAndConditions = () => {
             <p>
               For the purpose of these Terms and Conditions, the term
               &quot;we&quot;, &quot;us&quot;, &quot;our&quot; refers to
-              PandaPrep. The terms &quot;you&quot;, “your”, &quot;user&quot;,
-              “visitor” refer to any natural or legal person visiting our
+              PandaPrep. The terms &quot;you&quot;, "your", &quot;user&quot;,
+              "visitor" refer to any natural or legal person visiting our
               website and/or purchasing from us.
             </p>
 
@@ -84,7 +84,7 @@ const TermsAndConditions = () => {
                 These do not signify our endorsement of the linked websites.
               </li>
               <li>
-                You may not create a link to our website without PandaPrep&#39;s
+                You may not create a link to our website without PandaPrep's
                 prior written consent.
               </li>
               <li>

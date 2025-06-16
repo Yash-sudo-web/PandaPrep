@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/global/navbar";
 import { cn, getCookie } from "@/lib/utils";
-import { Eye, Info, Search, Trash2, Pencil, Save, X } from "lucide-react";
+import { Eye, Info, Search, Trash2, Pencil, Save, X, MessageCircle } from "lucide-react";
 import axios from "axios";
 import { BASE_URL } from "@/lib/constant";
 import { useTheme } from "next-themes";
@@ -27,6 +27,7 @@ const History = () => {
       createdAt: string;
       secure_url: string;
       status: string;
+      type: 'pdf_generation' | 'pdf_chat';
     }[]
   >([]);
   const [selectedNotes, setSelectedNotes] = useState<number[]>([]);
@@ -101,6 +102,10 @@ const History = () => {
         label: "Processing",
         color: "bg-yellow-500 text-white",
       },
+      queued: {
+        label: "In Queue",
+        color: "bg-orange-500 text-white",
+      }
     };
 
     type StatusKey = keyof typeof statusStyles;
@@ -117,6 +122,33 @@ const History = () => {
       <span
         className={cn(
           "text-xs font-semibold px-2 py-0.5 rounded-full",
+          montserrat500.className,
+          tag.color
+        )}
+      >
+        {tag.label}
+      </span>
+    );
+  };
+
+  const TypeTag = ({ type }: { type: 'pdf_generation' | 'pdf_chat' }) => {
+    const typeStyles = {
+      pdf_generation: {
+        label: "Notes Generation",
+        color: "bg-blue-500 text-white",
+      },
+      pdf_chat: {
+        label: "Chat with Notes",
+        color: "bg-purple-500 text-white",
+      }
+    };
+
+    const tag = typeStyles[type];
+
+    return (
+      <span
+        className={cn(
+          "text-xs font-semibold px-2 py-0.5 rounded-full ",
           montserrat500.className,
           tag.color
         )}
@@ -198,6 +230,12 @@ const History = () => {
     getNoteName(note).toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  const handleContinueChat = (note: any) => {
+    if (note.type === 'pdf_chat') {
+      router.push(`/chat?historyId=${note.id}`);
+    }
+  };
+
   if (!mounted) return <div className="min-h-screen" />;
 
   return (
@@ -235,7 +273,7 @@ const History = () => {
             </div>
             <input
               type="text"
-              placeholder="Search your notes..."
+              placeholder="Search your entries..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className={cn(
@@ -277,8 +315,7 @@ const History = () => {
                 )}
               >
                 <p>
-                  You have {notes.length} generated{" "}
-                  {notes.length === 1 ? "note" : "notes"} in PandaPrep.
+                  You have {notes.length} {notes.length === 1 ? "entry" : "entries"} in your PandaPrep history.
                 </p>
                 <div className="relative inline-block">
                   <Info
@@ -389,7 +426,26 @@ const History = () => {
                       {new Date(note.createdAt).toLocaleString()}
                     </p>
                     <div className="mt-1">
-                      <StatusTag status={note.status} />
+                      <div className="flex items-center gap-2">
+                        {/* Only show StatusTag if type is not 'pdf_chat' */}
+                        {note.type !== 'pdf_chat' && <StatusTag status={note.status} />}
+                        <TypeTag type={note.type} />
+                        {note.type === 'pdf_chat' && (
+                          <button
+                            onClick={() => handleContinueChat(note)}
+                            className={cn(
+                              "flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full",
+                              montserrat500.className,
+                              isDarkMode
+                                ? "bg-purple-500 text-white hover:bg-purple-600"
+                                : "bg-purple-500 text-white hover:bg-purple-600"
+                            )}
+                          >
+                            <MessageCircle className="w-3 h-3" />
+                            Continue Chat
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex gap-4 items-center self-end sm:self-auto">

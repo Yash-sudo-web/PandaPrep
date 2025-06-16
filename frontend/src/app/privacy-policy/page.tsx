@@ -6,7 +6,6 @@ import { useEffect, useState } from "react";
 import { useTheme } from "next-themes";
 import { cn } from "@/lib/utils";
 
-
 const funnel_display = Funnel_Display({
   subsets: ["latin"],
   weight: "400",

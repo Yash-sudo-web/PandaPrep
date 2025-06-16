@@ -1,17 +1,18 @@
 // File: controllers/user.history.controller.js
 import mongoose from 'mongoose';
 import { NotesRequestModel } from '../models/user-request.model.js';
+import { ChatHistoryModel } from '../models/chat-history.model.js';
 import { UserModel } from '../models/user.model.js';
 import { deletePDFFromCloudinary } from '../utils/cloudinary-file-upload.util.js';
 
 /**
- * Retrieves all notes generation requests for a specific user
+ * Retrieves all history items for a specific user
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
  */
 export async function getUserNotesHistoryController(req, res) {
   const { email } = req.body;
-  console.log(`Retrieving notes history for user: ${email}`);
+  console.log(`Retrieving history for user: ${email}`);
 
   try {
     // Find the user by email
@@ -26,7 +27,7 @@ export async function getUserNotesHistoryController(req, res) {
 
     // Find all notes requests for this user
     const notesRequests = await NotesRequestModel.find(
-      { _userID: userDoc._id, status: { $in: ['completed', 'processing']}},
+      { _userID: userDoc._id, status: { $in: ['completed', 'processing', 'queued']}},
       {
         _id: 1,
         subject_name: 1,
@@ -40,6 +41,7 @@ export async function getUserNotesHistoryController(req, res) {
         secure_url: 1,
         include_images: 1,
         error: 1,
+        type: 1,
       }
     ).sort({ createdAt: -1 });
 
@@ -49,24 +51,24 @@ export async function getUserNotesHistoryController(req, res) {
       data: notesRequests,
     });
   } catch (error) {
-    console.error(`Error retrieving notes history for user ${email}:`, error);
+    console.error(`Error retrieving history for user ${email}:`, error);
     res.status(500).json({
       success: false,
-      error: 'Failed to retrieve notes history',
+      error: 'Failed to retrieve history',
       details: process.env.NODE_ENV !== 'production' ? error.stack : undefined,
     });
   }
 }
 
 /**
- * Retrieves a single note generation request with details
+ * Retrieves a single history item with details
  * @param {Request} req - Express request object
  * @param {Response} res - Express response object
  */
 export async function getSingleNoteHistoryController(req, res) {
   const { email } = req.body;
   const { requestId } = req.params;
-  console.log(`Retrieving note details for user: ${email}, requestId: ${requestId}`);
+  console.log(`Retrieving history details for user: ${email}, requestId: ${requestId}`);
 
   try {
     // Find the user by email
@@ -79,32 +81,46 @@ export async function getSingleNoteHistoryController(req, res) {
       });
     }
 
-    // Find the specific note request for this user
-    const noteRequest = await NotesRequestModel.findOne({
+    // Try to find the item in notes requests first
+    let historyItem = await NotesRequestModel.findOne({
       _id: requestId,
       _userID: userDoc._id,
     });
 
-    if (!noteRequest) {
+    if (historyItem) {
+      return res.status(200).json({
+        success: true,
+        data: historyItem,
+        downloadUrl: historyItem.status === 'completed' ? historyItem.secure_url : null,
+      });
+    }
+
+    // If not found in notes requests, try chat history
+    historyItem = await ChatHistoryModel.findOne({
+      _id: requestId,
+      _userID: userDoc._id,
+    });
+
+    if (!historyItem) {
       return res.status(404).json({
         success: false,
-        error: 'Note request not found or does not belong to this user',
+        error: 'History item not found or does not belong to this user',
       });
     }
 
     res.status(200).json({
       success: true,
-      data: noteRequest,
-      downloadUrl: noteRequest.status === 'completed' ? noteRequest.secure_url : null,
+      data: historyItem,
+      downloadUrl: historyItem.pdfUrl,
     });
   } catch (error) {
     console.error(
-      `Error retrieving note details for user ${email}, requestId ${requestId}:`,
+      `Error retrieving history details for user ${email}, requestId ${requestId}:`,
       error
     );
     res.status(500).json({
       success: false,
-      error: 'Failed to retrieve note details',
+      error: 'Failed to retrieve history details',
       details: process.env.NODE_ENV !== 'production' ? error.stack : undefined,
     });
   }
@@ -182,7 +198,7 @@ export async function getUserNotesStatsController(req, res) {
  */
 
 export async function deleteUserNoteController(req, res) {
-  const { email, requestId } = req.body; // requestId should be an array of valid MongoDB ObjectIds
+  const { email, requestId } = req.body;
 
   if (!Array.isArray(requestId) || requestId.length === 0) {
     return res.status(400).json({
@@ -208,7 +224,6 @@ export async function deleteUserNoteController(req, res) {
   }
 
   try {
-    // Find the user by email
     const userDoc = await UserModel.findOne({ email });
 
     if (!userDoc) {
@@ -218,7 +233,6 @@ export async function deleteUserNoteController(req, res) {
       });
     }
 
-    // Find and delete the note requests
     const notesToDelete = await NotesRequestModel.find({
       _id: { $in: objectIds },
       _userID: userDoc._id,
@@ -231,7 +245,16 @@ export async function deleteUserNoteController(req, res) {
       });
     }
 
-    // Delete notes
+    // Delete associated chat histories if type is pdf_chat
+    const pdfChatNoteIds = notesToDelete
+      .filter(note => note.type === 'pdf_chat')
+      .map(note => note._id);
+
+    if (pdfChatNoteIds.length > 0) {
+      await ChatHistoryModel.deleteMany({ _historyID: { $in: pdfChatNoteIds } });
+    }
+
+    // Delete notes from database
     await NotesRequestModel.deleteMany({ _id: { $in: objectIds }, _userID: userDoc._id });
 
     // Delete associated files from Cloudinary
@@ -255,6 +278,7 @@ export async function deleteUserNoteController(req, res) {
     });
   }
 }
+
 
 /**
  * Updates the display name of a specific note request

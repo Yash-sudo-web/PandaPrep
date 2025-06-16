@@ -3,7 +3,6 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { ThemeProvider } from "@/providers/theme-provider"
 import { Analytics } from '@vercel/analytics/next';
-import { DM_Sans } from 'next/font/google'
 import Footer from "@/components/global/footer";
 import HealthCheckWrapper from "@/components/global/health-check-wrapper";
 import CookieConsent from "@/components/global/cookie-consent";

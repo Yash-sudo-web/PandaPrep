@@ -5,6 +5,7 @@ import { app } from './app.js';
 import { initializeWebSocketServer } from './websocket/server.js';
 import { deleteOldPDFsFromCloudinary, deleteStuckProcessingRequests } from './utils/cloudinary-file-upload.util.js';
 import cron from 'node-cron';
+import { recoverPendingJobs } from './utils/queue-config.js';
 
 dotenv.config({
   path: './.env',
@@ -38,3 +39,5 @@ connectDB()
   .catch((err) => {
     console.log('MongoDB connection failed!', err);
   });
+
+await recoverPendingJobs();

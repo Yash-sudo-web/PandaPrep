@@ -133,9 +133,9 @@ export function FeatureSection() {
                       >
                         {card.description}
                       </div>
-                      {index === 0 ? (
+                      {index !== 2 ? (
                         <button
-                          onClick={() => router.push("/generate")}
+                          onClick={() => router.push(index === 0 ? "/generate" : "/chat")}
                           className={`mt-1 xs:mt-2 sm:mt-3 md:mt-4 px-2 xs:px-3 md:px-4 py-0.5 xs:py-1 md:py-2 rounded text-xs xs:text-sm md:text-base cursor-pointer transition
                           ${isDarkMode
                               ? "bg-[#B17457] hover:bg-[#a76348] text-white"
