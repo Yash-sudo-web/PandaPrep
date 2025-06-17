@@ -313,7 +313,7 @@ const NotesGenerate = () => {
         // Check if user is in queue
         if (
           response.data.queueStatus &&
-          response.data.queueStatus.state === "prioritized"
+          response.data.queueStatus.state === "queued"
         ) {
           setQueueStatus(response.data.queueStatus);
           setEstimatedTime(response.data.estimatedTimeSeconds);
@@ -1134,7 +1134,7 @@ const NotesGenerate = () => {
 
     if (isInQueue && currentStage !== "generation_started") {
       title = "You're in Queue";
-      message = `We're facing high load due to exam season. You can either wait or close this tab and check back later in the history section.`;
+      message = `We're facing high load due to exam season. You can wait or close this tab and check back later in history—we'll also email you once it's processed.`;
     } else if (isGenerating) {
       title = "Your Notes are being generated";
       message = "Please wait while we prepare your notes...";
