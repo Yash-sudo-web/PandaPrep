@@ -726,7 +726,7 @@ export default function PDFChatPage() {
                                   </div>
                                 )}
                                 <div
-                                  className={`max-w-[85%] rounded-2xl px-5 py-4 shadow-lg ${message.role === "user"
+                                  className={`max-w-[85%] rounded-2xl px-5 py-4 shadow-lg overflow-x-auto break-all ${message.role === "user"
                                     ? isDarkMode
                                       ? "bg-gradient-to-r from-[#D29C7B] to-[#D29C7B]/80 text-[#1E1D1B]"
                                       : "bg-gradient-to-r from-[#B17457] to-[#B17457]/80 text-[#FAF7F0]"

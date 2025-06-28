@@ -67,7 +67,7 @@ const History = () => {
     if (allSelected) {
       setSelectedNotes([]);
     } else {
-      setSelectedNotes(notes.map((note) => note.id));
+      setSelectedNotes(notes.filter((note) => note.status === 'completed').map((note) => note.id));
     }
     setAllSelected(!allSelected);
   };
@@ -215,7 +215,8 @@ const History = () => {
   }, [idToken]);
 
   useEffect(() => {
-    setAllSelected(selectedNotes.length === notes.length && notes.length > 0);
+    const completedNotes = notes.filter((note) => note.status === 'completed');
+    setAllSelected(selectedNotes.length === completedNotes.length && completedNotes.length > 0);
   }, [selectedNotes, notes]);
 
   // Get display name or fall back to subject_name if display_name is missing
