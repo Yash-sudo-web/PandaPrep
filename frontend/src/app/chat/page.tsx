@@ -37,6 +37,9 @@ interface Message {
   pending?: boolean;
 }
 
+const MAX_FILE_SIZE_MB = 10;
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+
 export default function PDFChatPage() {
   const { theme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState<boolean>(false);
@@ -168,6 +171,10 @@ export default function PDFChatPage() {
 
   const handleFileUpload = async (file: File) => {
     if (file.type === "application/pdf") {
+      if (file.size > MAX_FILE_SIZE_BYTES) {
+        toast.error(`File size exceeds ${MAX_FILE_SIZE_MB}MB limit. Please upload a smaller PDF.`);
+        return;
+      }
       setMessages([]);
       setUploadedFile(file);
       setShowPdfViewer(false);
@@ -238,6 +245,10 @@ export default function PDFChatPage() {
     setIsDragOver(false);
     const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) {
+      if (files[0].size > MAX_FILE_SIZE_BYTES) {
+        toast.error(`File size exceeds ${MAX_FILE_SIZE_MB}MB limit. Please upload a smaller PDF.`);
+        return;
+      }
       handleFileUpload(files[0]);
     }
   };
@@ -488,10 +499,14 @@ export default function PDFChatPage() {
                       Drop your PDF here
                     </h3>
                     <p
-                      className={`${isDarkMode ? "text-[#D0CCC4]/60" : "text-[#4A4947]/60"
-                        } mb-8 text-lg leading-relaxed`}
+                      className={`${isDarkMode ? "text-[#D0CCC4]/60" : "text-[#4A4947]/60"}
+                        mb-8 text-lg leading-relaxed`}
                     >
                       Or click to browse and select your document
+                      <br />
+                      <span className="text-xs font-semibold mt-2 block">
+                        PDF file size limit: 10MB
+                      </span>
                     </p>
                     <Button
                       size="lg"
@@ -511,7 +526,13 @@ export default function PDFChatPage() {
                     className="hidden"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      if (file) handleFileUpload(file);
+                      if (file) {
+                        if (file.size > MAX_FILE_SIZE_BYTES) {
+                          toast.error(`File size exceeds ${MAX_FILE_SIZE_MB}MB limit. Please upload a smaller PDF.`);
+                          return;
+                        }
+                        handleFileUpload(file);
+                      }
                     }}
                   />
                 </div>
