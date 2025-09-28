@@ -240,11 +240,11 @@ class NotesGeneratorAgent {
       // Use Groq
       const llm = new ChatGroq({
         groqApiKey: process.env.GROQ_API_KEY,
-        model: 'llama3-70b-8192',
+        model: 'llama-3.3-70b-versatile',
         streaming: true,
       });
 
-      model = 'llama3-70b-8192';
+      model = 'llama-3.3-70b-versatile';
       source = 'Groq';
       let accumulatedContent = '';
 
