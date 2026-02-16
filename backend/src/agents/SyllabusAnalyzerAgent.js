@@ -1,12 +1,7 @@
-import { default as ModelClient } from "@azure-rest/ai-inference";
-import { AzureKeyCredential } from "@azure/core-auth";
+import { ChatGroq } from '@langchain/groq';
 import dotenv from "dotenv";
 
 dotenv.config();
-
-const endpoint = process.env.AZURE_AI_ENDPOINT; 
-const modelName = process.env.AZURE_MODEL_NAME;
-const apiKey = process.env.AZURE_API_KEY;
 
 class SyllabusAnalyzerAgent {
   static getSystemPrompt(params) {
@@ -155,7 +150,11 @@ class SyllabusAnalyzerAgent {
   static async process(params) {
     const { syllabus } = params;
     const systemPrompt = this.getSystemPrompt(params);
-    const client = new ModelClient(endpoint, new AzureKeyCredential(apiKey));
+    const llm = new ChatGroq({
+      groqApiKey: process.env.GROQ_API_KEY,
+      model: 'llama-3.3-70b-versatile',
+      streaming: false,
+    });
 
     const MAX_RETRIES = 3;
     let retries = 0;
@@ -163,26 +162,12 @@ class SyllabusAnalyzerAgent {
 
     while (retries <= MAX_RETRIES) {
       try {
-        const response = await client.path('/chat/completions').post({
-          body: {
-            model: modelName,
-            messages: [
-              { role: 'system', content: systemPrompt },
-              { role: 'user', content: `Syllabus:\n${syllabus}` },
-            ],
-            max_tokens: 4192,
-            temperature: 0.8,
-            top_p: 0.1,
-            presence_penalty: 0,
-            frequency_penalty: 0,
-          },
-        });
+        const response = await llm.invoke([
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Syllabus:\n${syllabus}` },
+        ]);
 
-        if (response.status !== '200') {
-          throw new Error(JSON.stringify(response.body?.error));
-        }
-
-        parsedResponse = this.parseResponse(response.body.choices[0].message.content);
+        parsedResponse = this.parseResponse(response.content);
 
         // If we got a valid response (not an error object), break out of the loop
         if (!parsedResponse.error) {
