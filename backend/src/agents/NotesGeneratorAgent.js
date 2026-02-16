@@ -1,15 +1,9 @@
 import { ChatGroq } from '@langchain/groq';
 import dotenv from 'dotenv';
-import ModelClient from '@azure-rest/ai-inference';
-import { AzureKeyCredential } from '@azure/core-auth';
 import { broadcastMarkdownUpdate, broadcastStage } from '../websocket/server.js';
 import ChatWithNotesAgent from './ChatWithNotesAgent.js';
 
 dotenv.config();
-
-const endpoint = process.env.AZURE_AI_ENDPOINT;
-const modelName = process.env.AZURE_MODEL_NAME;
-const apiKey = process.env.AZURE_API_KEY;
 
 class NotesGeneratorAgent {
   static getSystemPrompt(params = {}) {
@@ -201,79 +195,42 @@ class NotesGeneratorAgent {
     let model = '';
     let source = '';
 
-    if (noteType === 'detailed') {
-      // Use Azure
-      const azureClient = new ModelClient(
-        endpoint,
-        new AzureKeyCredential(process.env.AZURE_API_KEY)
-      );
+    // Use Groq for all note types
+    const llm = new ChatGroq({
+      groqApiKey: process.env.GROQ_API_KEY,
+      model: 'llama-3.3-70b-versatile',
+      streaming: true,
+    });
 
-      const response = await azureClient.path('/chat/completions').post({
-        body: {
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: enhancedPrompt },
-          ],
-          max_tokens: 2048,
-          temperature: 0.8,
-          top_p: 0.1,
-          presence_penalty: 0,
-          frequency_penalty: 0,
-          model: modelName,
-        },
-      });
+    model = 'llama-3.3-70b-versatile';
+    source = 'Groq';
+    let accumulatedContent = '';
 
-      console.log('Response generated successfully', response);
-
-      if (response.status !== '200') {
-        throw response.body.error;
-      }
-
-      content = response.body.choices[0].message.content;
-      model = modelName;
-      source = 'Azure';
-
-      if (requestId) {
-        broadcastMarkdownUpdate(requestId, content, null, true);
-      }
-    } else {
-      // Use Groq
-      const llm = new ChatGroq({
-        groqApiKey: process.env.GROQ_API_KEY,
-        model: 'llama-3.3-70b-versatile',
-        streaming: true,
-      });
-
-      model = 'llama-3.3-70b-versatile';
-      source = 'Groq';
-      let accumulatedContent = '';
-
-      const response = await llm.invoke(
-        [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: enhancedPrompt },
-        ],
-        {
-          callbacks: requestId
-            ? [
-                {
-                  handleLLMNewToken(token) {
-                    accumulatedContent += token;
-                    if (token.includes('\n\n') || accumulatedContent.length % 20 === 0) {
-                      broadcastMarkdownUpdate(requestId, accumulatedContent, null, false);
-                    }
-                  },
+    const response = await llm.invoke(
+      [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: enhancedPrompt },
+      ],
+      {
+        callbacks: requestId
+          ? [
+              {
+                handleLLMNewToken(token) {
+                  accumulatedContent += token;
+                  if (token.includes('\n\n') || accumulatedContent.length % 20 === 0) {
+                    broadcastMarkdownUpdate(requestId, accumulatedContent, null, false);
+                  }
                 },
-              ]
-            : undefined,
-        }
-      );
-
-      content = response.content;
-
-      if (requestId) {
-        broadcastMarkdownUpdate(requestId, content, null, true);
+              },
+            ]
+          : undefined,
       }
+    );
+
+    content = response.content;
+
+    if (requestId) {
+      broadcastMarkdownUpdate(requestId, content, null, true);
     }
 
     console.log(
