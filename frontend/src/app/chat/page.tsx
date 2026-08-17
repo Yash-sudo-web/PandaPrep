@@ -19,6 +19,7 @@ import {
   Zap,
   ChevronLeft,
   ChevronRight,
+  Clock,
 } from "lucide-react";
 import Navbar from "@/components/global/navbar";
 import { toast, Toaster } from "sonner";
@@ -428,7 +429,54 @@ export default function PDFChatPage() {
     <Navbar />
     <Toaster richColors position="top-right" closeButton={true} />
 
-    {/* Main Content with proper spacing */}
+    {/* Coming Soon Banner — FAISS vector store temporarily disabled */}
+    <div className={`fixed inset-0 z-40 flex items-center justify-center pointer-events-none`}>
+      {/* Blurred overlay */}
+      <div className={`absolute inset-0 pointer-events-none ${isDarkMode ? "bg-[#1E1D1B]/60" : "bg-[#FAF7F0]/60"} backdrop-blur-sm`} />
+
+      {/* Coming Soon Card */}
+      <div className={`relative z-50 pointer-events-auto max-w-md w-full mx-4 rounded-2xl shadow-2xl border p-8 text-center ${
+        isDarkMode
+          ? "bg-[#252320] border-[#D29C7B]/30 text-[#D0CCC4]"
+          : "bg-white border-[#B17457]/20 text-[#4A4947]"
+      }`}>
+        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+          isDarkMode ? "bg-[#D29C7B]/20" : "bg-[#B17457]/10"
+        }`}>
+          <Clock size={32} className={isDarkMode ? "text-[#D29C7B]" : "text-[#B17457]"} />
+        </div>
+        <h2 className={`${montserrat500.className} text-2xl font-bold mb-3`}>
+          Coming Soon
+        </h2>
+        <p className={`text-sm leading-relaxed mb-5 ${
+          isDarkMode ? "text-[#A9A29A]" : "text-[#4A4947]/70"
+        }`}>
+          The <strong>Chat with Notes</strong> feature is temporarily unavailable while we upgrade our infrastructure for better performance.
+          <br /><br />
+          You can still generate notes from the{" "}
+          <a
+            href="/generate"
+            className={`underline font-semibold ${
+              isDarkMode ? "text-[#D29C7B] hover:text-[#b1876c]" : "text-[#B17457] hover:text-[#8f523a]"
+            }`}
+          >
+            Generate Notes
+          </a>{" "}
+          page.
+        </p>
+        <a
+          href="/generate"
+          className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-semibold transition-colors ${
+            isDarkMode
+              ? "bg-[#D29C7B] text-[#1E1D1B] hover:bg-[#b1876c]"
+              : "bg-[#B17457] text-white hover:bg-[#8f523a]"
+          }`}
+        >
+          <Sparkles size={16} />
+          Generate Notes
+        </a>
+      </div>
+    </div>
     <div className="flex-1 container mx-auto px-3 sm:px-6 lg:px-8 py-2 sm:py-8 mt-24 sm:mt-20 mb-4 sm:mb-12 flex items-start justify-center">
       <div className="max-w-7xl w-full mx-auto">
         {!uploadedFile ? (

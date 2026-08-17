@@ -1,7 +1,7 @@
 import ChatWithNotesAgent from '../agents/ChatWithNotesAgent.js';
 import path from 'path';
 import fs from 'fs';
-import { fileURLToPath } from 'url';
+// fileURLToPath not needed — using /tmp paths directly
 import axios from 'axios';
 import multer from 'multer';
 import { v4 as uuidv4 } from 'uuid';
@@ -9,12 +9,11 @@ import { UserModel } from '../models/user.model.js';
 import { NotesRequestModel } from '../models/user-request.model.js';
 import { ChatHistoryModel } from '../models/chat-history.model.js';
 
-// Constants
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const UPLOADS_DIR = path.join(process.cwd(), "uploads", "pdfs");
-const VECTOR_STORE_DIR = path.join(process.cwd(), "temp", "vectorstores");
+// Constants — use /tmp for Vercel serverless compatibility
+const UPLOADS_DIR = '/tmp/uploads/pdfs';
+const VECTOR_STORE_DIR = '/tmp/vectorstores';
 
-// Ensure directories exist
+// Ensure directories exist (re-created each invocation on Vercel)
 if (!fs.existsSync(UPLOADS_DIR)) {
   fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 }

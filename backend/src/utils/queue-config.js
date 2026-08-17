@@ -1,6 +1,5 @@
-// localQueue.js
-import mongoose from 'mongoose';
-import { broadcastStage } from '../websocket/server.js';
+// queue-config.js — MongoDB-backed in-memory job queue
+// No WebSocket broadcasts, no cron intervals, no SIGINT handlers (serverless compatible)
 import { generateNotes } from '../controllers/pipeline.controller.js';
 import { JobModel } from '../models/jobs-queue.model.js';
 
@@ -21,23 +20,17 @@ async function processQueue() {
   const { requestId, data } = job;
 
   try {
-    broadcastStage(requestId, 'STARTING', { message: 'Your request is starting', position: 0 });
-    broadcastStage(requestId, 'PROCESSING', { message: 'Processing your request...', position: 0 });
-
+    console.log(`[Queue] Starting job ${job._id} for requestId ${requestId}`);
     await generateNotes(requestId, data.requestBody, data.requestIdDb, data.userId);
 
     await JobModel.findByIdAndUpdate(job._id, { status: 'completed', updatedAt: new Date() });
-    broadcastStage(requestId, 'generation_complete', { message: 'Notes generation completed' });
+    console.log(`[Queue] Job ${job._id} completed successfully`);
   } catch (err) {
+    console.error(`[Queue] Job ${job._id} failed:`, err.message);
     await JobModel.findByIdAndUpdate(job._id, {
       status: 'failed',
       updatedAt: new Date(),
       $inc: { retries: 1 },
-    });
-
-    broadcastStage(requestId, 'ERROR', {
-      message: 'Notes generation failed',
-      error: err.message,
     });
   } finally {
     activeJobs--;
@@ -55,20 +48,11 @@ export async function addToQueue(requestId, data) {
     processQueue();
 
     const queuedCount = await JobModel.countDocuments({ status: 'queued' });
-    broadcastStage(requestId, 'QUEUED', {
-      message: 'Your request has been queued',
-      position: queuedCount,
-      jobId: job._id,
-    });
 
-    console.log(`Job ${job._id} added to local queue`);
+    console.log(`[Queue] Job ${job._id} added. Queue position: ${queuedCount}`);
     return job;
   } catch (err) {
-    console.error('Error adding job:', err);
-    broadcastStage(requestId, 'ERROR', {
-      message: 'Failed to queue your request',
-      error: err.message,
-    });
+    console.error('[Queue] Error adding job:', err);
     throw err;
   }
 }
@@ -89,28 +73,36 @@ export async function getQueueStatus(jobId) {
       position,
     };
   } catch (err) {
-    console.error('Error getting queue status:', err);
+    console.error('[Queue] Error getting queue status:', err);
     return null;
   }
 }
 
-// On startup, reload unfinished jobs
+// On startup, reload unfinished jobs from MongoDB
 export async function recoverPendingJobs() {
-  const pendingJobs = await JobModel.find({ status: { $in: ['queued', 'processing'] } }).sort({ createdAt: 1 });
-  queue.push(...pendingJobs);
-  console.log(`Recovered ${pendingJobs.length} jobs from MongoDB`);
-  processQueue();
+  try {
+    const pendingJobs = await JobModel.find({ status: { $in: ['queued', 'processing'] } }).sort({ createdAt: 1 });
+    
+    if (pendingJobs.length > 0) {
+      // Mark any previously-processing jobs as failed (they were interrupted by a restart)
+      const processingJobs = pendingJobs.filter(j => j.status === 'processing');
+      for (const job of processingJobs) {
+        await JobModel.findByIdAndUpdate(job._id, { 
+          status: 'failed', 
+          updatedAt: new Date() 
+        });
+        console.log(`[Queue] Marked interrupted job ${job._id} as failed`);
+      }
+
+      // Re-queue jobs that were queued (not yet started)
+      const queuedJobs = pendingJobs.filter(j => j.status === 'queued');
+      queue.push(...queuedJobs);
+      console.log(`[Queue] Recovered ${queuedJobs.length} pending jobs from MongoDB`);
+      processQueue();
+    } else {
+      console.log('[Queue] No pending jobs to recover');
+    }
+  } catch (err) {
+    console.error('[Queue] Error recovering pending jobs:', err);
+  }
 }
-
-// Optional: Clean up completed jobs older than 24h
-setInterval(async () => {
-  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
-  await JobModel.deleteMany({ status: { $in: ['completed', 'failed'] }, updatedAt: { $lt: new Date(cutoff) } });
-}, 60 * 60 * 1000);
-
-// Graceful shutdown
-process.on('SIGINT', async () => {
-  console.log('Shutting down...');
-  await mongoose.disconnect();
-  process.exit(0);
-});

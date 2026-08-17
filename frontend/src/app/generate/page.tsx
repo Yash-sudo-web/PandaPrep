@@ -8,7 +8,7 @@ import { Funnel_Display } from "next/font/google";
 import Navbar from "@/components/global/navbar";
 import MultiTabSwitch from "@/components/ui/option-switch";
 import axios from "axios";
-import { BASE_URL } from "@/lib/constant";
+import { BASE_URL, AGENTIC_BASE_URL } from "@/lib/constant";
 import PDFLikeMarkdownDisplay from "@/components/global/PDFdisplay";
 import { useTheme } from "next-themes";
 import { montserrat400, montserrat500, montserrat600 } from "@/lib/font-utils";
@@ -28,6 +28,7 @@ import {
   Redo,
   Loader2,
   Lock,
+  Clock,
 } from "lucide-react";
 
 import AnimatedInput from "@/components/global/input";
@@ -40,15 +41,14 @@ const NotesGenerate = () => {
   const auth = getAuth(app);
   const [isGenerating, setIsGenerating] = useState(false);
   const [currentStage, setCurrentStage] = useState("");
-  const [markdownContent, setMarkdownContent] = useState("");
   const [requestId, setRequestId] = useState("");
   const [generationComplete, setGenerationComplete] = useState(false);
+  const [markdownContent, setMarkdownContent] = useState("");
   const [downloadId, setDownloadId] = useState("");
   const [error, setError] = useState("");
-  const [isConnected, setIsConnected] = useState(false);
+
   const [showGenerateButton, setShowGenerateButton] = useState(true);
   const [userCredits, setUserCredits] = useState(0);
-  const [showPreview, setShowPreview] = useState(false);
   const [idToken, setIdToken] = useState<string | null>(null);
   const [validationErrors, setValidationErrors] = useState<{
     [key: string]: string | boolean;
@@ -61,12 +61,11 @@ const NotesGenerate = () => {
     2: false,
   });
   const [hasAttemptedGeneration, setHasAttemptedGeneration] = useState(false);
-  const [queueStatus, setQueueStatus] = useState({
-    position: 0,
-    state: "",
-  });
   const [estimatedTime, setEstimatedTime] = useState(0);
   const [isInQueue, setIsInQueue] = useState(false);
+
+  // Polling interval ref
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -84,17 +83,11 @@ const NotesGenerate = () => {
   const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
 
-  const togglePreview = () => {
-    setShowPreview((prev) => !prev);
-  };
-
   const isDarkMode = mounted && resolvedTheme === "dark";
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  const socketRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     if (user?.email) {
@@ -123,6 +116,15 @@ const NotesGenerate = () => {
   useEffect(() => {
     validateSteps();
   }, [formData]);
+
+  // Cleanup polling on unmount
+  useEffect(() => {
+    return () => {
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+      }
+    };
+  }, []);
 
   const validateSteps = () => {
     const step1Valid = !!formData.subject_name.trim();
@@ -162,83 +164,6 @@ const NotesGenerate = () => {
     if (validationErrors[field]) {
       setValidationErrors((prev) => ({ ...prev, [field]: false }));
     }
-  };
-
-  const handlePDFUploadSuccess = (cloudinaryUrl: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      relativePathToReferenceMaterial: cloudinaryUrl,
-    }));
-  };
-
-  const connectWebSocket = (reqId: string) => {
-    if (socketRef.current) {
-      socketRef.current.close();
-    }
-
-    const wsUrl = `${BASE_URL.replace("http", "ws")}/ws?requestId=${reqId}`;
-    const socket = new WebSocket(wsUrl);
-
-    socket.onopen = () => {
-      setIsConnected(true);
-    };
-
-    socket.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-
-        if (data.type === "connected") {
-        } else if (data.type === "stage_update") {
-          setCurrentStage(data.stage);
-          if (data.stage === "generation_started") {
-            setIsInQueue(false);
-            setQueueStatus({ position: 0, state: "" });
-            setEstimatedTime(0);
-          }
-
-          if (data.stage === "generation_complete") {
-            setGenerationComplete(true);
-            setIsGenerating(false);
-            setShowGenerateButton(true);
-            setHasAttemptedGeneration(true);
-            if (data.data && data.data.downloadId) {
-              setDownloadId(data.data.downloadId);
-            }
-          }
-        } else if (data.type === "content_update") {
-          setMarkdownContent(data.content);
-        } else if (data.type === "error") {
-          setError(data.message);
-          setIsGenerating(false);
-          setShowGenerateButton(true);
-        }
-      } catch (err) {
-        console.error("Error parsing WebSocket message:", err);
-        setError("Failed to process server response");
-        setIsGenerating(false);
-        setShowGenerateButton(true);
-      }
-    };
-
-    socket.onclose = () => {
-      setIsConnected(false);
-      if (isGenerating) {
-        setError("Connection closed unexpectedly. Please try again.");
-        setIsGenerating(false);
-        setShowGenerateButton(true);
-      }
-    };
-
-    socket.onerror = (error) => {
-      console.error("WebSocket error:", error);
-      setError(
-        "WebSocket connection error. Please check your internet connection."
-      );
-      setIsGenerating(false);
-      setShowGenerateButton(true);
-    };
-
-    socketRef.current = socket;
   };
 
   const handleGetUser = async () => {
@@ -281,6 +206,72 @@ const NotesGenerate = () => {
     return Object.keys(errors).length === 0;
   };
 
+  /**
+   * Starts polling the /generation-status endpoint every 4 seconds.
+   */
+  const startPolling = (reqId: string, token: string) => {
+    // Clear any existing interval
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+    }
+
+    setCurrentStage("initializing");
+    setIsInQueue(false);
+
+    pollingIntervalRef.current = setInterval(async () => {
+      try {
+        const res = await axios.get(
+          `${AGENTIC_BASE_URL}/pipeline/generation-status/${reqId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        const { status, markdown, downloadUrl, error: jobError } = res.data;
+
+        // Update stage message based on DB status
+        if (status === "queued") {
+          setCurrentStage("queued");
+          setIsInQueue(false);
+        } else if (status === "processing") {
+          setCurrentStage("processing");
+          setIsInQueue(false);
+        } else if (status === "completed") {
+          // Stop polling — we're done!
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+          }
+          setCurrentStage("generation_complete");
+          setGenerationComplete(true);
+          setIsGenerating(false);
+          setShowGenerateButton(true);
+          setHasAttemptedGeneration(true);
+          setIsInQueue(false);
+          if (markdown) {
+            setMarkdownContent(markdown);
+          }
+          if (downloadUrl) {
+            setDownloadId(downloadUrl);
+          }
+        } else if (status === "failed") {
+          // Stop polling — job failed
+          if (pollingIntervalRef.current) {
+            clearInterval(pollingIntervalRef.current);
+            pollingIntervalRef.current = null;
+          }
+          setError(jobError || "Notes generation failed. Please try again.");
+          setIsGenerating(false);
+          setShowGenerateButton(true);
+          setIsInQueue(false);
+        }
+      } catch (err) {
+        console.error("Polling error:", err);
+        // Don't stop polling on transient errors — keep retrying
+      }
+    }, 4000); // Poll every 4 seconds
+  };
+
   const handleSubmit = async () => {
     try {
       if (!validateForm()) {
@@ -291,17 +282,22 @@ const NotesGenerate = () => {
       setIsGenerating(true);
       setShowGenerateButton(false);
       setError("");
-      setMarkdownContent("");
       setCurrentStage("initializing");
       setGenerationComplete(false);
+      setMarkdownContent("");
       setDownloadId("");
-      setQueueStatus({ position: 0, state: "" });
       setEstimatedTime(0);
       setIsInQueue(false);
 
+      const payload = {
+        ...formData,
+        email: user?.email || formData.email || "",
+        format: "markdown",
+      };
+
       const response = await axios.post(
-        `${BASE_URL}/pipeline/generate-notes`,
-        formData,
+        `${AGENTIC_BASE_URL}/pipeline/generate-notes`,
+        payload,
         {
           headers: {
             Authorization: `Bearer ${idToken}`,
@@ -310,27 +306,22 @@ const NotesGenerate = () => {
       );
 
       if (response.data.success) {
-        // Check if user is in queue
-        if (
-          response.data.queueStatus &&
-          response.data.queueStatus.state === "queued"
-        ) {
-          setQueueStatus(response.data.queueStatus);
+        const reqId = response.data.requestId;
+        setRequestId(reqId);
+        if (response.data.estimatedTimeSeconds) {
           setEstimatedTime(response.data.estimatedTimeSeconds);
-          setIsInQueue(true);
-          setCurrentStage("queued");
         }
-
-        if (response.data && response.data.requestId) {
-          setRequestId(response.data.requestId);
-          connectWebSocket(response.data.requestId);
-        }
+        startPolling(reqId, idToken!);
       }
     } catch (error) {
       console.error("Error generating notes:", error);
       if (error) {
         if (axios.isAxiosError(error) && error.response) {
-          setError(error.response.data.error || "Server error occurred");
+          setError(
+            error.response.data.error ||
+              error.response.data.message ||
+              "Server error occurred"
+          );
         } else {
           setError("An unexpected error occurred. Please try again.");
         }
@@ -345,41 +336,192 @@ const NotesGenerate = () => {
   };
 
   const downloadGeneratedNotes = () => {
-    if (downloadId) {
-      try {
-        // Create a temporary link element
-        const link = document.createElement("a");
-        link.href = downloadId; // Directly use the URL
-
-        // Set target to _blank to open in a new tab
-        link.target = "_blank";
-
-        // Extract filename from URL or use a default
-        const urlParts = downloadId.split("/");
-        const defaultFilename = `${
-          formData?.subject_name || "generated"
-        }_notes.pdf`;
-        const filename = urlParts[urlParts.length - 1] || defaultFilename;
-
-        link.download = filename;
-
-        // Append to the document, trigger click, and remove the link
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } catch (error) {
-        console.error("Error downloading notes:", error);
-        // Fix the TypeScript error with proper type checking
-        if (error instanceof Error) {
-          setError(`Failed to download notes: ${error.message}`);
-        } else {
-          setError("Failed to download notes. Please try again.");
-        }
-      }
-    } else {
-      setError("No download URL available. Please generate notes first.");
+    if (!markdownContent && !downloadId) {
+      setError("No notes available to download. Please generate notes first.");
+      return;
     }
+
+    if (downloadId && !markdownContent) {
+      window.open(downloadId, "_blank");
+      return;
+    }
+
+    // Find the rendered HTML content
+    const printableElement = document.getElementById("printable-notes-section");
+    if (!printableElement) {
+      window.print();
+      return;
+    }
+
+    // Create an isolated hidden iframe for clean, full-document printing
+    const printFrame = document.createElement("iframe");
+    printFrame.style.position = "fixed";
+    printFrame.style.right = "0";
+    printFrame.style.bottom = "0";
+    printFrame.style.width = "0";
+    printFrame.style.height = "0";
+    printFrame.style.border = "none";
+    document.body.appendChild(printFrame);
+
+    const frameDoc = printFrame.contentWindow?.document;
+    if (!frameDoc) {
+      window.print();
+      return;
+    }
+
+    frameDoc.open();
+    frameDoc.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>${formData.subject_name ? `${formData.subject_name} Notes` : "PandaPrep Study Notes"}</title>
+          <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+          <style>
+            @page {
+              size: A4;
+              margin: 18mm 15mm;
+            }
+            * {
+              box-sizing: border-box;
+            }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+              font-size: 14px;
+              line-height: 1.65;
+              color: #111827;
+              background: #ffffff;
+              margin: 0;
+              padding: 0;
+            }
+            h1 {
+              font-size: 24px;
+              font-weight: 700;
+              margin-top: 0;
+              margin-bottom: 12px;
+              padding-bottom: 8px;
+              border-bottom: 2px solid #e5e7eb;
+              page-break-after: avoid;
+              break-after: avoid;
+            }
+            h2 {
+              font-size: 18px;
+              font-weight: 600;
+              margin-top: 22px;
+              margin-bottom: 10px;
+              padding-bottom: 4px;
+              border-bottom: 1px solid #e5e7eb;
+              page-break-after: avoid;
+              break-after: avoid;
+            }
+            h3 {
+              font-size: 15px;
+              font-weight: 600;
+              margin-top: 18px;
+              margin-bottom: 8px;
+              page-break-after: avoid;
+              break-after: avoid;
+            }
+            p {
+              margin: 8px 0;
+              text-align: justify;
+            }
+            ul, ol {
+              margin: 8px 0;
+              padding-left: 24px;
+            }
+            li {
+              margin: 4px 0;
+            }
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 16px 0;
+              page-break-inside: avoid;
+              break-inside: avoid;
+              font-size: 13px;
+            }
+            th, td {
+              border: 1px solid #d1d5db;
+              padding: 8px 12px;
+              text-align: left;
+            }
+            th {
+              background-color: #f3f4f6;
+              font-weight: 600;
+            }
+            pre {
+              background: #f3f4f6;
+              border: 1px solid #e5e7eb;
+              border-radius: 6px;
+              padding: 12px;
+              overflow-x: auto;
+              font-family: monospace;
+              font-size: 12px;
+              margin: 12px 0;
+              page-break-inside: avoid;
+              break-inside: avoid;
+              white-space: pre-wrap;
+            }
+            code {
+              font-family: monospace;
+              background: #f3f4f6;
+              padding: 2px 4px;
+              border-radius: 4px;
+              font-size: 12px;
+            }
+            pre code {
+              padding: 0;
+              background: transparent;
+            }
+            blockquote {
+              border-left: 4px solid #b17457;
+              background: #faf7f0;
+              padding: 8px 16px;
+              margin: 12px 0;
+              font-style: italic;
+              page-break-inside: avoid;
+              break-inside: avoid;
+            }
+            hr {
+              border: none;
+              border-top: 1px solid #e5e7eb;
+              margin: 20px 0;
+            }
+            a {
+              color: #b17457;
+              text-decoration: none;
+            }
+            .no-print {
+              display: none !important;
+            }
+            .katex-display {
+              margin: 12px 0;
+              overflow-x: auto;
+              overflow-y: hidden;
+              page-break-inside: avoid;
+              break-inside: avoid;
+            }
+          </style>
+        </head>
+        <body>
+          ${printableElement.innerHTML}
+        </body>
+      </html>
+    `);
+    frameDoc.close();
+
+    setTimeout(() => {
+      printFrame.contentWindow?.focus();
+      printFrame.contentWindow?.print();
+      setTimeout(() => {
+        if (document.body.contains(printFrame)) {
+          document.body.removeChild(printFrame);
+        }
+      }, 2000);
+    }, 300);
   };
+
+
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -392,8 +534,9 @@ const NotesGenerate = () => {
 
     return () => {
       unsubscribe();
-      if (socketRef.current) {
-        socketRef.current.close();
+      // Cleanup polling on unmount
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
       }
     };
   }, [auth, router]);
@@ -419,29 +562,8 @@ const NotesGenerate = () => {
         case "queued":
           statusMessage = "Request queued for processing...";
           break;
-        case "generation_started":
-          statusMessage = "Starting note generation...";
-          break;
-        case "analyzing_syllabus":
-          statusMessage = "Analyzing syllabus content...";
-          break;
-        case "syllabus_analyzed":
-          statusMessage = "Syllabus analysis complete!";
-          break;
-        case "generating_image_suggestions":
-          statusMessage = "Generating image suggestions...";
-          break;
-        case "downloading_images":
-          statusMessage = "Finding and downloading images...";
-          break;
-        case "integrating_images":
-          statusMessage = "Integrating images into notes...";
-          break;
-        case "generating_pdf":
-          statusMessage = "Creating PDF document...";
-          break;
-        case "pdf_generation_complete":
-          statusMessage = "PDF generation complete!";
+        case "processing":
+          statusMessage = "Generating your notes...";
           break;
         case "generation_complete":
           statusMessage = "Notes successfully generated!";
@@ -455,7 +577,7 @@ const NotesGenerate = () => {
       <div
         className={`p-2 sm:p-3 ${statusColor} border rounded-md flex items-center gap-2 sm:gap-3`}
       >
-        {isGenerating && !isInQueue && (
+        {isGenerating && (
           <Loader2 className="animate-spin w-4 h-4 sm:w-5 sm:h-5" />
         )}
         <p className={`${statusTextColor} text-sm sm:text-base`}>
@@ -493,6 +615,8 @@ const NotesGenerate = () => {
 
   const [showTooltip, setShowTooltip] = useState(false);
   const [showOtherTooltip, setShowOtherTooltip] = useState(false);
+  const [showContextTooltip, setShowContextTooltip] = useState(false);
+
   const toggleTooltip = () => {
     setShowTooltip(true);
     setTimeout(() => setShowTooltip(false), 3000);
@@ -761,6 +885,7 @@ const NotesGenerate = () => {
               </div>
             </div>
 
+            {/* Add Context — PDF Upload */}
             <div className="space-y-3">
               <div className="flex justify-between items-center">
                 <p className={`${montserrat500.className} text-xl sm:text-2xl`}>
@@ -768,11 +893,15 @@ const NotesGenerate = () => {
                 </p>
               </div>
               <PDFUpload
-                onUploadSuccess={handlePDFUploadSuccess}
+                onUploadSuccess={(url) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    relativePathToReferenceMaterial: url,
+                  }))
+                }
                 isDarkMode={isDarkMode}
                 userId={user?.uid}
                 initialValue={formData.relativePathToReferenceMaterial}
-                className="min-h-[80px] sm:min-h-[120px]"
               />
               <p
                 className={`${montserrat400.className} text-sm sm:text-base ${
@@ -813,8 +942,7 @@ const NotesGenerate = () => {
               }`}
             >
               If your syllabus is lengthy or split into several units, try
-              generating one unit at a time. Upload relevant PDFs to enhance the
-              quality and accuracy of your generated notes.
+              generating one unit at a time.
             </p>
           </div>
         </div>
@@ -937,7 +1065,7 @@ const NotesGenerate = () => {
               <p>Key concepts only</p>
             </div>
             <div className="w-1/3">
-              <p>Question & Answer</p>
+              <p>Question &amp; Answer</p>
               <p>Test Your Knowledge</p>
             </div>
             <div className="w-1/3 relative">
@@ -985,7 +1113,7 @@ const NotesGenerate = () => {
         <div
           className={`${
             isDarkMode ? "bg-[#333230]" : "bg-[#D9D9D966]"
-          } rounded-xl p-1.5 flex justify-between items-center mt-5 min-h-[50px] sm:h-[65px] transition-colors duration-300`}
+          } rounded-xl p-1.5 flex justify-between items-center mt-5 min-h-[50px] sm:h-[65px] transition-colors duration-300 opacity-60 cursor-not-allowed`}
         >
           <div className="pl-2 sm:pl-3 flex items-center gap-2 sm:gap-3">
             <div
@@ -1023,60 +1151,24 @@ const NotesGenerate = () => {
 
                 <span
                   className={`
-          absolute left-0 bottom-full mb-2 bg-gray-800 text-white p-2 rounded text-sm w-28 sm:w-48
+          absolute left-0 bottom-full mb-2 bg-gray-800 text-white p-2 rounded text-sm w-36 sm:w-48
           transition-opacity duration-200
           ${showTooltip ? "opacity-100 block" : "opacity-0 hidden"}
           group-hover:opacity-100 group-hover:block
           pointer-events-none
         `}
                 >
-                  This is an experimental feature
+                  Feature temporarily disabled
                 </span>
               </span>
             </p>
           </div>
           <div className="pr-2 sm:pr-4">
             <Switch
-              checked={formData.include_images === "yes"}
-              onCheckedChange={(checked) => {
-                setFormData((prev) => ({
-                  ...prev,
-                  include_images: checked ? "yes" : "no",
-                }));
-                if (checked) setShowDisclaimer(true);
-              }}
+              checked={false}
+              disabled={true}
+              onCheckedChange={() => {}}
             />
-
-            {showDisclaimer && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-xs">
-                <div
-                  className={`rounded-2xl p-6 w-11/12 max-w-3xl shadow-2xl border ${
-                    isDarkMode
-                      ? "bg-[#1E1D1B] text-[#D0CCC4] border-[#D0CCC4]"
-                      : "bg-[#FAF7F0] text-[#4A4947]"
-                  } ${montserrat600.className}`}
-                >
-                  <h2 className="text-2xl font-bold mb-4">
-                    <strong>Disclaimer</strong>
-                  </h2>
-                  <p className="text-md sm:text-lg mb-4">
-                    This is an <strong>experimental feature</strong>. Images are
-                    AI-generated and may not always accurately represent the
-                    content. Please review them before use.
-                  </p>
-                  <button
-                    onClick={() => setShowDisclaimer(false)}
-                    className={`mt-2 px-4 py-2 rounded-lg font-semibold transition ${
-                      isDarkMode
-                        ? "bg-[#D29C7B] text-[#1E1D1B] hover:bg-[#9e765e]"
-                        : "bg-[#B17457] text-[#FAF7F0] hover:bg-[#8c5540]"
-                    }`}
-                  >
-                    Got it!
-                  </button>
-                </div>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -1132,17 +1224,15 @@ const NotesGenerate = () => {
 
     let title, message;
 
-    if (isInQueue && currentStage !== "generation_started") {
+    if (isInQueue && currentStage === "queued") {
       title = "You're in Queue";
-      message = `We're facing high load due to exam season. You can wait or close this tab and check back later in history—we'll also email you once it's processed.`;
+      message = `We're facing high load due to exam season. You can wait or close this tab and check back later in history — we'll also email you once it's processed.`;
     } else if (isGenerating) {
       title = "Your Notes are being generated";
       message = "Please wait while we prepare your notes...";
     } else {
       title = "Your Notes are Ready!";
-      message = generationComplete
-        ? "Here's a preview of what we've created"
-        : "";
+      message = generationComplete ? "Here's a preview of what we've created" : "";
     }
 
     return (
@@ -1169,169 +1259,109 @@ const NotesGenerate = () => {
           </div>
 
           <div
-            className={`flex ${
-              !isGenerating ? "justify-end" : "justify-between sm:justify-end"
-            } items-center gap-3 w-full sm:w-auto`}
+            className={`flex justify-end items-center gap-3 w-full sm:w-auto`}
           >
-            {isGenerating && markdownContent && (
-              <button
-                onClick={togglePreview}
-                className={`${
-                  montserrat500.className
-                } h-10 flex items-center gap-1 px-3 cursor-pointer border ${
-                  isDarkMode
-                    ? "border-[#D29C7B] hover:bg-[#333230]"
-                    : "border-[#B17457] hover:bg-gray-100"
-                } rounded-md transition text-sm`}
-              >
-                {showPreview ? "Hide Preview" : "Show Preview"}
-              </button>
-            )}
             <button
               onClick={downloadGeneratedNotes}
               className={`${
                 montserrat500.className
-              } h-10 flex items-center gap-1 px-3 cursor-pointer border ${
+              } h-10 flex items-center gap-1.5 px-4 cursor-pointer border ${
                 isDarkMode
-                  ? "border-[#D29C7B] hover:bg-[#333230]"
-                  : "border-[#B17457] hover:bg-gray-100"
-              } rounded-md transition text-sm ${
-                !generationComplete || !downloadId
+                  ? "border-[#D29C7B] text-[#D29C7B] hover:bg-[#333230]"
+                  : "border-[#B17457] text-[#B17457] hover:bg-gray-100"
+              } rounded-md transition text-sm font-medium ${
+                !generationComplete || (!markdownContent && !downloadId)
                   ? "opacity-50 cursor-not-allowed"
                   : ""
               }`}
-              disabled={!generationComplete || !downloadId}
+              disabled={!generationComplete || (!markdownContent && !downloadId)}
+              title="Download notes"
             >
-              <Download size={20} />
-              Download
+              <Download size={18} />
+              <span>Download</span>
             </button>
+
           </div>
         </div>
 
-        <div className="px-4 pt-1 h-full flex flex-col items-center justify-center">
-          <div className="w-full max-w-md text-center">
-            <div className="mb-8">
-              <div
-                className={`sm:w-16 sm:h-16 w-12 h-12 ${
-                  isGenerating
-                    ? isDarkMode
-                      ? "bg-[#444340]"
-                      : "bg-[#B1745780]"
-                    : isDarkMode
-                    ? "bg-[#B17457]"
-                    : "bg-[#B17457]"
-                } rounded-full flex items-center justify-center mx-auto mb-4 sm:mt-0 mt-8 transition-colors duration-300`}
-              >
-                {isGenerating ? (
-                  <Loader2
-                    size={24}
-                    className="text-white animate-spin sm:w-8 sm:h-8"
-                  />
-                ) : (
-                  <Sparkles size={24} className="text-white sm:w-8 sm:h-8" />
-                )}
+        <div className="px-4 pt-4 h-full flex flex-col items-center justify-center">
+          {(!generationComplete || isGenerating) && (
+            <div className="w-full max-w-md text-center mb-4">
+              <div>
+                <div
+                  className={`sm:w-14 sm:h-14 w-12 h-12 ${
+                    isGenerating
+                      ? isDarkMode
+                        ? "bg-[#444340]"
+                        : "bg-[#B1745780]"
+                      : isDarkMode
+                      ? "bg-[#B17457]"
+                      : "bg-[#B17457]"
+                  } rounded-full flex items-center justify-center mx-auto mb-3 transition-colors duration-300`}
+                >
+                  {isGenerating ? (
+                    <Loader2
+                      size={22}
+                      className="text-white animate-spin sm:w-7 sm:h-7"
+                    />
+                  ) : (
+                    <Sparkles size={22} className="text-white sm:w-7 sm:h-7" />
+                  )}
+                </div>
+                <h2 className={`${montserrat500.className} text-xl sm:text-2xl`}>
+                  {title}
+                </h2>
+                <p
+                  className={`${montserrat400.className} text-xs sm:text-sm mt-1.5 ${
+                    isDarkMode ? "text-[#A9A29A]" : ""
+                  } ${
+                    isInQueue && currentStage === "queued"
+                      ? "text-orange-500"
+                      : ""
+                  }`}
+                >
+                  {message}
+                </p>
               </div>
-              <h2 className={`${montserrat500.className} text-2xl`}>{title}</h2>
-              <p
-                className={`${montserrat400.className} text-sm mt-2 ${
-                  isDarkMode ? "text-[#A9A29A]" : ""
-                } ${
-                  isInQueue && currentStage !== "generation_started"
-                    ? "text-orange-500"
-                    : ""
-                }`}
-              >
-                {message}
-              </p>
             </div>
-          </div>
+          )}
 
           <div
-            className={`w-full sm:w-[50rem] lg:w-[60rem] h-[18rem] sm:h-[22rem] rounded-2xl ${
+            className={`w-full h-[32rem] sm:h-[38rem] rounded-2xl ${
               isDarkMode
                 ? "bg-[#252320] border-[#333230]"
-                : "bg-gray-100 border-gray-300"
+                : "bg-gray-50 border-gray-200"
             } border flex items-center justify-center relative overflow-hidden transition-colors duration-300`}
           >
             {isGenerating ? (
-              showPreview && markdownContent ? (
-                <div className="w-full h-full">
-                  <PDFLikeMarkdownDisplay
-                    markdownContent={markdownContent}
-                    isGenerating={isGenerating}
-                    downloadId=""
-                  />
-                </div>
-              ) : (
-                <div
-                  className={`text-center backdrop-blur-md ${
-                    isDarkMode ? "bg-[#252320]/30" : "bg-white/30"
-                  } absolute inset-0 flex flex-col items-center justify-center transition-colors duration-300`}
-                >
-                  <Loader2
-                    className={`animate-spin h-10 w-10 ${
-                      isDarkMode ? "text-[#A9A29A]" : "text-gray-500"
-                    } mx-auto mb-4`}
-                  />
-                  <p
-                    className={`${montserrat500.className} ${
-                      isDarkMode ? "text-[#A9A29A]" : "text-gray-500"
-                    }`}
-                  >
-                    {isInQueue && currentStage !== "generation_started"
-                      ? "Waiting in queue..."
-                      : "Generating your notes..."}
-                  </p>
-                </div>
-              )
-            ) : generationComplete && markdownContent ? (
-              <div className="w-full h-full relative">
-                <iframe
-                  src={`${
-                    downloadId
-                      ? `${downloadId}#zoom=80&toolbar=0&navpanes=0`
-                      : null
-                  }`}
-                  className="w-full h-full border-0 rounded-lg"
-                  title="PDF Viewer"
+              <div
+                className={`text-center backdrop-blur-md ${
+                  isDarkMode ? "bg-[#252320]/40" : "bg-white/40"
+                } absolute inset-0 flex flex-col items-center justify-center transition-colors duration-300 z-10`}
+              >
+                <Loader2
+                  className={`animate-spin h-10 w-10 ${
+                    isDarkMode ? "text-[#A9A29A]" : "text-[#B17457]"
+                  } mx-auto mb-4`}
                 />
-                {downloadId && (
-                  <button
-                    onClick={() => {
-                      if (downloadId) {
-                        window.open(downloadId, "_blank");
-                      }
-                    }}
-                    className={`absolute top-2 right-4 cursor-pointer sm:right-8 p-2 rounded-full ${
-                      isDarkMode
-                        ? "bg-[#333230] hover:bg-[#444340]"
-                        : "bg-white hover:bg-gray-100"
-                    } shadow-md transition-colors z-10 flex items-center justify-center`}
-                    aria-label="Open PDF in new tab"
-                    title="Open in new tab"
-                  >
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className={
-                        isDarkMode ? "text-[#D0CCC4]" : "text-[#4A4947]"
-                      }
-                    >
-                      <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-                      <polyline points="15 3 21 3 21 9" />
-                      <line x1="10" y1="14" x2="21" y2="3" />
-                    </svg>
-                  </button>
-                )}
+                <p
+                  className={`${montserrat500.className} ${
+                    isDarkMode ? "text-[#A9A29A]" : "text-gray-700"
+                  }`}
+                >
+                  {isInQueue && currentStage === "queued"
+                    ? "Waiting in queue..."
+                    : "Generating your notes with AI..."}
+                </p>
               </div>
+            ) : generationComplete && (markdownContent || downloadId) ? (
+              <PDFLikeMarkdownDisplay
+                markdownContent={markdownContent}
+                isGenerating={isGenerating}
+                downloadId={downloadId}
+              />
             ) : (
-              <div className="text-center">
+              <div className="text-center p-6">
                 <p
                   className={`${montserrat500.className} ${
                     isDarkMode ? "text-[#A9A29A]" : "text-gray-500"
@@ -1339,7 +1369,7 @@ const NotesGenerate = () => {
                 >
                   No preview available
                 </p>
-                {error && <p className="text-red-500 mt-2">{error}</p>}
+                {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
               </div>
             )}
           </div>
@@ -1470,7 +1500,11 @@ const NotesGenerate = () => {
           >
             <div
               className={`flex flex-col gap-4 h-auto ${
-                currentStep === 1 ? "sm:h-[66.5rem] md:h-[61.5rem] lg:h-[47.5rem]" : "sm:h-[40rem]"
+                currentStep === 1
+                  ? "sm:h-[66.5rem] md:h-[61.5rem] lg:h-[47.5rem]"
+                  : currentStep === 3
+                  ? "min-h-[40rem]"
+                  : "sm:h-[40rem]"
               }`}
             >
               {currentStep === 0 && step1Component()}
@@ -1528,7 +1562,7 @@ const NotesGenerate = () => {
                     {renderGenerationStatus()}
                   </div>
 
-                  {generationComplete && markdownContent && downloadId && (
+                  {generationComplete && (
                     <div className="w-full flex justify-between sm:w-auto sm:justify-end gap-2 sm:gap-4">
                       <button
                         onClick={handleSubmit}
@@ -1547,7 +1581,7 @@ const NotesGenerate = () => {
                         onClick={() => {
                           if (
                             confirm(
-                              "Are you sure you want to start over? This will clear all your input including any uploaded PDF."
+                              "Are you sure you want to start over? This will clear all your input."
                             )
                           ) {
                             setCurrentStep(0);
@@ -1562,10 +1596,15 @@ const NotesGenerate = () => {
                               include_images: "no",
                               relativePathToReferenceMaterial: "",
                             });
-                            setMarkdownContent("");
                             setGenerationComplete(false);
+                            setMarkdownContent("");
                             setDownloadId("");
                             setHasAttemptedGeneration(false);
+                            // Stop any active polling
+                            if (pollingIntervalRef.current) {
+                              clearInterval(pollingIntervalRef.current);
+                              pollingIntervalRef.current = null;
+                            }
                           }
                         }}
                       >

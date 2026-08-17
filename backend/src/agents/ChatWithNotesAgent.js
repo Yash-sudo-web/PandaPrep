@@ -1,26 +1,45 @@
 import { GoogleGenAI } from '@google/genai';
-import { PDFLoader } from '@langchain/community/document_loaders/fs/pdf';
 import { RecursiveCharacterTextSplitter } from 'langchain/text_splitter';
-import { FaissStore } from '@langchain/community/vectorstores/faiss';
 import { GoogleGenerativeAIEmbeddings } from '@langchain/google-genai';
 import dotenv from 'dotenv';
 import fs from 'fs';
 import path from 'path';
-import { fileURLToPath } from 'url';
 
 dotenv.config();
 
-// Constants
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const PDF_CACHE_DIR = path.join(process.cwd(), 'temp', 'pdfs');
-const VECTOR_STORE_DIR = path.join(process.cwd(), 'temp', 'vectorstores');
+// Use /tmp for Vercel serverless compatibility (ephemeral but writable)
+const PDF_CACHE_DIR = '/tmp/pdfs';
+const VECTOR_STORE_DIR = '/tmp/vectorstores';
 
-// Ensure directories exist
+// Ensure directories exist (will be re-created on each cold start on Vercel)
 [PDF_CACHE_DIR, VECTOR_STORE_DIR].forEach((dir) => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
 });
+
+/**
+ * Lazily loads PDFLoader to avoid issues with missing native deps at module load time.
+ */
+async function getPDFLoader() {
+  const { PDFLoader } = await import('@langchain/community/document_loaders/fs/pdf');
+  return PDFLoader;
+}
+
+/**
+ * Lazily loads FaissStore to avoid native binary crash at module load time.
+ * faiss-node is a native C++ addon and may not be available on all environments.
+ */
+async function getFaissStore() {
+  try {
+    const { FaissStore } = await import('@langchain/community/vectorstores/faiss');
+    return FaissStore;
+  } catch (err) {
+    throw new Error(
+      'FAISS vector store is not available in this environment. This feature is temporarily disabled.'
+    );
+  }
+}
 
 class ChatWithNotesAgent {
   // Add a static map to store chat histories
@@ -98,6 +117,7 @@ Context from the document is provided below, marked as "Document Excerpt":
   static async processPdfStandard(filePath, documentId) {
     console.log(`Processing PDF with standard extraction: ${filePath}`);
 
+    const PDFLoader = await getPDFLoader();
     const loader = new PDFLoader(filePath, { splitPages: true });
     const docs = await loader.load();
 
@@ -124,6 +144,8 @@ Context from the document is provided below, marked as "Document Excerpt":
    */
   static async processPdfDocument(filePath, documentId, options = {}) {
     console.log(`Processing PDF document: ${filePath}`);
+
+    const FaissStore = await getFaissStore();
 
     // Check if vector store already exists
     const vectorStorePath = path.join(VECTOR_STORE_DIR, documentId);
@@ -169,6 +191,8 @@ Context from the document is provided below, marked as "Document Excerpt":
    */
   static async loadVectorStore(vectorStorePath) {
     console.log(`Loading vector store from ${vectorStorePath}`);
+
+    const FaissStore = await getFaissStore();
 
     const embeddings = new GoogleGenerativeAIEmbeddings({
       apiKey: process.env.GEMINI_API_KEY,
@@ -244,7 +268,7 @@ ${doc.pageContent.trim()}
       // Generate response
       console.log('Generating response...');
       const response = await genAI.models.generateContent({
-        model: 'gemini-2.0-flash-lite',
+        model: 'gemini-3.5-flash-lite',
         contents: contents,
       });
 
@@ -315,7 +339,7 @@ ${doc.pageContent.trim()}
       // Generate streaming response
       console.log('Generating streaming response...');
       const response = await genAI.models.generateContentStream({
-        model: 'gemini-2.0-flash-lite',
+        model: 'gemini-3.5-flash-lite',
         contents: contents,
       });
 

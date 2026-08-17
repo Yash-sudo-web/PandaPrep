@@ -1,43 +1,42 @@
 import dotenv from 'dotenv';
-import http from 'http';
 import connectDB from './db/index.js';
 import { app } from './app.js';
-import { initializeWebSocketServer } from './websocket/server.js';
-import { deleteOldPDFsFromCloudinary, deleteStuckProcessingRequests } from './utils/cloudinary-file-upload.util.js';
-import cron from 'node-cron';
-import { recoverPendingJobs } from './utils/queue-config.js';
 
 dotenv.config({
   path: './.env',
 });
 
-// Create HTTP server from Express app
-const server = http.createServer(app);
+/**
+ * Configures maximum serverless execution duration for Vercel functions (in seconds).
+ */
+export const maxDuration = 60;
 
-// Initialize WebSocket server with the HTTP server
-const wss = initializeWebSocketServer(server);
-
-cron.schedule("0 0 * * *", async () => {
-  console.log("Running scheduled cleanup of old PDFs...");
-  await deleteOldPDFsFromCloudinary();
-});
-
-cron.schedule('0 * * * *', async () => {
-  console.log('Running hourly cleanup of stuck processing requests...');
-  await deleteStuckProcessingRequests();
-});
-
-connectDB()
-  .then(() => {
-    // Listen on the HTTP server instead of the Express app directly
-    server.listen(process.env.PORT || 8000, () => {
-      console.log(`Server is running at port: ${process.env.PORT || 8000}`);
-      console.log(`http://localhost:${process.env.PORT || 8000}`);
-      console.log(`WebSocket server initialized`);
+/**
+ * Vercel invokes this handler per request. A serverless function must not open
+ * its own long-lived HTTP listener with app.listen().
+ */
+export default async function handler(req, res) {
+  try {
+    await connectDB();
+    return app(req, res);
+  } catch (error) {
+    console.error('Unable to initialize the API function:', error);
+    return res.status(503).json({
+      success: false,
+      error: 'Service temporarily unavailable',
     });
-  })
-  .catch((err) => {
-    console.log('MongoDB connection failed!', err);
-  });
+  }
+}
 
-await recoverPendingJobs();
+// Keep the persistent listener only for local `npm run dev` / `npm start`.
+if (!process.env.VERCEL) {
+  connectDB()
+    .then(() => {
+      app.listen(process.env.PORT || 8000, () => {
+        console.log(`Server is running at port: ${process.env.PORT || 8000}`);
+      });
+    })
+    .catch((error) => {
+      console.error('MongoDB connection failed!', error);
+    });
+}
