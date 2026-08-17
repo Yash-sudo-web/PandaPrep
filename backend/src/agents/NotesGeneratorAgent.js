@@ -1,6 +1,5 @@
 import { ChatGroq } from '@langchain/groq';
 import dotenv from 'dotenv';
-import { broadcastMarkdownUpdate, broadcastStage } from '../websocket/server.js';
 import ChatWithNotesAgent from './ChatWithNotesAgent.js';
 
 dotenv.config();
@@ -184,58 +183,24 @@ class NotesGeneratorAgent {
     const enhancedPrompt = promptText + sectionContext;
     const systemPrompt = this.getSystemPrompt(params);
 
-    if (requestId) {
-      broadcastStage(requestId, 'notes_generation_started', {
-        promptLength: enhancedPrompt.length,
-        hasContext: sectionContext.length > 0,
-      });
-    }
-
-    let content = '';
-    let model = '';
-    let source = '';
-
-    // Use Groq for all note types
+    // Use Groq Llama for all note types (concise, detailed, qa)
     const llm = new ChatGroq({
       groqApiKey: process.env.GROQ_API_KEY,
       model: 'llama-3.3-70b-versatile',
-      streaming: true,
+      streaming: false,
     });
 
-    model = 'llama-3.3-70b-versatile';
-    source = 'Groq';
-    let accumulatedContent = '';
+    const response = await llm.invoke([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: enhancedPrompt },
+    ]);
 
-    const response = await llm.invoke(
-      [
-        { role: 'system', content: systemPrompt },
-        { role: 'user', content: enhancedPrompt },
-      ],
-      {
-        callbacks: requestId
-          ? [
-              {
-                handleLLMNewToken(token) {
-                  accumulatedContent += token;
-                  if (token.includes('\n\n') || accumulatedContent.length % 20 === 0) {
-                    broadcastMarkdownUpdate(requestId, accumulatedContent, null, false);
-                  }
-                },
-              },
-            ]
-          : undefined,
-      }
-    );
-
-    content = response.content;
-
-    if (requestId) {
-      broadcastMarkdownUpdate(requestId, content, null, true);
-    }
+    const content = response.content;
 
     console.log(
-      `[Model Used] Source: ${source}, Model: ${model}, Context: ${sectionContext.length > 0 ? 'Yes' : 'No'}`
+      `[NotesGeneratorAgent] Section generated. Context used: ${sectionContext.length > 0 ? 'Yes' : 'No'}`
     );
+
     return this.formatResponse(content);
   }
 
@@ -258,40 +223,20 @@ class NotesGeneratorAgent {
     const results = [];
     const totalPrompts = prompts.length;
 
-    if (requestId) {
-      broadcastStage(requestId, 'notes_generation_overview', {
-        totalSections: totalPrompts,
-        topics: prompts.map((p) => p.topics || []),
-        hasVectorStore: !!(params.vectorStorePath && params.documentId),
-      });
-    }
+    console.log(`[NotesGeneratorAgent] Generating ${totalPrompts} sections...`);
 
     for (let i = 0; i < prompts.length; i++) {
       const prompt = prompts[i];
       const currentTopics = prompt.topics || [];
 
-      if (requestId) {
-        broadcastStage(requestId, 'generating_section', {
-          sectionIndex: i,
-          sectionNumber: i + 1,
-          totalSections: totalPrompts,
-          topics: currentTopics,
-          progress: Math.round((i / totalPrompts) * 100),
-        });
-      }
+      console.log(
+        `[NotesGeneratorAgent] Generating section ${i + 1}/${totalPrompts}: ${currentTopics.join(', ')}`
+      );
 
       // Generate notes with context for this specific section
       const content = await this.generate(prompt, params, requestId);
 
-      if (requestId) {
-        broadcastStage(requestId, 'section_completed', {
-          sectionIndex: i,
-          sectionNumber: i + 1,
-          totalSections: totalPrompts,
-          topics: currentTopics,
-          progress: Math.round(((i + 1) / totalPrompts) * 100),
-        });
-      }
+      console.log(`[NotesGeneratorAgent] Section ${i + 1}/${totalPrompts} complete.`);
 
       results.push({
         topics: currentTopics,
@@ -300,23 +245,13 @@ class NotesGeneratorAgent {
       });
     }
 
-    if (requestId) {
-      broadcastStage(requestId, 'all_sections_completed', {
-        totalSections: totalPrompts,
-        progress: 100,
-      });
-    }
-
+    console.log(`[NotesGeneratorAgent] All ${totalPrompts} sections generated.`);
     return results;
   }
 
   static combineNotes(notesArray, requestId = null) {
     // Combine multiple notes sections into a single document
-    if (requestId) {
-      broadcastStage(requestId, 'combining_sections', {
-        totalSections: notesArray.length,
-      });
-    }
+    console.log(`[NotesGeneratorAgent] Combining ${notesArray.length} sections into final document...`);
 
     let combinedNotes = '# Complete Study Notes\n\n';
     let tableOfContents = '## Table of Contents\n\n';
@@ -329,19 +264,11 @@ class NotesGeneratorAgent {
       // Add section with anchor
       combinedNotes += `\n<a id="section-${index + 1}"></a>\n\n`;
       combinedNotes += noteSection.content + '\n\n---\n\n';
-
-      // Broadcast progress updates on table of contents
-      if (requestId && index % 2 === 0) {
-        broadcastMarkdownUpdate(requestId, tableOfContents, -1, false);
-      }
     });
 
     const finalDocument = tableOfContents + '\n\n---\n\n' + combinedNotes;
 
-    if (requestId) {
-      broadcastMarkdownUpdate(requestId, finalDocument, -1, true);
-      broadcastStage(requestId, 'document_combined', { success: true });
-    }
+    console.log(`[NotesGeneratorAgent] Document combined successfully.`);
     return finalDocument;
   }
 }
